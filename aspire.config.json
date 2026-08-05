@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "src/PickleCrew.AppHost/PickleCrew.AppHost.csproj"
+  }
+}

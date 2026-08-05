@@ -1,0 +1,26 @@
+using PickleCrew.Api;
+using PickleCrew.Api.Data.Database;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
+builder.AddDatabase();
+builder.Services.AddTimeProvider();
+builder.Services.AddApiDocumentation();
+builder.Services.AddErrorHandling();
+
+var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+
+if (app.Environment.IsDevelopment())
+{
+    await app.InitializeDatabaseAsync();
+    app.MapOpenApi();
+}
+
+app.MapDefaultEndpoints();
+app.MapEndpoints();
+
+await app.RunAsync();
