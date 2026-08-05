@@ -6,12 +6,20 @@ using Xunit;
 
 namespace PickleCrew.IntegrationTests;
 
+[CollectionDefinition(nameof(AppHostCollection))]
+public sealed class AppHostCollection : ICollectionFixture<AppHostFixture>
+{
+}
+
 public sealed class AppHostFixture : IAsyncLifetime
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
     private DistributedApplication? application;
+    private HttpClient? apiClient;
 
-    public HttpClient ApiClient { get; private set; } = null!;
+    public HttpClient ApiClient => apiClient ?? throw new InvalidOperationException(
+        "The API client is not available because the AppHost has not finished starting."
+    );
 
     public string DatabaseConnectionString { get; private set; } = null!;
 
@@ -61,12 +69,12 @@ public sealed class AppHostFixture : IAsyncLifetime
             timeout.Token
         ).WaitAsync(DefaultTimeout, timeout.Token);
 
-        ApiClient = application.CreateHttpClient("api");
+        apiClient = application.CreateHttpClient("api", "http");
     }
 
     public async Task DisposeAsync()
     {
-        ApiClient.Dispose();
+        apiClient?.Dispose();
 
         if (application is not null)
         {

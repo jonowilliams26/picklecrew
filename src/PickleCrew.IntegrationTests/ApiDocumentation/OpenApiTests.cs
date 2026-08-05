@@ -9,7 +9,8 @@ using Xunit;
 
 namespace PickleCrew.IntegrationTests.ApiDocumentation;
 
-public sealed class OpenApiTests(AppHostFixture fixture) : IClassFixture<AppHostFixture>
+[Collection(nameof(AppHostCollection))]
+public sealed class OpenApiTests(AppHostFixture fixture)
 {
     [Fact]
     public async Task OpenApiDocument_WhenResponseIsEmptyErrorStatusCode_ShouldUseProblemDetailsSchema()

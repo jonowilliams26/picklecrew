@@ -6,6 +6,6 @@ var database = postgres.AddDatabase("picklecrew");
 builder.AddProject<Projects.PickleCrew_Api>("api")
     .WithReference(database)
     .WaitFor(database)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health", endpointName: "http");
 
 builder.Build().Run();
