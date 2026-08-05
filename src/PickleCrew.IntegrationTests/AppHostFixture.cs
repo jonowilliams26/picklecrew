@@ -13,7 +13,7 @@ public sealed class AppHostCollection : ICollectionFixture<AppHostFixture>
 
 public sealed class AppHostFixture : IAsyncLifetime
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
     private DistributedApplication? application;
     private HttpClient? apiClient;
 
@@ -69,7 +69,7 @@ public sealed class AppHostFixture : IAsyncLifetime
             timeout.Token
         ).WaitAsync(DefaultTimeout, timeout.Token);
 
-        apiClient = application.CreateHttpClient("api");
+        apiClient = application.CreateHttpClient("api", "http");
     }
 
     public async Task DisposeAsync()
