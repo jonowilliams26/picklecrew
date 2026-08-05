@@ -1,10 +1,42 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
+using PickleCrew.Api;
 using Xunit;
 
 namespace PickleCrew.IntegrationTests.ApiDocumentation;
 
 public sealed class OpenApiTests(AppHostFixture fixture) : IClassFixture<AppHostFixture>
 {
+    [Fact]
+    public async Task OpenApiDocument_WhenResponseIsEmptyErrorStatusCode_ShouldUseProblemDetailsSchema()
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddApiDocumentation();
+
+        await using var app = builder.Build();
+        app.MapGet("/resource", static () => TypedResults.NotFound());
+        await app.StartAsync();
+
+        var provider = app.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
+        var document = await provider.GetOpenApiDocumentAsync();
+        var path = document.Paths["/resource"];
+        Assert.NotNull(path.Operations);
+        var operation = path.Operations[HttpMethod.Get];
+        Assert.NotNull(operation.Responses);
+        var response = operation.Responses[StatusCodes.Status404NotFound.ToString()];
+        Assert.NotNull(response.Content);
+        var mediaType = response.Content["application/problem+json"];
+        Assert.NotNull(mediaType.Schema);
+        Assert.NotNull(mediaType.Schema.Properties);
+
+        Assert.Contains("traceId", mediaType.Schema.Properties.Keys);
+    }
+
     [Fact]
     public async Task OpenApiDocument_WhenGenerated_ShouldIncludeTraceIdInProblemDetailsSchemas()
     {
