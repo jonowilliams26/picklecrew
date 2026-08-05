@@ -28,7 +28,7 @@ public sealed class CreatePersistenceProbeTests(AppHostFixture fixture)
             await httpResponse.Content.ReadFromJsonAsync<HttpValidationProblemDetails>();
 
         Assert.NotNull(response);
-        Assert.True(response.Errors.ContainsKey(nameof(request.Value)));
+        Assert.True(response.Errors.ContainsKey("value"));
     }
 
     [Fact]
