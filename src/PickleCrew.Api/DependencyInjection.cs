@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PickleCrew.Api.Data.Database;
 
 namespace PickleCrew.Api;
@@ -28,6 +29,15 @@ internal static class DependencyInjection
     public static IServiceCollection AddErrorHandling(this IServiceCollection services)
     {
         services.AddProblemDetails();
+
+        return services;
+    }
+
+    public static IServiceCollection AddJsonSerialization(this IServiceCollection services)
+    {
+        services.ConfigureHttpJsonOptions(options =>
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter())
+        );
 
         return services;
     }
