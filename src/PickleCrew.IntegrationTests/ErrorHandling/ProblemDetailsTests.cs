@@ -6,7 +6,8 @@ using Xunit;
 
 namespace PickleCrew.IntegrationTests.ErrorHandling;
 
-public sealed class ProblemDetailsTests(AppHostFixture fixture) : IClassFixture<AppHostFixture>
+[Collection(nameof(AppHostCollection))]
+public sealed class ProblemDetailsTests(AppHostFixture fixture)
 {
     [Fact]
     public async Task Request_WhenEndpointDoesNotExist_ShouldReturnProblemDetailsWithTraceId()

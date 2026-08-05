@@ -6,8 +6,8 @@ using Xunit;
 
 namespace PickleCrew.IntegrationTests.PersistenceProbe;
 
+[Collection(nameof(AppHostCollection))]
 public sealed class CreatePersistenceProbeTests(AppHostFixture fixture)
-    : IClassFixture<AppHostFixture>
 {
     [Fact]
     public async Task CreatePersistenceProbe_WhenValueIsBlank_ShouldReturnValidationProblem()
