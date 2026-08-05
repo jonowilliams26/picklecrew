@@ -8,6 +8,7 @@ builder.AddDatabase();
 builder.Services.AddTimeProvider();
 builder.Services.AddApiDocumentation();
 builder.Services.AddErrorHandling();
+builder.Services.AddJsonSerialization();
 
 var app = builder.Build();
 
