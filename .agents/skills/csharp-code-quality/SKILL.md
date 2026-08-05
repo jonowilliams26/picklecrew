@@ -7,6 +7,15 @@ description: Apply repository C# code-quality conventions when writing, modifyin
 
 Apply these conventions to all C# code in scope.
 
+## Local variable type inference
+
+Use `var` for local variables when an explicit type is not required and does not add value. Keep an explicit type only when it is needed for correctness or makes otherwise unclear code easier to understand.
+
+```csharp
+var customer = await customerRepository.GetAsync(customerId);
+var retryCount = 0;
+```
+
 ## Private fields
 
 - Name private fields using lower camel case.
