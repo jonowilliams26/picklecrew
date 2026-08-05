@@ -39,12 +39,7 @@ jobs:
         run: dotnet build PickleCrew.slnx --configuration Release --no-restore
 
       - name: Test
-        run: >-
-          dotnet test PickleCrew.slnx
-          --configuration Release
-          --no-build
-          --no-restore
-          --logger "console;verbosity=detailed"
+        run: dotnet test PickleCrew.slnx --configuration Release --no-build --no-restore
 
       - name: Check for pending EF Core model changes
         run: >-
