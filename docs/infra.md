@@ -34,7 +34,9 @@ The `<branch-id>` suffix remains part of PlanetScale's generated username format
 
 Health responses do not expose connection strings or exception details. Database readiness checks have a five-second request timeout and successful responses are cached in the API process for ten seconds to limit repeated database work. `/alive` is not cached.
 
-Configure a Cloudflare WAF rate-limiting rule for `GET /health` on both API domains so abusive traffic is rejected before it reaches the Worker and container. WAF rules are managed in Cloudflare rather than by this repository.
+The Worker limits `/health` to 10 requests per minute per client IP before it looks up or starts the container. Development and production use separate rate-limiter namespace IDs. Rejected requests return `429`; `/alive` and all other API endpoints are not rate-limited.
+
+Worker rate-limit counters are per Cloudflare location, permissive, and eventually consistent. This protects the container and database, but it does not prevent the Worker itself from being invoked. A WAF rate-limiting rule managed through Terraform remains an optional future enhancement for enforcement before Worker invocation.
 
 ## Deployments
 

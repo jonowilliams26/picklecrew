@@ -1,5 +1,7 @@
 import { Container } from "@cloudflare/containers";
 
+import { rateLimitHealthRequest } from "./health-rate-limit";
+
 const apiPort = 8080;
 
 export class ApiContainer extends Container<Env> {
@@ -18,6 +20,15 @@ export class ApiContainer extends Container<Env> {
 
 export default {
   async fetch(request, env): Promise<Response> {
+    const rateLimitResponse = await rateLimitHealthRequest({
+      request,
+      rateLimiter: env.HEALTH_RATE_LIMITER,
+      deploymentEnvironment: env.DEPLOYMENT_ENVIRONMENT,
+    });
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const container = env.API_CONTAINER.getByName(
       `picklecrew-api-${env.DEPLOYMENT_ENVIRONMENT}`,
     );

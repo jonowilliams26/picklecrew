@@ -63,6 +63,10 @@ jobs:
         working-directory: infra/api
         run: npm ci
 
+      - name: Test Worker
+        working-directory: infra/api
+        run: npm test
+
       - name: Type-check Worker
         working-directory: infra/api
         run: npm run typecheck
