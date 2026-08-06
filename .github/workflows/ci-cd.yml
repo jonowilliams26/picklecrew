@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: pipeline-${{ github.event_name == 'pull_request' && github.ref || github.ref_type == 'tag' && 'production' || 'development' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -51,6 +51,28 @@ jobs:
           --configuration Release
           --no-build
           --no-color
+
+      - name: Generate EF Core migration script
+        run: |
+          mkdir -p "$RUNNER_TEMP/ef-migrations"
+
+          dotnet ef migrations script \
+            --idempotent \
+            --project src/PickleCrew.Api/PickleCrew.Api.csproj \
+            --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj \
+            --context PickleCrewDbContext \
+            --configuration Release \
+            --no-build \
+            --no-color \
+            --output "$RUNNER_TEMP/ef-migrations/migrations.sql"
+
+      - name: Upload EF Core migration script
+        uses: actions/upload-artifact@v4
+        with:
+          name: ef-migrations
+          path: ${{ runner.temp }}/ef-migrations/migrations.sql
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -123,6 +145,34 @@ jobs:
       - name: Install Worker dependencies
         working-directory: infra/api
         run: npm ci
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Download EF Core migration script
+        uses: actions/download-artifact@v4
+        with:
+          name: ef-migrations
+          path: ${{ runner.temp }}/ef-migrations
+
+      - name: Validate EF Core migration script
+        run: test -s "$RUNNER_TEMP/ef-migrations/migrations.sql"
+
+      - name: Apply database migrations
+        env:
+          MIGRATIONS_DATABASE_URL: ${{ secrets.MIGRATIONS_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+
+          : "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
+          test -s "$RUNNER_TEMP/ef-migrations/migrations.sql"
+
+          psql "$MIGRATIONS_DATABASE_URL" \
+            --no-psqlrc \
+            --set ON_ERROR_STOP=1 \
+            --file "$RUNNER_TEMP/ef-migrations/migrations.sql"
 
       - name: Deploy API
         working-directory: infra/api
