@@ -13,7 +13,7 @@ Client -> Cloudflare Custom Domain -> Worker -> Container:8080 -> PlanetScale Po
 | `development` | `picklecrew-api-development` | `api.dev.picklecrew.app` | Development PlanetScale database and credentials |
 | `production` | `picklecrew-api-production` | `api.picklecrew.app` | Production PlanetScale database and credentials |
 
-Each environment has one named `basic` container instance. The Worker passes its `DATABASE_CONNECTION_STRING` secret to the container as `ConnectionStrings__picklecrew`, which ASP.NET Core reads as `ConnectionStrings:picklecrew`.
+Each environment has one named `basic` container instance. Its Durable Object uses an Oceania location hint, and container placement is constrained to Oceania with APAC fallback because Cloudflare does not allow the limited-capacity Oceania region as the only constraint. Durable Object placement is fixed after first use, so changing the intended region requires a new instance name. The Worker passes its `DATABASE_CONNECTION_STRING` secret to the container as `ConnectionStrings__picklecrew`, which ASP.NET Core reads as `ConnectionStrings:picklecrew`.
 
 ## PlanetScale access
 
