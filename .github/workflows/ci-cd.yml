@@ -29,6 +29,9 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Validate Fly configurations
+        env:
+          # flyctl requires a token even though validation is local when a config is provided.
+          FLY_API_TOKEN: local-config-validation
         run: |
           set -euo pipefail
 
