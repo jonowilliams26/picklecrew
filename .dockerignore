@@ -4,6 +4,7 @@
 .github/
 .vs/
 **/bin/
+**/dist/
 **/node_modules/
 **/obj/
 infra/
