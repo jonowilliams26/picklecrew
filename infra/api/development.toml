@@ -2,7 +2,7 @@ app = "picklecrew-api-development"
 primary_region = "syd"
 
 [build]
-  dockerfile = "src/PickleCrew.Api/Dockerfile"
+  dockerfile = "../../src/PickleCrew.Api/Dockerfile"
 
 [env]
   ASPNETCORE_ENVIRONMENT = "Production"
