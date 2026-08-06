@@ -20,7 +20,6 @@ RUN dotnet publish src/PickleCrew.Api/PickleCrew.Api.csproj \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
-ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
 STOPSIGNAL SIGTERM
 COPY --from=build --chown=app:app /app/ ./
