@@ -12,8 +12,11 @@ namespace Microsoft.Extensions.Hosting;
 
 public static class Extensions
 {
-    private const string HealthEndpointPath = "/health";
-    private const string AlivenessEndpointPath = "/alive";
+    private const string healthEndpointPath = "/health";
+    private const string alivenessEndpointPath = "/alive";
+    private const string healthChecksPolicyName = "HealthChecks";
+    private static readonly TimeSpan healthCheckTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan healthCheckCacheDuration = TimeSpan.FromSeconds(10);
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
@@ -53,8 +56,8 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation(options =>
                     {
                         options.Filter = context =>
-                            !context.Request.Path.StartsWithSegments(HealthEndpointPath)
-                            && !context.Request.Path.StartsWithSegments(AlivenessEndpointPath);
+                            !context.Request.Path.StartsWithSegments(healthEndpointPath)
+                            && !context.Request.Path.StartsWithSegments(alivenessEndpointPath);
                     })
                     .AddHttpClientInstrumentation();
             });
@@ -67,6 +70,17 @@ public static class Extensions
     public static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
+        builder.Services.AddRequestTimeouts(options =>
+        {
+            options.AddPolicy(healthChecksPolicyName, healthCheckTimeout);
+        });
+        builder.Services.AddOutputCache(options =>
+        {
+            options.AddPolicy(
+                healthChecksPolicyName,
+                policy => policy.Expire(healthCheckCacheDuration)
+            );
+        });
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
@@ -75,15 +89,14 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
+        app.MapHealthChecks(alivenessEndpointPath, new HealthCheckOptions
         {
             Predicate = registration => registration.Tags.Contains("live"),
         });
 
-        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
-        {
-            app.MapHealthChecks(HealthEndpointPath);
-        }
+        app.MapHealthChecks(healthEndpointPath)
+            .CacheOutput(healthChecksPolicyName)
+            .WithRequestTimeout(healthChecksPolicyName);
 
         return app;
     }

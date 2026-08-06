@@ -13,6 +13,9 @@
   "vars": {
     "DEPLOYMENT_ENVIRONMENT": "development"
   },
+  "secrets": {
+    "required": ["DATABASE_CONNECTION_STRING"]
+  },
   "durable_objects": {
     "bindings": [
       {
@@ -38,6 +41,9 @@
       ],
       "vars": {
         "DEPLOYMENT_ENVIRONMENT": "development"
+      },
+      "secrets": {
+        "required": ["DATABASE_CONNECTION_STRING"]
       },
       "durable_objects": {
         "bindings": [
@@ -68,6 +74,9 @@
       ],
       "vars": {
         "DEPLOYMENT_ENVIRONMENT": "production"
+      },
+      "secrets": {
+        "required": ["DATABASE_CONNECTION_STRING"]
       },
       "durable_objects": {
         "bindings": [

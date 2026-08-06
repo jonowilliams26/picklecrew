@@ -14,6 +14,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseRequestTimeouts();
+app.UseOutputCache();
 
 if (app.Environment.IsDevelopment())
 {
