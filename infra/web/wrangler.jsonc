@@ -1,0 +1,44 @@
+{
+  "$schema": "../../src/PickleCrew.Web/node_modules/wrangler/config-schema.json",
+  "name": "picklecrew-web",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-08-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
+    }
+  },
+  "env": {
+    "development": {
+      "name": "picklecrew-web-development",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        {
+          "pattern": "dev.picklecrew.app",
+          "custom_domain": true
+        }
+      ]
+    },
+    "production": {
+      "name": "picklecrew-web-production",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        {
+          "pattern": "picklecrew.app",
+          "custom_domain": true
+        }
+      ]
+    }
+  }
+}
