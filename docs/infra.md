@@ -1,19 +1,19 @@
 # Infrastructure
 
-PickleCrew uses ASP.NET Core 10 for the API, Docker for its image, a TypeScript Cloudflare Worker to manage a Cloudflare Container, and PlanetScale Postgres for deployed data. Aspire remains local-development-only.
+PickleCrew uses ASP.NET Core 10 for the API, Fly.io for application hosting, Docker for the image, PlanetScale Postgres for deployed data, and Cloudflare for DNS, TLS proxying, WAF, and DDoS protection. Aspire remains local-development-only.
 
 ## Architecture
 
 ```text
-Client -> Cloudflare Custom Domain -> Worker -> Container:8080 -> PlanetScale Postgres
+Client -> Cloudflare Proxy -> Fly.io:8080 -> PlanetScale Postgres
 ```
 
-| Environment | Worker | Domain | Database isolation |
-|---|---|---|---|
-| `development` | `picklecrew-api-development` | `api.dev.picklecrew.app` | Development PlanetScale database and credentials |
-| `production` | `picklecrew-api-production` | `api.picklecrew.app` | Production PlanetScale database and credentials |
+| Environment | Fly app | Fly hostname | Public hostname | Region | Minimum running Machines |
+|---|---|---|---|---|---|
+| `development` | `picklecrew-api-development` | `picklecrew-api-development.fly.dev` | `api.dev.picklecrew.app` | `syd` | 0 |
+| `production` | `picklecrew-api-production` | `picklecrew-api-production.fly.dev` | `api.picklecrew.app` | `syd` | 1 |
 
-Each environment has one named `basic` container instance. Its Durable Object uses an Oceania location hint, and container placement is constrained to Oceania with APAC fallback because Cloudflare does not allow the limited-capacity Oceania region as the only constraint. Durable Object placement is fixed after first use, so changing the intended region requires a new instance name. The Worker passes its `DATABASE_CONNECTION_STRING` secret to the container as `ConnectionStrings__picklecrew`, which ASP.NET Core reads as `ConnectionStrings:picklecrew`.
+Both apps use one shared CPU, 512 MB memory, port `8080`, automatic Machine start and stop, and `/alive` routing health checks. Fly's default remote builder and high-availability behavior are used. Fly may create more than one Machine during initial deployment or rollout, which can affect billing.
 
 ## PlanetScale access
 
@@ -27,52 +27,145 @@ Host=<host>;Port=6432;Database=<database>;Username=<role>.<branch-id>;Password=<
 
 The `<branch-id>` suffix remains part of PlanetScale's generated username format; it is not the development/production isolation boundary. Do not add `sslrootcert=system`; it is a libpq parameter rather than an Npgsql certificate path. Verify each environment's credential independently with `SELECT 1` before deployment.
 
-Schema migrations use a separate, stable `picklecrew_migrator` role in each database. CI connects directly to PlanetScale on port `5432` with that environment's libpq URL. Migration credentials are never used by the application or sent to Cloudflare.
+Schema migrations use a separate, stable `picklecrew_migrator` role in each database. CI connects directly to PlanetScale on port `5432` with that environment's `psql`-compatible libpq URL. Migration credentials are available only to the migration step and are never stored in Fly.
 
 ## Health endpoints
 
-- `/alive` is process-only liveness. It does not connect to the database and is used by the Cloudflare Container health probe.
-- `/health` is dependency readiness. It runs all registered health checks, including the Npgsql connectivity check, and is used by the post-deployment smoke test.
+- `/alive` is process-only liveness. It does not connect to the database and is the Fly routing health check.
+- `/health` is dependency readiness. It runs all registered health checks, including Npgsql connectivity, and is used by deployment smoke tests.
 
-Health responses do not expose connection strings or exception details. Database readiness checks have a five-second request timeout and successful responses are cached in the API process for ten seconds to limit repeated database work. `/alive` is not cached.
+Health responses do not expose connection strings or exception details. Database readiness checks have a five-second request timeout and successful responses are cached in the API process for ten seconds. `/alive` is not cached.
 
-The Worker limits `/health` to 10 requests per minute per client IP before it looks up or starts the container. Development and production use separate rate-limiter namespace IDs. Rejected requests return `429`; `/alive` and all other API endpoints are not rate-limited.
+## One-time Fly.io setup
 
-Worker rate-limit counters are per Cloudflare location, permissive, and eventually consistent. This protects the container and database, but it does not prevent the Worker itself from being invoked. A WAF rate-limiting rule managed through Terraform remains an optional future enhancement for enforcement before Worker invocation.
+1. Create or sign in to Fly.io, enable billing, select an organization, and record its slug.
+2. Reserve the empty applications without deploying Machines:
 
-## Deployments
+   ```bash
+   fly apps create picklecrew-api-development --org <organization-slug>
+   fly apps create picklecrew-api-production --org <organization-slug>
+   ```
 
-The repository pipeline is defined in `.github/workflows/ci-cd.yml`. CI and deployment run as separate jobs so deployment credentials are only available to the deployment job.
+3. Create a separate app-scoped deployment token for each application. Do not use `fly auth token`:
 
-- Pull requests run CI only.
-- Pushes to `main` run CI and deploy development.
-- Stable SemVer tags such as `v1.0.0` run CI and deploy production.
+   ```bash
+   fly tokens create deploy \
+     --app picklecrew-api-development \
+     --name "picklecrew-development-github" \
+     --expiry <duration>
 
-CI generates an idempotent EF Core SQL migration script from the same Release build that it tests. Every pull request, `main` push, and release tag uploads the script as the `ef-migrations` workflow artifact so it can be inspected. The production environment approval occurs only after CI has generated this reviewable artifact.
+   fly tokens create deploy \
+     --app picklecrew-api-production \
+     --name "picklecrew-production-github" \
+     --expiry <duration>
+   ```
 
-The deployment job installs the Worker dependencies and PostgreSQL client, downloads and validates the migration artifact produced by its own workflow run, and applies it immediately before `wrangler deploy`. A missing secret, missing or empty artifact, database connection failure, or SQL error stops the job before Cloudflare is changed.
+4. Record each expiration date and create a rotation reminder before expiry.
+5. Retain the `development` and `production` GitHub Environments. Store the corresponding app's deploy token and database credentials as environment secrets:
 
-The deployment writes the runtime database connection string to an owner-readable temporary file in `$RUNNER_TEMP`, passes it to `wrangler deploy --secrets-file`, and removes it through a shell cleanup trap. The value is stored as a Cloudflare Worker secret and is not committed to source or configuration. The separate migration URL is scoped only to the `psql` step and is never written to a file or passed to Wrangler.
+   ```text
+   FLY_API_TOKEN
+   DATABASE_CONNECTION_STRING
+   MIGRATIONS_DATABASE_URL
+   ```
 
-Wrangler provisions the Custom Domains and their certificates. `workers.dev` and preview URLs are disabled.
+   No Fly-related GitHub variables are required. `DATABASE_CONNECTION_STRING` must use the environment's non-DDL application role, PgBouncer port `6432`, Npgsql syntax, and `SSL Mode=VerifyFull`. `MIGRATIONS_DATABASE_URL` must use the environment's migrator role, direct port `5432`, and `psql`-compatible URL syntax. Development and production credentials must differ. Keep production approval rules enabled.
+6. After confirming no other workflow uses them, remove the obsolete `CLOUDFLARE_API_TOKEN` secret and `CLOUDFLARE_ACCOUNT_ID` variable.
 
-## Required GitHub Environments
+If an app name changes, update both files in `infra/api/`, the static app hostnames and URLs in `.github/workflows/ci-cd.yml`, and this document.
 
-The `development` and `production` GitHub Environments each require:
+## One-time Cloudflare and certificate setup
 
-- secret `CLOUDFLARE_API_TOKEN`
-- secret `DATABASE_CONNECTION_STRING`
-- secret `MIGRATIONS_DATABASE_URL`
-- variable `CLOUDFLARE_ACCOUNT_ID`
+Attach each public hostname to its Fly app:
 
-`DATABASE_CONNECTION_STRING` must contain that environment's database-specific runtime credentials for PgBouncer port `6432`. `MIGRATIONS_DATABASE_URL` must contain that environment's direct PlanetScale URL for the `picklecrew_migrator` role on port `5432`. Development and production values must differ. Do not create repository-level database secrets. Keep production approval rules enabled.
+```bash
+fly certs add api.dev.picklecrew.app \
+  --app picklecrew-api-development
+fly certs setup api.dev.picklecrew.app \
+  --app picklecrew-api-development
 
-Use a separate Cloudflare token for each environment. Create each token from the **Edit Cloudflare Workers** template, restrict it to the PickleCrew account and the `picklecrew.app` zone, and ensure it permits Worker deployment and secret updates.
+fly certs add api.picklecrew.app \
+  --app picklecrew-api-production
+fly certs setup api.picklecrew.app \
+  --app picklecrew-api-production
+```
+
+Use the exact DNS values returned by Fly. In the `picklecrew.app` Cloudflare zone:
+
+1. Confirm that no stale Worker Custom Domain, Worker route, or DNS record owns either API hostname.
+2. Add each Fly-provided `_fly-ownership` TXT record.
+3. Create each API CNAME with the Fly-provided target.
+4. Enable Cloudflare proxying on each CNAME (orange cloud).
+5. Set zone SSL/TLS mode to **Full (strict)**.
+6. Optionally enable Always Use HTTPS.
+
+Check issuance and DNS status with:
+
+```bash
+fly certs check api.dev.picklecrew.app \
+  --app picklecrew-api-development
+fly certs check api.picklecrew.app \
+  --app picklecrew-api-production
+```
+
+Certificate issuance can remain pending until the first automated deployment creates application Machines. If issuance fails, compare the current TXT and CNAME records with `fly certs setup`, remove stale Worker routes or conflicting records, verify that the CNAME is proxied and Full (strict) is enabled, then run `fly certs check` again. Retry the failed GitHub Actions deployment after Fly and Cloudflare finish provisioning.
+
+Cloudflare credentials are not used by the ongoing deployment workflow.
+
+## Automated deployments
+
+The pipeline is `.github/workflows/ci-cd.yml`:
+
+| Git event | Result |
+|---|---|
+| Pull request | CI only; no deployment |
+| Push or merge to `main` | Deploy development |
+| Stable SemVer tag such as `v1.0.0` | Deploy production after GitHub Environment approval |
+
+CI restores tools and dependencies, builds and tests Release, checks for pending EF Core model changes, generates and uploads an idempotent migration artifact, and validates the API Docker build.
+
+The deployment job uses static environment selection from the Git ref. It validates production tags, checks out the repository, installs PostgreSQL tools, downloads and validates the migration artifact, and applies that artifact with `psql` before making any Fly change. A migration failure prevents deployment.
+
+After migrations, CI installs the official Fly CLI, stages `DATABASE_CONNECTION_STRING` as the Fly secret `ConnectionStrings__picklecrew`, and deploys from the repository root. The commands used by CI are:
+
+```bash
+flyctl secrets set \
+  --stage \
+  --config "$FLY_CONFIG" \
+  "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}"
+
+flyctl deploy . --config "$FLY_CONFIG"
+```
+
+Fly's default remote builder, deployment strategy, and high-availability behavior remain enabled. CI then uses bounded retries to test `/alive` and `/health` first through the app's `fly.dev` hostname and then through the Cloudflare-proxied public hostname. Secret staging, deployment, Fly health checks, either direct smoke test, or either proxied smoke test failing causes the workflow to fail.
+
+There is no local or manual API deployment procedure. The first deployment and all later deployments run through GitHub Actions.
 
 ## Database migrations
 
-EF Core migrations are generated in CI as idempotent SQL and retained as a workflow artifact for seven days. Deployments apply the exact artifact from their CI job with `psql` and `ON_ERROR_STOP` before running `wrangler deploy`. Re-running a deployment is safe because the script checks `__EFMigrationsHistory` before applying each completed migration.
+EF Core migrations are generated in CI as idempotent SQL and retained as a workflow artifact for seven days. Deployments apply the exact artifact from their CI job with `psql` and `ON_ERROR_STOP` before staging the Fly runtime secret and deploying. Re-running a deployment is safe because the script checks `__EFMigrationsHistory` before applying each completed migration.
 
-Deployed application instances never run migrations during startup. Local-development database initialization remains unchanged. Runtime traffic continues through PgBouncer on port `6432` with the non-DDL `picklecrew_app` role, while migrations connect directly on port `5432` with `picklecrew_migrator`. `MIGRATIONS_DATABASE_URL` is available only to the migration step and never reaches the Worker or container.
+Deployed application instances never run migrations during startup. Local-development database initialization remains unchanged. Runtime traffic uses PgBouncer on port `6432` with the non-DDL `picklecrew_app` role, while migrations connect directly on port `5432` with `picklecrew_migrator`.
 
-A failed migration prevents application deployment, but application rollback does not roll back database changes. Schema changes must use expand-and-contract compatibility so the current and next application versions can both operate during rollout. Destructive changes may run only after deployed code no longer reads or writes the affected objects. Recover from migration problems with a forward fix or the established PlanetScale backup and branch restoration process.
+Application rollback does not roll back database changes. Schema changes must use expand-and-contract compatibility so the current and next application versions can both operate during rollout. Destructive changes may run only after deployed code no longer reads or writes the affected objects. Recover from migration problems with a forward fix or the established PlanetScale backup and branch restoration process.
+
+## Operations
+
+Use Fly CLI inspection commands for the appropriate app:
+
+```bash
+fly status --app picklecrew-api-development
+fly logs --app picklecrew-api-development
+fly checks list --app picklecrew-api-development
+fly secrets list --app picklecrew-api-development
+```
+
+Substitute `picklecrew-api-production` for production. `fly secrets list` shows secret names and digests, not plaintext values. Use the GitHub Actions run as the deployment audit trail and inspect Fly logs and checks when health verification fails.
+
+Retry a transient failure by re-running the failed GitHub Actions jobs after correcting the underlying issue. Do not deploy locally. Rotate an expiring token by creating a replacement app-scoped deploy token, updating only that environment's `FLY_API_TOKEN`, confirming the normal pipeline succeeds, and revoking the old token.
+
+Rollback is automated: revert the application commit and trigger the normal pipeline. A push to `main` rolls development back; create a new stable SemVer tag from the reverted code to roll production back after approval. Use a forward database fix when a migration is not backward compatible.
+
+## Removed infrastructure
+
+Cloudflare remains the DNS, TLS, WAF, DDoS, and HTTP proxy layer. PickleCrew no longer uses a Cloudflare Worker, Durable Object, Cloudflare Container, Worker health rate limiter, or Wrangler deployment pipeline. The Cloudflare-related agent skills remain installed for ongoing proxy and security configuration work.
