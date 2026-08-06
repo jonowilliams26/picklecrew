@@ -7,6 +7,12 @@
       "skillPath": "skills/cloudflare/SKILL.md",
       "computedHash": "8581f52e9f307d6ae298e016f93720bae2739d13a2169fa96d47df516c38f63c"
     },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f99ef49d9909d380ca683ceb8dc8c25775c20ee38140112c394e037d8c11ee18"
+    },
     "workers-best-practices": {
       "source": "cloudflare/skills",
       "sourceType": "github",
