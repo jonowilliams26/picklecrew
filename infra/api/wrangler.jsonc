@@ -1,0 +1,92 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "picklecrew-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "DEPLOYMENT_ENVIRONMENT": "development"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "API_CONTAINER",
+        "class_name": "ApiContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ApiContainer"]
+    }
+  ],
+  "env": {
+    "development": {
+      "name": "picklecrew-api-development",
+      "routes": [
+        {
+          "pattern": "dev.api.picklecrew.app",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "DEPLOYMENT_ENVIRONMENT": "development"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "API_CONTAINER",
+            "class_name": "ApiContainer"
+          }
+        ]
+      },
+      "containers": [
+        {
+          "name": "picklecrew-api-development",
+          "class_name": "ApiContainer",
+          "image": "../../src/PickleCrew.Api/Dockerfile",
+          "image_build_context": "../..",
+          "instance_type": "basic",
+          "max_instances": 1
+        }
+      ]
+    },
+    "production": {
+      "name": "picklecrew-api-production",
+      "routes": [
+        {
+          "pattern": "api.picklecrew.app",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "DEPLOYMENT_ENVIRONMENT": "production"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "API_CONTAINER",
+            "class_name": "ApiContainer"
+          }
+        ]
+      },
+      "containers": [
+        {
+          "name": "picklecrew-api-production",
+          "class_name": "ApiContainer",
+          "image": "../../src/PickleCrew.Api/Dockerfile",
+          "image_build_context": "../..",
+          "instance_type": "basic",
+          "max_instances": 1
+        }
+      ]
+    }
+  }
+}

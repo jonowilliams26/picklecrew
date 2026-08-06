@@ -1,0 +1,10 @@
+.agents/
+.aspire/
+.git/
+.github/
+.vs/
+**/bin/
+**/node_modules/
+**/obj/
+infra/
+TestResults/
