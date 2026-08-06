@@ -1,8 +1,7 @@
-name: CI
+name: ci
 
 on:
   pull_request:
-  workflow_call:
 
 permissions:
   contents: read
@@ -13,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: CI
+    name: ci
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -21,56 +20,5 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Restore tools
-        run: dotnet tool restore
-
-      - name: Restore dependencies
-        run: dotnet restore PickleCrew.slnx
-
-      - name: Build
-        run: dotnet build PickleCrew.slnx --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test PickleCrew.slnx --configuration Release --no-build --no-restore
-
-      - name: Check for pending EF Core model changes
-        run: >-
-          dotnet ef migrations has-pending-model-changes
-          --project src/PickleCrew.Api/PickleCrew.Api.csproj
-          --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj
-          --context PickleCrewDbContext
-          --configuration Release
-          --no-build
-          --no-color
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: infra/api/package-lock.json
-
-      - name: Install Worker dependencies
-        working-directory: infra/api
-        run: npm ci
-
-      - name: Type-check Worker
-        working-directory: infra/api
-        run: npm run typecheck
-
-      - name: Validate Wrangler types
-        working-directory: infra/api
-        run: npm run check:wrangler-types
-
-      - name: Build API container
-        run: >-
-          docker build
-          --platform linux/amd64
-          --file src/PickleCrew.Api/Dockerfile
-          --tag picklecrew-api:ci
-          .
+      - name: Run ci checks
+        uses: ./.github/actions/ci

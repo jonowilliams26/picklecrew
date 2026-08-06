@@ -1,4 +1,4 @@
-name: Deploy API
+name: deploy API
 
 on:
   push:
@@ -17,11 +17,19 @@ concurrency:
 
 jobs:
   ci:
-    name: CI
-    uses: ./.github/workflows/ci.yml
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Run ci checks
+        uses: ./.github/actions/ci
 
   deploy:
-    name: Deploy ${{ github.ref_type == 'tag' && 'production' || 'development' }}
+    name: deploy ${{ github.ref_type == 'tag' && 'production' || 'development' }}
     needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 30
