@@ -1,11 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -15,10 +12,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend
+  ci:
+    name: CI
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -50,3 +47,30 @@ jobs:
           --configuration Release
           --no-build
           --no-color
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: infra/api/package-lock.json
+
+      - name: Install Worker dependencies
+        working-directory: infra/api
+        run: npm ci
+
+      - name: Type-check Worker
+        working-directory: infra/api
+        run: npm run typecheck
+
+      - name: Validate Wrangler types
+        working-directory: infra/api
+        run: npm run check:wrangler-types
+
+      - name: Build API container
+        run: >-
+          docker build
+          --platform linux/amd64
+          --file src/PickleCrew.Api/Dockerfile
+          --tag picklecrew-api:ci
+          .
