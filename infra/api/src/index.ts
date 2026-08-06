@@ -12,6 +12,7 @@ export class ApiContainer extends Container<Env> {
     ASPNETCORE_ENVIRONMENT: "Production",
     ASPNETCORE_URLS: `http://0.0.0.0:${apiPort}`,
     DEPLOYMENT_ENVIRONMENT: this.env.DEPLOYMENT_ENVIRONMENT,
+    ConnectionStrings__picklecrew: this.env.DATABASE_CONNECTION_STRING,
   };
 }
 

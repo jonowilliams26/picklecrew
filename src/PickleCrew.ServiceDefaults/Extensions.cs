@@ -80,10 +80,7 @@ public static class Extensions
             Predicate = registration => registration.Tags.Contains("live"),
         });
 
-        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
-        {
-            app.MapHealthChecks(HealthEndpointPath);
-        }
+        app.MapHealthChecks(HealthEndpointPath);
 
         return app;
     }
