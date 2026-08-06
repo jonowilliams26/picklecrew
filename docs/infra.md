@@ -32,7 +32,9 @@ The `<branch-id>` suffix remains part of PlanetScale's generated username format
 - `/alive` is process-only liveness. It does not connect to the database and is used by the Cloudflare Container health probe.
 - `/health` is dependency readiness. It runs all registered health checks, including the Npgsql connectivity check, and is used by the post-deployment smoke test.
 
-Health responses do not expose connection strings or exception details.
+Health responses do not expose connection strings or exception details. Database readiness checks have a five-second request timeout and successful responses are cached in the API process for ten seconds to limit repeated database work. `/alive` is not cached.
+
+Configure a Cloudflare WAF rate-limiting rule for `GET /health` on both API domains so abusive traffic is rejected before it reaches the Worker and container. WAF rules are managed in Cloudflare rather than by this repository.
 
 ## Deployments
 
