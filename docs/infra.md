@@ -10,7 +10,7 @@ Client -> Cloudflare Custom Domain -> Worker -> Container:8080 -> PickleCrew.Api
 
 | Environment | Worker | Domain |
 |---|---|---|
-| `development` | `picklecrew-api-development` | `dev.api.picklecrew.app` |
+| `development` | `picklecrew-api-development` | `api.dev.picklecrew.app` |
 | `production` | `picklecrew-api-production` | `api.picklecrew.app` |
 
 Each environment has one named `basic` container instance. `/alive` is the process-only container health endpoint.

@@ -35,10 +35,10 @@ jobs:
     timeout-minutes: 30
     environment:
       name: ${{ github.ref_type == 'tag' && 'production' || 'development' }}
-      url: ${{ github.ref_type == 'tag' && 'https://api.picklecrew.app' || 'https://dev.api.picklecrew.app' }}
+      url: ${{ github.ref_type == 'tag' && 'https://api.picklecrew.app' || 'https://api.dev.picklecrew.app' }}
     env:
       DEPLOYMENT_ENVIRONMENT: ${{ github.ref_type == 'tag' && 'production' || 'development' }}
-      DEPLOYMENT_URL: ${{ github.ref_type == 'tag' && 'https://api.picklecrew.app' || 'https://dev.api.picklecrew.app' }}
+      DEPLOYMENT_URL: ${{ github.ref_type == 'tag' && 'https://api.picklecrew.app' || 'https://api.dev.picklecrew.app' }}
 
     steps:
       - name: Validate production release tag

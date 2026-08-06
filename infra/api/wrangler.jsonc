@@ -32,7 +32,7 @@
       "name": "picklecrew-api-development",
       "routes": [
         {
-          "pattern": "dev.api.picklecrew.app",
+          "pattern": "api.dev.picklecrew.app",
           "custom_domain": true
         }
       ],
