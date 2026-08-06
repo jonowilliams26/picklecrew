@@ -80,7 +80,10 @@
           "image": "../../src/PickleCrew.Api/Dockerfile",
           "image_build_context": "../..",
           "instance_type": "basic",
-          "max_instances": 1
+          "max_instances": 1,
+          "constraints": {
+            "regions": ["OC", "APAC"]
+          }
         }
       ]
     },
@@ -123,7 +126,10 @@
           "image": "../../src/PickleCrew.Api/Dockerfile",
           "image_build_context": "../..",
           "instance_type": "basic",
-          "max_instances": 1
+          "max_instances": 1,
+          "constraints": {
+            "regions": ["OC", "APAC"]
+          }
         }
       ]
     }

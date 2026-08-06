@@ -30,15 +30,16 @@ export default {
     }
 
     const container = env.API_CONTAINER.getByName(
-      `picklecrew-api-${env.DEPLOYMENT_ENVIRONMENT}`,
+      `picklecrew-api-${env.DEPLOYMENT_ENVIRONMENT}-oceania-v1`,
+      { locationHint: "oc" },
     );
 
     try {
-      await container.startAndWaitForPorts({ ports: [apiPort] });
+      return await container.fetch(request);
     } catch (error: unknown) {
       console.error(
         JSON.stringify({
-          event: "api_container_start_failed",
+          event: "api_container_request_failed",
           deploymentEnvironment: env.DEPLOYMENT_ENVIRONMENT,
           error: error instanceof Error ? error.message : String(error),
         }),
@@ -49,7 +50,5 @@ export default {
         headers: { "Retry-After": "5" },
       });
     }
-
-    return container.fetch(request);
   },
 } satisfies ExportedHandler<Env>;
