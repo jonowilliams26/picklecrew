@@ -17,7 +17,9 @@ Each environment has one named `basic` container instance. `/alive` is the proce
 
 ## Deployments
 
-- Pull requests run `.github/workflows/ci.yml`.
+The repository pipeline is defined in `.github/workflows/ci-cd.yml`. CI and deployment run as separate jobs so deployment credentials are only available to the deployment job.
+
+- Pull requests run CI only.
 - Pushes to `main` run CI and deploy development.
 - Stable SemVer tags such as `v1.0.0` run CI and deploy production. Tags may be created from `main` or a release branch.
 
