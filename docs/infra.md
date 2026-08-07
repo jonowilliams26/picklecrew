@@ -17,7 +17,7 @@ Client -> Cloudflare Proxy -> Fly.io:8080 -> PlanetScale Postgres
 | API environment | Fly hostname | Region | Minimum running Machines |
 |---|---|---|---|
 | `development` | `picklecrew-api-development.fly.dev` | `syd` | 0 |
-| `production` | `picklecrew-api-production.fly.dev` | `syd` | 1 |
+| `production` | `picklecrew-api-production.fly.dev` | `syd` | 0 |
 
 Both Fly API apps use one shared CPU, 512 MB memory, port `8080`, automatic Machine start and stop, and `/alive` routing health checks. Fly's default remote builder and high-availability behavior are used. Fly may create more than one Machine during initial deployment or rollout, which can affect billing.
 
