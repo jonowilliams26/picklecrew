@@ -40,7 +40,7 @@ jobs:
         run: dotnet build PickleCrew.slnx --configuration Release --no-restore
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.20.0
 
@@ -126,7 +126,7 @@ jobs:
             --output "$RUNNER_TEMP/ef-migrations/migrations.sql"
 
       - name: Upload EF Core migration script
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ef-migrations
           path: ${{ runner.temp }}/ef-migrations/migrations.sql
@@ -178,7 +178,7 @@ jobs:
           sudo apt-get install --yes postgresql-client
 
       - name: Download EF Core migration script
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ef-migrations
           path: ${{ runner.temp }}/ef-migrations
@@ -292,7 +292,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.20.0
 
