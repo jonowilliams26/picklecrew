@@ -696,6 +696,7 @@ a {
 
 .stats-grid > [data-reveal] {
   display: flex;
+  min-width: 0;
 }
 
 .stats-grid .feature-card {
@@ -1189,7 +1190,7 @@ a {
   .chat-stage { width: min(100%, 650px); margin: 0 auto; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 679px) {
   .landing-header { width: min(100% - 28px, 1240px); height: 74px; }
   .landing-header nav { display: none; }
   .landing-header > a:last-child { display: none; }
@@ -1220,8 +1221,8 @@ a {
   .stats-section { width: min(100% - 28px, 1160px); padding: 100px 0; }
   .section-heading-row { margin-bottom: 38px; }
   .section-heading-row h2, .rally-copy h2, .manifesto-section h2, .final-copy h2 { font-size: clamp(3rem, 14vw, 4.5rem); }
-  .stats-grid { grid-template-columns: 1fr; }
-  .feature-card { min-height: 370px; }
+  .stats-grid { grid-template-columns: minmax(0, 1fr); }
+  .feature-card { min-width: 0; min-height: 370px; }
   .ranking-card, .pairing-card { min-height: 430px; }
   .rally-section { grid-template-columns: minmax(0, 1fr); gap: 45px; padding: 95px 20px; }
   .chat-stage { min-height: 540px; }
@@ -1245,6 +1246,28 @@ a {
   .crown-doodle svg { width: 58px; height: 58px; }
   .landing-footer { width: min(100% - 28px, 1240px); grid-template-columns: 1fr; justify-items: start; }
   .landing-footer > span { justify-self: start; }
+}
+
+@media (max-width: 360px) {
+  .win-card,
+  .streak-card,
+  .ranking-card,
+  .pairing-card { padding: 22px; }
+  .streak-dots { justify-content: space-between; gap: 3px; }
+  .streak-dots i { width: 27px; height: 27px; }
+  .ranking-card li { grid-template-columns: 24px 32px minmax(0, 1fr) 52px; gap: 6px; }
+  .ranking-card .player-avatar { width: 30px; height: 30px; }
+  .ranking-card li > span:nth-last-child(2) { display: none; }
+  .pair-avatar { width: 88px; height: 88px; }
+  .pairing-visual > span { width: 39px; height: 39px; }
+}
+
+@media (max-width: 720px) and (prefers-reduced-motion: no-preference) {
+  .reveal-ready [data-reveal="slide-left"] { transform: translateX(-32px) rotate(-1deg); }
+  .reveal-ready [data-reveal="slide-right"] { transform: translateX(32px) rotate(1deg); }
+  .reveal-ready [data-reveal="tilt-left"] { transform: translateY(48px) rotate(-3deg) scale(0.96); }
+  .reveal-ready [data-reveal="tilt-right"] { transform: translateY(48px) rotate(3deg) scale(0.96); }
+  .reveal-ready [data-reveal="pop"] { transform: translateY(32px) rotate(2deg) scale(0.9); }
 }
 
 @media (prefers-reduced-motion: reduce) {
