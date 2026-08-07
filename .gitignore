@@ -3,6 +3,11 @@
 **/node_modules/
 **/obj/
 **/.wrangler/
+**/.dev.vars
+**/.dev.vars.*
+**/.env
+**/.env.*
+!**/.env.example
 TestResults/
 .vs/
 .aspire/
