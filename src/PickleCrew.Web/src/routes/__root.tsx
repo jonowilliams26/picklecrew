@@ -17,14 +17,22 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'PickleCrew',
+        title: 'PickleCrew — Own the bragging rights',
       },
       {
         name: 'description',
-        content: 'Pickleball stats for your crew.',
+        content:
+          'Track pickleball wins, streaks, crew leaderboards, and your best doubles pairing.',
+      },
+      {
+        name: 'theme-color',
+        content: '#f8f3df',
       },
     ],
-    links: [{ rel: 'stylesheet', href: appStyles }],
+    links: [
+      { rel: 'stylesheet', href: appStyles },
+      { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+    ],
   }),
   component: RootComponent,
   shellComponent: RootDocument,
