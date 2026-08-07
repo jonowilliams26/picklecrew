@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import {
   ArrowDownRight,
   ArrowRight,
@@ -62,7 +63,48 @@ function PickleBall({ className }: { className: string }) {
   )
 }
 
+function useScrollReveals() {
+  useEffect(() => {
+    const root = document.documentElement
+    const elements = document.querySelectorAll('[data-reveal]')
+
+    root.classList.add('reveal-ready')
+
+    if (!('IntersectionObserver' in window)) {
+      elements.forEach((element) => element.setAttribute('data-revealed', 'true'))
+
+      return () => root.classList.remove('reveal-ready')
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return
+          }
+
+          entry.target.setAttribute('data-revealed', 'true')
+          observer.unobserve(entry.target)
+        })
+      },
+      {
+        rootMargin: '0px 0px -8% 0px',
+        threshold: 0.14,
+      },
+    )
+
+    elements.forEach((element) => observer.observe(element))
+
+    return () => {
+      observer.disconnect()
+      root.classList.remove('reveal-ready')
+    }
+  }, [])
+}
+
 function HomePage() {
+  useScrollReveals()
+
   return (
     <div className="landing-shell">
       <header className="landing-header">
@@ -134,11 +176,6 @@ function HomePage() {
             </div>
             <PickleBall className="pickleball pickleball-one" />
             <PickleBall className="pickleball pickleball-two" />
-            <div className="stamp stamp-rematch" aria-hidden="true">
-              REMATCH
-              <small>DEMANDED</small>
-            </div>
-
             <article className="scoreboard-card">
               <header className="scoreboard-header">
                 <div>
@@ -214,11 +251,11 @@ function HomePage() {
         </div>
 
         <section className="stats-section" id="stats" aria-labelledby="stats-heading">
-          <div className="section-kicker">
+          <div className="section-kicker" data-reveal="slide-left">
             <span>THE RECEIPTS</span>
             <i />
           </div>
-          <div className="section-heading-row">
+          <div className="section-heading-row" data-reveal="rise">
             <h2 id="stats-heading">Every game adds fuel to the rivalry.</h2>
             <p>
               No spreadsheets. No fuzzy memories. Just gloriously undeniable proof
@@ -227,7 +264,8 @@ function HomePage() {
           </div>
 
           <div className="stats-grid">
-            <article className="feature-card win-card">
+            <div data-reveal="tilt-left">
+              <article className="feature-card win-card">
               <header>
                 <span>WIN PERCENTAGE</span>
                 <Award aria-hidden="true" />
@@ -240,9 +278,11 @@ function HomePage() {
                 <strong>+12%</strong>
                 <span>since the new paddle arrived</span>
               </footer>
-            </article>
+              </article>
+            </div>
 
-            <article className="feature-card streak-card">
+            <div data-reveal="tilt-right">
+              <article className="feature-card streak-card">
               <header>
                 <span>LONGEST STREAK</span>
                 <Flame aria-hidden="true" />
@@ -253,9 +293,11 @@ function HomePage() {
                 {Array.from({ length: 7 }, (_, index) => <i key={index}>W</i>)}
               </div>
               <footer>ENDED BY JORDAN · 11–9</footer>
-            </article>
+              </article>
+            </div>
 
-            <article className="feature-card ranking-card">
+            <div data-reveal="slide-left">
+              <article className="feature-card ranking-card">
               <header>
                 <div>
                   <span>CREW LEADERBOARD · TOTAL POINTS</span>
@@ -283,9 +325,11 @@ function HomePage() {
                 ))}
               </ol>
               <p className="ranking-note">Every result moves the score. Excuses earn zero points.</p>
-            </article>
+              </article>
+            </div>
 
-            <article className="feature-card pairing-card">
+            <div data-reveal="slide-right">
+              <article className="feature-card pairing-card">
               <header>
                 <span>BEST DOUBLES PAIRING</span>
                 <Users aria-hidden="true" />
@@ -301,12 +345,13 @@ function HomePage() {
                 <span>win rate together</span>
               </div>
               <footer>Someone split them up.</footer>
-            </article>
+              </article>
+            </div>
           </div>
         </section>
 
         <section className="rally-section" id="how-it-works" aria-labelledby="rally-heading">
-          <div className="rally-copy">
+          <div className="rally-copy" data-reveal="slide-left">
             <div className="section-kicker section-kicker-light">
               <span>POST-GAME RITUAL</span>
               <i />
@@ -317,22 +362,26 @@ function HomePage() {
               before the losing side rewrites history.
             </p>
             <ol className="steps-list">
-              <li>
+              <li data-reveal="rise">
                 <span>01</span>
                 <div><strong>Log the game</strong><small>Singles, doubles, scores. Done.</small></div>
               </li>
-              <li>
+              <li data-reveal="rise">
                 <span>02</span>
                 <div><strong>Watch stats shuffle</strong><small>Streaks rise. Leaders wobble.</small></div>
               </li>
-              <li>
+              <li data-reveal="rise">
                 <span>03</span>
                 <div><strong>Deploy bragging rights</strong><small>Bring screenshots to the group chat.</small></div>
               </li>
             </ol>
           </div>
 
-          <div className="chat-stage" aria-label="Example post-game group chat">
+          <div
+            className="chat-stage"
+            data-reveal="pop"
+            aria-label="Example post-game group chat"
+          >
             <PickleBall className="pickleball chat-ball" />
             <div className="phone-card">
               <header>
@@ -357,19 +406,21 @@ function HomePage() {
         </section>
 
         <section className="manifesto-section" aria-labelledby="manifesto-heading">
-          <span className="manifesto-label">THE CREW CODE</span>
-          <h2 id="manifesto-heading">Play nice. Track everything.</h2>
+          <div data-reveal="rise">
+            <span className="manifesto-label">THE CREW CODE</span>
+            <h2 id="manifesto-heading">Play nice. Track everything.</h2>
+          </div>
           <div className="manifesto-rules">
-            <p><span>01</span>All heroic wins deserve documentation.</p>
-            <p><span>02</span>All “off days” still count.</p>
-            <p><span>03</span>The leaderboard may be questioned, but never ignored.</p>
+            <p data-reveal="tilt-left"><span>01</span>All heroic wins deserve documentation.</p>
+            <p data-reveal="rise"><span>02</span>All “off days” still count.</p>
+            <p data-reveal="tilt-right"><span>03</span>The leaderboard may be questioned, but never ignored.</p>
           </div>
         </section>
 
         <section className="final-cta" id="join-the-crew" aria-labelledby="final-heading">
           <div className="final-court" aria-hidden="true"><span /><span /><span /></div>
           <PickleBall className="pickleball final-ball" />
-          <div className="final-copy">
+          <div className="final-copy" data-reveal="pop">
             <span className="micro-label">YOUR NEXT ERA STARTS HERE</span>
             <h2 id="final-heading">Ready to settle this on the court?</h2>
             <p>Create the crew. Log the games. Keep the crown moving.</p>
