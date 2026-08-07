@@ -23,3 +23,12 @@ Backend:
 Local Development Orchestration:
 - Aspire
 - Aspire is used for local development only and is not used for deployments to cloud environments.
+
+## Generated API Client
+
+- After any API change, including changes to endpoints, HTTP contracts, OpenAPI metadata, or OpenAPI transformers, regenerate and commit the web API client:
+  ```shell
+  dotnet build src/PickleCrew.Api/PickleCrew.Api.csproj
+  pnpm --dir src/PickleCrew.Web api:generate
+  ```
+- Treat `src/PickleCrew.Web/src/lib/api/openapi.json` and `src/PickleCrew.Web/src/lib/api/generated` as read-only generated artifacts.

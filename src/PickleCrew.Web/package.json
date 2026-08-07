@@ -5,6 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@11.20.0",
   "scripts": {
+    "api:generate": "openapi-ts",
     "dev": "vite dev",
     "build": "vite build && tsc6 --noEmit",
     "cf-typegen": "wrangler types worker-configuration.d.ts --config ../../infra/web/wrangler.jsonc",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.51.0",
+    "@hey-api/openapi-ts": "0.99.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",

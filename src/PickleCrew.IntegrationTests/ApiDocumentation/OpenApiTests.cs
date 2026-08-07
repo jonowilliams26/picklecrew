@@ -39,6 +39,31 @@ public sealed class OpenApiTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task OpenApiDocument_WhenGenerated_ShouldDescribeIntegerPropertiesWithoutStringTypes()
+    {
+        using var httpResponse = await fixture.ApiClient.GetAsync("/openapi/v1.json");
+
+        httpResponse.EnsureSuccessStatusCode();
+
+        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(responseStream);
+        var schemas = document.RootElement
+            .GetProperty("components")
+            .GetProperty("schemas");
+        var idSchema = schemas
+            .GetProperty("CreatePersistenceProbeHttpResponse")
+            .GetProperty("properties")
+            .GetProperty("id");
+        var statusSchema = schemas
+            .GetProperty("ProblemDetails")
+            .GetProperty("properties")
+            .GetProperty("status");
+
+        AssertIntegerSchema(idSchema);
+        AssertIntegerSchema(statusSchema);
+    }
+
+    [Fact]
     public async Task OpenApiDocument_WhenGenerated_ShouldIncludeTraceIdInProblemDetailsSchemas()
     {
         using var httpResponse = await fixture.ApiClient.GetAsync("/openapi/v1.json");
@@ -67,5 +92,23 @@ public sealed class OpenApiTests(AppHostFixture fixture)
                 property => property.GetString() == "traceId"
             );
         });
+    }
+
+    private static void AssertIntegerSchema(JsonElement schema)
+    {
+        var type = schema.GetProperty("type");
+        var types = type.ValueKind switch
+        {
+            JsonValueKind.String => [type.GetString()],
+            JsonValueKind.Array => type
+                .EnumerateArray()
+                .Select(item => item.GetString())
+                .ToArray(),
+            _ => [],
+        };
+
+        Assert.Contains("integer", types);
+        Assert.DoesNotContain("string", types);
+        Assert.False(schema.TryGetProperty("pattern", out _));
     }
 }
