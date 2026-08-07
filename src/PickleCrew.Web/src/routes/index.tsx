@@ -4,9 +4,11 @@ import {
   ArrowDownRight,
   ArrowRight,
   Award,
+  Clock3,
   Crown,
   Flame,
   Medal,
+  RefreshCcw,
   Sparkles,
   Trophy,
   Users,
@@ -34,6 +36,63 @@ const tickerItems = [
 ] as const
 
 const tickerGroupItems = [...tickerItems, ...tickerItems] as const
+
+const achievements = [
+  {
+    title: 'On a Heater',
+    description: 'Win 3 games in a row before someone checks your paddle.',
+    badge: '2 / 3 wins',
+    footer: 'One more. Stay spicy.',
+    state: 'progress',
+    progress: 'two-thirds',
+    icon: Flame,
+  },
+  {
+    title: 'Crown Snatcher',
+    description: 'Beat the current crew leader and borrow the throne.',
+    badge: 'Unlocked · Jordan',
+    footer: 'Receipt verified.',
+    state: 'earned',
+    progress: null,
+    icon: Crown,
+  },
+  {
+    title: 'Deuce Ex Machina',
+    description: 'Win 12–10 or deeper after everyone thought it was over.',
+    badge: 'Locked',
+    footer: 'Not dramatic enough yet.',
+    state: 'locked',
+    progress: null,
+    icon: Clock3,
+  },
+  {
+    title: 'Social Butterfly',
+    description: 'Win with 3 different doubles partners. Networking!',
+    badge: '2 / 3 partners',
+    footer: 'Make one more friend.',
+    state: 'progress',
+    progress: 'two-thirds',
+    icon: Users,
+  },
+  {
+    title: 'Reverse Pickle',
+    description: 'Lose, demand the immediate rematch, then win it.',
+    badge: 'Unlocked · Dev',
+    footer: 'The comeback was personal.',
+    state: 'earned',
+    progress: null,
+    icon: RefreshCcw,
+  },
+  {
+    title: 'Court Goblin',
+    description: 'Play 5 games in one day and refuse to go home.',
+    badge: '4 / 5 games',
+    footer: 'Hydration is for quitters.',
+    state: 'progress',
+    progress: 'four-fifths',
+    icon: Zap,
+  },
+] as const
 
 function LogoMark() {
   return (
@@ -347,6 +406,98 @@ function HomePage() {
               <footer>Someone split them up.</footer>
               </article>
             </div>
+          </div>
+        </section>
+
+        <section
+          className="trophies-section"
+          id="trophies"
+          aria-labelledby="trophies-heading"
+        >
+          <div className="trophies-inner">
+            <div className="trophies-heading">
+              <div data-reveal="slide-left">
+                <div className="section-kicker section-kicker-light">
+                  <span>TROPHY CABINET</span>
+                  <i />
+                </div>
+                <h2 id="trophies-heading">
+                  Your crew&apos;s trophy cabinet gets weird fast.
+                </h2>
+              </div>
+              <p data-reveal="rise">
+                Wins are nice. Hyper-specific proof of chaos is better. Every game
+                can unlock another deeply serious honor.
+              </p>
+            </div>
+
+            <div className="trophy-showcase">
+              <article className="trophy-featured" data-reveal="tilt-left">
+                <header>
+                  <span>FRESHLY UNLOCKED</span>
+                  <strong>RARE-ISH</strong>
+                </header>
+                <div className="trophy-emblem" aria-hidden="true">
+                  <Trophy />
+                  <Sparkles />
+                </div>
+                <div className="trophy-featured-copy">
+                  <span>11–0 VICTORY</span>
+                  <h3>That&apos;s a Paddlin&apos;</h3>
+                  <p>
+                    Win 11–0. No crumbs, no mercy, no alternate version of events.
+                  </p>
+                </div>
+                <footer>
+                  <span className="trophy-avatar" aria-hidden="true">M</span>
+                  <div>
+                    <small>UNLOCKED BY</small>
+                    <strong>Maya “No Mercy” Chen</strong>
+                  </div>
+                  <b>11–0</b>
+                </footer>
+              </article>
+
+              <div className="trophy-grid">
+                {achievements.map((achievement) => {
+                  const AchievementIcon = achievement.icon
+
+                  return (
+                    <article
+                      className={`trophy-card trophy-card-${achievement.state}`}
+                      data-reveal="rise"
+                      key={achievement.title}
+                    >
+                      <header>
+                        <span className="trophy-card-icon" aria-hidden="true">
+                          <AchievementIcon />
+                        </span>
+                        <span className="trophy-card-badge">{achievement.badge}</span>
+                      </header>
+                      <h3>{achievement.title}</h3>
+                      <p>{achievement.description}</p>
+                      <footer>
+                        {achievement.progress ? (
+                          <div
+                            className={`trophy-progress trophy-progress-${achievement.progress}`}
+                            aria-hidden="true"
+                          >
+                            <span />
+                          </div>
+                        ) : (
+                          <i aria-hidden="true" />
+                        )}
+                        <span>{achievement.footer}</span>
+                      </footer>
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+
+            <p className="trophy-fine-print" data-reveal="rise">
+              ACHIEVEMENTS ARE PERMANENT. CONTEXT IS OPTIONAL.
+            </p>
           </div>
         </section>
 
