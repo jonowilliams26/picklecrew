@@ -67,26 +67,49 @@ internal static class DependencyInjection
 
             options.AddSchemaTransformer((schema, context, _) =>
             {
-                if (context.JsonPropertyInfo is not null
-                    || !typeof(ProblemDetails).IsAssignableFrom(context.JsonTypeInfo.Type))
+                var schemaType = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type)
+                    ?? context.JsonTypeInfo.Type;
+
+                if (IsIntegerType(schemaType))
                 {
-                    return Task.CompletedTask;
+                    if (schema.Type is { } jsonSchemaType)
+                    {
+                        schema.Type = jsonSchemaType & ~JsonSchemaType.String;
+                    }
+
+                    schema.Pattern = null;
                 }
 
-                schema.Properties ??= new Dictionary<string, IOpenApiSchema>();
-                schema.Properties["traceId"] = new OpenApiSchema
+                if (context.JsonPropertyInfo is null
+                    && typeof(ProblemDetails).IsAssignableFrom(context.JsonTypeInfo.Type))
                 {
-                    Type = JsonSchemaType.String,
-                    Description = "The trace identifier for the request.",
-                };
-                schema.Required ??= new HashSet<string>();
-                schema.Required.Add("traceId");
+                    schema.Properties ??= new Dictionary<string, IOpenApiSchema>();
+                    schema.Properties["traceId"] = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String,
+                        Description = "The trace identifier for the request.",
+                    };
+                    schema.Required ??= new HashSet<string>();
+                    schema.Required.Add("traceId");
+                }
 
                 return Task.CompletedTask;
             });
         });
 
         return services;
+    }
+
+    private static bool IsIntegerType(Type type)
+    {
+        return type == typeof(byte)
+            || type == typeof(sbyte)
+            || type == typeof(short)
+            || type == typeof(ushort)
+            || type == typeof(int)
+            || type == typeof(uint)
+            || type == typeof(long)
+            || type == typeof(ulong);
     }
 
     public static IServiceCollection AddErrorHandling(this IServiceCollection services)
