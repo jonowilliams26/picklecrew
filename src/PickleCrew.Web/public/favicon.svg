@@ -1,6 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="29" fill="#c9f43b" stroke="#15352d" stroke-width="5"/>
-  <path d="M18 48 46 16" stroke="#15352d" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="42" cy="17" r="4" fill="#15352d"/>
-  <circle cx="17" cy="43" r="4" fill="#15352d"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 74 74">
+  <g transform="rotate(-7 32 32)" filter="drop-shadow(2px 3px 0 #15352d)">
+    <circle cx="32" cy="32" r="28" fill="#c9f43b" stroke="#15352d" stroke-width="4"/>
+    <g fill="#15352d">
+      <circle cx="20" cy="15" r="4"/>
+      <circle cx="43" cy="19" r="4"/>
+      <circle cx="31" cy="30" r="4"/>
+      <circle cx="15" cy="38" r="4"/>
+      <circle cx="48" cy="40" r="4"/>
+      <circle cx="29" cy="49" r="4"/>
+    </g>
+  </g>
 </svg>
