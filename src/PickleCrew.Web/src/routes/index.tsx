@@ -209,10 +209,10 @@ function HomePage() {
             How it works
           </a>
         </nav>
-        <div className="flex items-center gap-4 max-[680px]:hidden">
+        <div className="flex items-center gap-4">
           {user ? (
             <>
-              <span className="text-xs font-bold">
+              <span className="text-xs font-bold max-[680px]:hidden">
                 {user.firstName || user.email}
               </span>
               <a
