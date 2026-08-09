@@ -13,3 +13,4 @@ TestResults/
 .aspire/
 *.user
 *.suo
+.env
