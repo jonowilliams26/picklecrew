@@ -19,6 +19,18 @@
       "skillPath": "skills/workers-best-practices/SKILL.md",
       "computedHash": "c919a93c9db826a0ee2818f6f7977c40c1a43bb87abc848b22181fdbabe2ef80"
     },
+    "workos": {
+      "source": "workos/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/workos/skills/workos/SKILL.md",
+      "computedHash": "f1704fb1d9fab60a4e2ef4117e89ec5b78fec85c2cd3e8b42039646758d33b64"
+    },
+    "workos-widgets": {
+      "source": "workos/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/workos/skills/workos-widgets/SKILL.md",
+      "computedHash": "b805d4526f3ba5803eb44fe925059491ec9f33b406808a6865ac307a1182e1e6"
+    },
     "wrangler": {
       "source": "cloudflare/skills",
       "sourceType": "github",

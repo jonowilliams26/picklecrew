@@ -8,8 +8,13 @@ var api = builder.AddProject<Projects.PickleCrew_Api>("api")
     .WaitFor(database)
     .WithHttpHealthCheck("/health", endpointName: "http");
 
-builder.AddViteApp("web", "../PickleCrew.Web")
+var web = builder.AddViteApp("web", "../PickleCrew.Web")
     .WithPnpm()
     .WithReference(api);
+
+web.WithEnvironment(
+    "WORKOS_REDIRECT_URI",
+    $"{web.GetEndpoint("http")}/api/auth/callback"
+);
 
 builder.Build().Run();

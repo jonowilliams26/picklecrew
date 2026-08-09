@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useLoaderData } from '@tanstack/react-router'
+import { getAuth } from '@workos/authkit-tanstack-react-start'
 import { useEffect } from 'react'
 import {
   ArrowDownRight,
@@ -20,6 +21,10 @@ import { cn } from '~/lib/utils'
 export const Route = createFileRoute('/')({
   component: HomePage,
   ssr: true,
+  loader: async () => {
+    const { user } = await getAuth()
+    return { user }
+  },
 })
 
 const leaderboard = [
@@ -180,6 +185,7 @@ function useScrollReveals() {
 
 function HomePage() {
   useScrollReveals()
+  const { user } = useLoaderData({ from: '/' })
 
   return (
     <div className="landing-shell min-h-screen">
@@ -203,13 +209,29 @@ function HomePage() {
             How it works
           </a>
         </nav>
-        <a
-          className={cn(buttonVariants({ variant: 'crew', size: 'lg' }), 'max-[680px]:hidden')}
-          href="#join-the-crew"
-        >
-          Start a crew
-          <ArrowRight data-icon="inline-end" />
-        </a>
+        <div className="flex items-center gap-4 max-[680px]:hidden">
+          {user ? (
+            <>
+              <span className="text-xs font-bold">
+                {user.firstName || user.email}
+              </span>
+              <a
+                className={buttonVariants({ variant: 'crew', size: 'lg' })}
+                href="/api/auth/sign-out"
+              >
+                Sign out
+              </a>
+            </>
+          ) : (
+            <a
+              className={buttonVariants({ variant: 'crew', size: 'lg' })}
+              href="/api/auth/sign-in"
+            >
+              Sign in
+              <ArrowRight data-icon="inline-end" />
+            </a>
+          )}
+        </div>
       </header>
 
       <main id="top">
@@ -234,8 +256,11 @@ function HomePage() {
               rivalry, and suspiciously unbeatable doubles pairing.
             </p>
             <div className="mt-[34px] flex items-center gap-[25px] max-[680px]:flex-col max-[680px]:text-center">
-              <a className={buttonVariants({ variant: 'crew', size: 'xl' })} href="#stats">
-                See who&apos;s really the best
+              <a
+                className={buttonVariants({ variant: 'crew', size: 'xl' })}
+                href="/api/auth/sign-up"
+              >
+                Start a crew
                 <ArrowDownRight data-icon="inline-end" />
               </a>
               <a
@@ -887,8 +912,11 @@ function HomePage() {
             <p className="mt-0 mb-[30px] font-heading text-[17px]">
               Create the crew. Log the games. Keep the crown moving.
             </p>
-            <a className={buttonVariants({ variant: 'paper', size: 'xl' })} href="#top">
-              Start the rivalry
+            <a
+              className={buttonVariants({ variant: 'paper', size: 'xl' })}
+              href="/api/auth/sign-up"
+            >
+              Start a crew
               <ArrowRight data-icon="inline-end" />
             </a>
           </div>
