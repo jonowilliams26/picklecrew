@@ -27,7 +27,17 @@
           "pattern": "dev.picklecrew.app",
           "custom_domain": true
         }
-      ]
+      ],
+      "vars": {
+        "WORKOS_REDIRECT_URI": "https://dev.picklecrew.app/api/auth/callback"
+      },
+      "secrets": {
+        "required": [
+          "WORKOS_CLIENT_ID",
+          "WORKOS_API_KEY",
+          "WORKOS_COOKIE_PASSWORD"
+        ]
+      }
     },
     "production": {
       "name": "picklecrew-web-production",
@@ -38,7 +48,17 @@
           "pattern": "picklecrew.app",
           "custom_domain": true
         }
-      ]
+      ],
+      "vars": {
+        "WORKOS_REDIRECT_URI": "https://picklecrew.app/api/auth/callback"
+      },
+      "secrets": {
+        "required": [
+          "WORKOS_CLIENT_ID",
+          "WORKOS_API_KEY",
+          "WORKOS_COOKIE_PASSWORD"
+        ]
+      }
     }
   }
 }

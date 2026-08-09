@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+const workosRedirectUri = process.env.WORKOS_REDIRECT_URI
+
 export default defineConfig({
   server: {
     host: true,
@@ -15,6 +17,9 @@ export default defineConfig({
   plugins: [
     cloudflare({
       configPath: '../../infra/web/wrangler.jsonc',
+      config: workosRedirectUri
+        ? { vars: { WORKOS_REDIRECT_URI: workosRedirectUri } }
+        : undefined,
       viteEnvironment: { name: 'ssr' },
     }),
     tailwindcss(),
