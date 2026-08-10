@@ -4,9 +4,16 @@ import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const workosRedirectUri = process.env.WORKOS_REDIRECT_URI
+const workosVariables = Object.fromEntries(
+  Object.entries({
+    WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
+    WORKOS_API_KEY: process.env.WORKOS_API_KEY,
+    WORKOS_COOKIE_PASSWORD: process.env.WORKOS_COOKIE_PASSWORD,
+    WORKOS_REDIRECT_URI: process.env.WORKOS_REDIRECT_URI,
+  }).filter((entry): entry is [string, string] => entry[1] !== undefined),
+)
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   server: {
     host: true,
     port: Number(process.env.PORT ?? 3000),
@@ -17,9 +24,10 @@ export default defineConfig({
   plugins: [
     cloudflare({
       configPath: '../../infra/web/wrangler.jsonc',
-      config: workosRedirectUri
-        ? { vars: { WORKOS_REDIRECT_URI: workosRedirectUri } }
-        : undefined,
+      config:
+        command === 'serve' && Object.keys(workosVariables).length > 0
+          ? { vars: workosVariables }
+          : undefined,
       viteEnvironment: { name: 'ssr' },
     }),
     tailwindcss(),
@@ -28,4 +36,4 @@ export default defineConfig({
     }),
     viteReact(),
   ],
-})
+}))

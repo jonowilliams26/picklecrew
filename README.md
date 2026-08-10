@@ -2,23 +2,31 @@
 
 ## Local development
 
-Create `infra/web/.env.local` with the WorkOS AuthKit configuration before starting the app:
+Configure the WorkOS AuthKit values in the AppHost's .NET user secrets. Get the client ID and API
+key from the WorkOS dashboard, then run these commands from the repository root:
 
-```dotenv
-WORKOS_CLIENT_ID=client_your_client_id
-WORKOS_API_KEY=sk_test_your_api_key
-WORKOS_COOKIE_PASSWORD=replace_with_at_least_32_random_characters
+```shell
+dotnet user-secrets set "Parameters:workos-client-id" "client_your_client_id" --project src/PickleCrew.AppHost/PickleCrew.AppHost.csproj
+dotnet user-secrets set "Parameters:workos-api-key" "sk_test_your_api_key" --project src/PickleCrew.AppHost/PickleCrew.AppHost.csproj
+openssl rand -base64 32
+dotnet user-secrets set "Parameters:workos-cookie-password" "paste_the_generated_value" --project src/PickleCrew.AppHost/PickleCrew.AppHost.csproj
 ```
 
-Get the client ID and API key from the WorkOS dashboard. Add
-`http://localhost:*/api/auth/callback` to the application's allowed redirect URIs and
-`http://localhost:*/` to its sign-out redirect URIs. The cookie password must be at least 32
-characters. Generate one locally rather than reusing another secret.
+The cookie password must be at least 32 characters and must not reuse another secret. Verify the
+values were saved. This command displays them in the terminal, so do not share its output:
 
-Aspire assigns the web resource a dynamic port and injects the matching `WORKOS_REDIRECT_URI` at
-startup. The environment file is located under `infra/web` because the Cloudflare Vite plugin loads
-local Worker variables relative to `infra/web/wrangler.jsonc`. It is ignored by Git and must not be
-committed.
+```shell
+dotnet user-secrets list --project src/PickleCrew.AppHost/PickleCrew.AppHost.csproj
+```
+
+Aspire reads these values as parameters and passes them to the web resource as
+`WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, and `WORKOS_COOKIE_PASSWORD`. It assigns the web resource a
+dynamic port and injects the matching `WORKOS_REDIRECT_URI` at startup. Local WorkOS configuration
+must not be stored in `.env` files. Remove an existing `infra/web/.env.local` after migrating its
+values to user secrets.
+
+Add `http://localhost:*/api/auth/callback` to the WorkOS application's allowed redirect URIs and
+`http://localhost:*/` to its sign-out redirect URIs.
 
 Start the app:
 
