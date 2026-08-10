@@ -30,3 +30,70 @@ A person who uses Picklecrew.
 - The user's current active crew remains selected when its WorkOS organization membership is active.
 - When the user has active crew memberships but no valid active crew context, the first active membership becomes active.
 - Users with multiple crew memberships may switch their active crew.
+- A user's statistics are calculated separately for each crew.
+- A user's historical games and statistics remain in a crew after their membership becomes inactive.
+
+## Game
+
+A completed pickleball game with a final score between two sides.
+
+### Business rules
+
+- A game is either singles with one player on each side or doubles with two players on each side.
+- Each competing group in a game is called a side.
+- A player may appear on only one side in a game.
+- Scores are non-negative whole numbers.
+- A game is played to 11 points.
+- A final score from 11–0 through 11–9 is valid.
+- After 10–10, the winning side must finish exactly two points ahead.
+- A score is invalid if play should have ended earlier.
+- Only completed games with one winning side are recorded.
+- A game may include any combination of active crew members and guests, but at least one participant must be an active member of the owning crew.
+- Games are recorded immediately after they are played.
+- The played date and time are assigned automatically when the game is saved and cannot be changed.
+- Any active member of the owning crew may record a game, including a game they did not participate in.
+- Recording a game does not require participant approval.
+- Possible duplicate games are allowed.
+- Only crew administrators may edit or delete a recorded game.
+- An administrator may edit a game's format, participants, guest names, and scores, but not its played date and time.
+- An edited game must satisfy the same validation rules as a newly recorded game.
+- Deleting a game removes all of its contributions from crew member statistics.
+- A recorded game contributes games played, wins, losses, win percentage, points scored, points conceded, and point differential to each participating crew member's statistics, including when they play with or against guests.
+- Game statistics are calculated within the owning crew only.
+- Only active members of the owning crew may view its games.
+
+### Relationships
+
+- Each game belongs to exactly one crew.
+- Each singles game has exactly two players.
+- Each doubles game has exactly four players.
+- Every participating crew member must have an active membership in the owning crew when the game is saved.
+
+## Side
+
+One of the two competing groups in a game.
+
+### Business rules
+
+- A side has one player in singles and two players in doubles.
+- A side may contain active crew members, guests, or both.
+
+### Relationships
+
+- Each game has exactly two sides.
+
+## Guest
+
+A person who participates in one game without being an active member of its crew.
+
+### Business rules
+
+- A guest is entered with a nonblank name while recording a game.
+- Guest names must be distinct within a game but do not need to be unique across games.
+- A guest exists only within the game in which they participate and cannot be reused in another game.
+- Statistics are not calculated for guests.
+- A guest's participation is not transferred or claimed if they later join the crew as a user.
+
+### Relationships
+
+- Each guest participates in exactly one game.
