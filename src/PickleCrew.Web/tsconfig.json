@@ -1,6 +1,7 @@
 {
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "allowJs": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

@@ -10,11 +10,14 @@ var database = postgres.AddDatabase("picklecrew");
 var api = builder.AddProject<Projects.PickleCrew_Api>("api")
     .WithReference(database)
     .WaitFor(database)
+    .WithEnvironment("WorkOS__ClientId", workosClientId)
+    .WithEnvironment("WorkOS__ApiKey", workosApiKey)
     .WithHttpHealthCheck("/health", endpointName: "http");
 
 var web = builder.AddViteApp("web", "../PickleCrew.Web")
     .WithPnpm()
     .WithReference(api)
+    .WithEnvironment("API_BASE_URL", api.GetEndpoint("http"))
     .WithEnvironment("WORKOS_CLIENT_ID", workosClientId)
     .WithEnvironment("WORKOS_API_KEY", workosApiKey)
     .WithEnvironment("WORKOS_COOKIE_PASSWORD", workosCookiePassword);

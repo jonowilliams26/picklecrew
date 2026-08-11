@@ -55,10 +55,102 @@
           }
         }
       }
+    },
+    "/onboarding/crew": {
+      "post": {
+        "tags": [
+          "CreateCrewEndpoint"
+        ],
+        "summary": "Creates the signed-in user's first crew.",
+        "operationId": "CreateOnboardingCrew",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCrewHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateCrewHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "CreateCrewHttpRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateCrewHttpResponse": {
+        "required": [
+          "crewId",
+          "name",
+          "organizationId"
+        ],
+        "type": "object",
+        "properties": {
+          "crewId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          }
+        }
+      },
       "CreatePersistenceProbeHttpRequest": {
         "required": [
           "value"
@@ -191,6 +283,9 @@
   "tags": [
     {
       "name": "CreatePersistenceProbeEndpoint"
+    },
+    {
+      "name": "CreateCrewEndpoint"
     }
   ]
 }

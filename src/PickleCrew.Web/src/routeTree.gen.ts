@@ -10,6 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedActiveCrewRouteImport } from './routes/_authenticated._active-crew'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated._active-crew.dashboard'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
@@ -20,6 +24,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedActiveCrewRoute = AuthenticatedActiveCrewRouteImport.update({
+  id: '/_active-crew',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedActiveCrewDashboardRoute =
+  AuthenticatedActiveCrewDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedActiveCrewRoute,
+  } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
   path: '/api/auth/callback',
@@ -43,6 +66,8 @@ const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -50,6 +75,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -58,6 +85,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteWithChildren
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -67,6 +98,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/onboarding'
+    | '/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -74,6 +107,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/onboarding'
+    | '/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -81,6 +116,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/_authenticated/_active-crew'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/_active-crew/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -89,6 +128,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
   ApiAuthSignOutRoute: typeof ApiAuthSignOutRoute
@@ -103,6 +143,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_active-crew': {
+      id: '/_authenticated/_active-crew'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedActiveCrewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_active-crew/dashboard': {
+      id: '/_authenticated/_active-crew/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedActiveCrewDashboardRouteImport
+      parentRoute: typeof AuthenticatedActiveCrewRoute
     }
     '/api/auth/callback': {
       id: '/api/auth/callback'
@@ -135,8 +203,38 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedActiveCrewRouteChildren {
+  AuthenticatedActiveCrewDashboardRoute: typeof AuthenticatedActiveCrewDashboardRoute
+}
+
+const AuthenticatedActiveCrewRouteChildren: AuthenticatedActiveCrewRouteChildren =
+  {
+    AuthenticatedActiveCrewDashboardRoute:
+      AuthenticatedActiveCrewDashboardRoute,
+  }
+
+const AuthenticatedActiveCrewRouteWithChildren =
+  AuthenticatedActiveCrewRoute._addFileChildren(
+    AuthenticatedActiveCrewRouteChildren,
+  )
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedActiveCrewRoute: typeof AuthenticatedActiveCrewRouteWithChildren
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedActiveCrewRoute: AuthenticatedActiveCrewRouteWithChildren,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
   ApiAuthSignOutRoute: ApiAuthSignOutRoute,

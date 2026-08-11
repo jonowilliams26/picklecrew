@@ -5,11 +5,10 @@ export const Route = createFileRoute('/api/auth/sign-in')({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const returnPathname = new URL(request.url).searchParams.get('returnPathname');
+        const returnPathname =
+          new URL(request.url).searchParams.get('returnPathname') ?? '/dashboard';
         const url = await getSignInUrl({
-          data: returnPathname
-            ? { prompt: 'select_account', returnPathname }
-            : { prompt: 'select_account' },
+          data: { prompt: 'select_account', returnPathname },
         });
         return new Response(null, {
           status: 307,

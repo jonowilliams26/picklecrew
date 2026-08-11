@@ -74,6 +74,10 @@ jobs:
         working-directory: src/PickleCrew.Web
         run: pnpm cf-typegen --check
 
+      - name: Test Web
+        working-directory: src/PickleCrew.Web
+        run: pnpm test
+
       - name: Build and validate Web Worker environments
         working-directory: src/PickleCrew.Web
         run: |
@@ -222,20 +226,26 @@ jobs:
       - name: Set up Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Stage Fly runtime secret
+      - name: Stage Fly runtime secrets
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+          WORKOS_CLIENT_ID: ${{ vars.WORKOS_CLIENT_ID }}
+          WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY }}
         run: |
           set -euo pipefail
 
           : "${FLY_API_TOKEN:?FLY_API_TOKEN is required}"
           : "${DATABASE_CONNECTION_STRING:?DATABASE_CONNECTION_STRING is required}"
+          : "${WORKOS_CLIENT_ID:?WORKOS_CLIENT_ID is required}"
+          : "${WORKOS_API_KEY:?WORKOS_API_KEY is required}"
 
           flyctl secrets set \
             --stage \
             --config "$FLY_CONFIG" \
-            "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}"
+            "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}" \
+            "WorkOS__ClientId=${WORKOS_CLIENT_ID}" \
+            "WorkOS__ApiKey=${WORKOS_API_KEY}"
 
       - name: Deploy API to Fly
         env:
