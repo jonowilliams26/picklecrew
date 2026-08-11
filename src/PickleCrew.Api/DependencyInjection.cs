@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using PickleCrew.Api.Data.Database;
@@ -19,6 +20,26 @@ internal static class DependencyInjection
     public static IServiceCollection AddTimeProvider(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
+
+        return services;
+    }
+
+    public static IServiceCollection AddRequestLogging(
+        this IServiceCollection services,
+        IHostEnvironment environment)
+    {
+        services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = environment.IsDevelopment()
+                ? HttpLoggingFields.All
+                : HttpLoggingFields.RequestMethod
+                    | HttpLoggingFields.RequestPath
+                    | HttpLoggingFields.ResponseStatusCode
+                    | HttpLoggingFields.Duration;
+            options.RequestBodyLogLimit = 4 * 1024;
+            options.ResponseBodyLogLimit = 4 * 1024;
+            options.CombineLogs = true;
+        });
 
         return services;
     }
