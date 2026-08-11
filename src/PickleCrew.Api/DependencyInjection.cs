@@ -37,8 +37,8 @@ internal static class DependencyInjection
         var isGeneratingOpenApi = Environment.GetCommandLineArgs()[0]
             .EndsWith("GetDocument.Insider.dll", StringComparison.OrdinalIgnoreCase);
         var clientId = configuration[nameof(WorkOsOptions.ClientId)] ?? "client_unconfigured";
-        var issuer = configuration[nameof(WorkOsOptions.Issuer)] ?? "https://api.workos.com";
-        var jwksAddress = $"https://api.workos.com/sso/jwks/{clientId}";
+        var issuer = WorkOsTokenEndpoints.GetIssuer(clientId);
+        var jwksAddress = WorkOsTokenEndpoints.GetJwksAddress(clientId);
 
         var workOsOptions = builder.Services.AddOptions<WorkOsOptions>()
             .Bind(configuration);

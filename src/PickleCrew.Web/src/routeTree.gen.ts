@@ -10,10 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as AuthenticatedActiveCrewRouteImport } from './routes/_authenticated._active-crew'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated._active-crew.dashboard'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedActiveCrewRouteRouteImport } from './routes/_authenticated/_active-crew/route'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated/_active-crew/dashboard'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
@@ -24,24 +24,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedActiveCrewRoute = AuthenticatedActiveCrewRouteImport.update({
-  id: '/_active-crew',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+const AuthenticatedActiveCrewRouteRoute =
+  AuthenticatedActiveCrewRouteRouteImport.update({
+    id: '/_active-crew',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedActiveCrewDashboardRoute =
   AuthenticatedActiveCrewDashboardRouteImport.update({
     id: '/dashboard',
     path: '/dashboard',
-    getParentRoute: () => AuthenticatedActiveCrewRoute,
+    getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
   } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
@@ -85,8 +86,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -128,7 +129,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
   ApiAuthSignOutRoute: typeof ApiAuthSignOutRoute
@@ -148,29 +149,29 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_active-crew': {
       id: '/_authenticated/_active-crew'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedActiveCrewRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      preLoaderRoute: typeof AuthenticatedActiveCrewRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/_active-crew/dashboard': {
       id: '/_authenticated/_active-crew/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedActiveCrewDashboardRouteImport
-      parentRoute: typeof AuthenticatedActiveCrewRoute
+      parentRoute: typeof AuthenticatedActiveCrewRouteRoute
     }
     '/api/auth/callback': {
       id: '/api/auth/callback'
@@ -203,38 +204,38 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedActiveCrewRouteChildren {
+interface AuthenticatedActiveCrewRouteRouteChildren {
   AuthenticatedActiveCrewDashboardRoute: typeof AuthenticatedActiveCrewDashboardRoute
 }
 
-const AuthenticatedActiveCrewRouteChildren: AuthenticatedActiveCrewRouteChildren =
+const AuthenticatedActiveCrewRouteRouteChildren: AuthenticatedActiveCrewRouteRouteChildren =
   {
     AuthenticatedActiveCrewDashboardRoute:
       AuthenticatedActiveCrewDashboardRoute,
   }
 
-const AuthenticatedActiveCrewRouteWithChildren =
-  AuthenticatedActiveCrewRoute._addFileChildren(
-    AuthenticatedActiveCrewRouteChildren,
+const AuthenticatedActiveCrewRouteRouteWithChildren =
+  AuthenticatedActiveCrewRouteRoute._addFileChildren(
+    AuthenticatedActiveCrewRouteRouteChildren,
   )
 
-interface AuthenticatedRouteChildren {
-  AuthenticatedActiveCrewRoute: typeof AuthenticatedActiveCrewRouteWithChildren
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedActiveCrewRouteRoute: typeof AuthenticatedActiveCrewRouteRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
 }
 
-const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedActiveCrewRoute: AuthenticatedActiveCrewRouteWithChildren,
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedActiveCrewRouteRoute:
+    AuthenticatedActiveCrewRouteRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
 }
 
-const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
-)
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
   ApiAuthSignOutRoute: ApiAuthSignOutRoute,

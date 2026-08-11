@@ -1,22 +1,14 @@
 import { createServerFn } from '@tanstack/react-start'
-import { WorkOS } from '@workos-inc/node'
-import { getAuth } from '@workos/authkit-tanstack-react-start'
-import { createClient } from '~/lib/api/generated/client'
+import { createApiClient } from '~/lib/api/api.server'
 import { createOnboardingCrew } from '~/lib/api/generated/sdk.gen'
+import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
+import { createWorkOsClient } from '~/lib/workos/workos.server'
 
-export const getActiveMemberships = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    const auth = await getAuth()
-    if (!auth.user) {
-      throw new Error('Authentication is required.')
-    }
-
-    const apiKey = process.env.WORKOS_API_KEY
-    if (!apiKey) {
-      throw new Error('WORKOS_API_KEY is not configured.')
-    }
-
-    const workos = new WorkOS(apiKey)
+export const getActiveMemberships = createServerFn({ method: 'GET' })
+  .middleware([authenticatedMiddleware])
+  .handler(async ({ context }) => {
+    const { auth } = context
+    const workos = createWorkOsClient()
     const memberships = await workos.userManagement.listOrganizationMemberships({
       userId: auth.user.id,
       statuses: ['active'],
@@ -29,27 +21,18 @@ export const getActiveMemberships = createServerFn({ method: 'GET' }).handler(
         organizationId: membership.organizationId,
       })),
     }
-  },
-)
+  })
 
 export const createCrew = createServerFn({ method: 'POST' })
+  .middleware([authenticatedMiddleware])
   .validator((data: { name: string }) => data)
-  .handler(async ({ data }) => {
-    const auth = await getAuth()
-    if (!auth.user) {
-      throw new Error('Authentication is required.')
-    }
-
-    const baseUrl = process.env.API_BASE_URL
-    if (!baseUrl) {
-      throw new Error('API_BASE_URL is not configured.')
-    }
-
-    const client = createClient({ baseUrl })
+  .handler(async ({ context, data }) => {
+    const client = createApiClient({
+      accessToken: context.auth.accessToken,
+    })
     const result = await createOnboardingCrew({
       client,
       body: { name: data.name },
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
     })
 
     if (result.error) {

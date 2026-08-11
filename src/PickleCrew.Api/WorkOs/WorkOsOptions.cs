@@ -7,6 +7,15 @@ internal sealed record WorkOsOptions
     public required string ClientId { get; init; }
 
     public required string ApiKey { get; init; }
+}
 
-    public string Issuer { get; init; } = "https://api.workos.com";
+internal static class WorkOsTokenEndpoints
+{
+    private const string ApiBaseUrl = "https://api.workos.com";
+
+    public static string GetIssuer(string clientId) =>
+        $"{ApiBaseUrl}/user_management/{clientId}";
+
+    public static string GetJwksAddress(string clientId) =>
+        $"{ApiBaseUrl}/sso/jwks/{clientId}";
 }

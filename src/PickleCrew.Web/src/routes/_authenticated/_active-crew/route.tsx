@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { switchToOrganization } from '@workos/authkit-tanstack-react-start'
-import { getActiveMemberships } from '~/lib/onboarding/onboarding-functions'
+import { getActiveMemberships } from '~/lib/onboarding/onboarding.functions'
 import { decideMembershipRoute } from '~/lib/onboarding/membership-routing'
 
 export const Route = createFileRoute('/_authenticated/_active-crew')({

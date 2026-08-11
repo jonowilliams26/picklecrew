@@ -17,7 +17,7 @@ import { Spinner } from '~/components/ui/spinner'
 import {
   createCrew,
   getActiveMemberships,
-} from '~/lib/onboarding/onboarding-functions'
+} from '~/lib/onboarding/onboarding.functions'
 import { decideMembershipRoute } from '~/lib/onboarding/membership-routing'
 
 export const Route = createFileRoute('/_authenticated/onboarding')({
