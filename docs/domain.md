@@ -67,6 +67,7 @@ A completed pickleball game with a final score between two sides.
 ### Relationships
 
 - Each game belongs to exactly one crew.
+- Each game records exactly one recorder, who must be an active member of the owning crew when the game is saved.
 - Each singles game has exactly two players.
 - Each doubles game has exactly four players.
 - Every participating crew member must have an active membership in the owning crew when the game is saved.
