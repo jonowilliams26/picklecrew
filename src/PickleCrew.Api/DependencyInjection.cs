@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
@@ -102,6 +103,26 @@ internal static class DependencyInjection
         builder.Services.AddSingleton<IWorkOsProvisioningService, WorkOsProvisioningService>();
 
         return builder;
+    }
+
+    public static IServiceCollection AddRequestLogging(
+        this IServiceCollection services,
+        IHostEnvironment environment)
+    {
+        services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = environment.IsDevelopment()
+                ? HttpLoggingFields.All
+                : HttpLoggingFields.RequestMethod
+                    | HttpLoggingFields.RequestPath
+                    | HttpLoggingFields.ResponseStatusCode
+                    | HttpLoggingFields.Duration;
+            options.RequestBodyLogLimit = 4 * 1024;
+            options.ResponseBodyLogLimit = 4 * 1024;
+            options.CombineLogs = true;
+        });
+
+        return services;
     }
 
     public static IServiceCollection AddApiDocumentation(this IServiceCollection services)
