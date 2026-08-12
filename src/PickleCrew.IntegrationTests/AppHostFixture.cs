@@ -41,6 +41,10 @@ public sealed class AppHostFixture : IAsyncLifetime
                 timeout.Token
             );
         appHost.Environment.EnvironmentName = "Testing";
+        appHost.Configuration["Parameters:workos-client-id"] = "client_test";
+        appHost.Configuration["Parameters:workos-api-key"] = "sk_test";
+        appHost.Configuration["Parameters:workos-cookie-password"] =
+            "test-cookie-password-at-least-32-characters";
 
         application = await appHost.BuildAsync(timeout.Token)
             .WaitAsync(DefaultTimeout, timeout.Token);
