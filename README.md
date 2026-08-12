@@ -78,6 +78,20 @@ client ID, API key, and cookie password as Cloudflare Worker secrets in the same
 Worker code. Pushes to `main` deploy development; stable `vMAJOR.MINOR.PATCH` tags deploy
 production.
 
+## Production releases
+
+Use the project-local pi command to create a GitHub release from `main` with generated release
+notes:
+
+```text
+/release major
+/release minor
+/release patch
+```
+
+The command calculates the next stable semantic version from the repository's remote tags and asks
+for confirmation before publishing. It requires an authenticated GitHub CLI.
+
 ## Generate the API client
 
 Build the API OpenAPI document, then generate the typed TypeScript client:
