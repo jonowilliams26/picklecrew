@@ -1,5 +1,6 @@
 using PickleCrew.Api;
 using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,10 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     await app.InitializeDatabaseAsync();
+}
+
+if (app.Environment.IsDevelopment() || app.Environment.IsTesting())
+{
     app.MapOpenApi();
 }
 

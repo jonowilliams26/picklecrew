@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/PickleCrew.Api/PickleCrew.Api.csproj" />
     <Project Path="src/PickleCrew.AppHost/PickleCrew.AppHost.csproj" />
+    <Project Path="src/PickleCrew.FakeWorkOs/PickleCrew.FakeWorkOs.csproj" />
     <Project Path="src/PickleCrew.IntegrationTests/PickleCrew.IntegrationTests.csproj" />
     <Project Path="src/PickleCrew.ServiceDefaults/PickleCrew.ServiceDefaults.csproj" />
   </Folder>

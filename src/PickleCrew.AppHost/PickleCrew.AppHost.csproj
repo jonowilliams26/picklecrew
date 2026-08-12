@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../PickleCrew.Api/PickleCrew.Api.csproj" />
+    <ProjectReference Include="../PickleCrew.FakeWorkOs/PickleCrew.FakeWorkOs.csproj" />
   </ItemGroup>
 </Project>

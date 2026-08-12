@@ -2,6 +2,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Testing;
 using Xunit;
 
 namespace PickleCrew.IntegrationTests;
@@ -23,6 +24,58 @@ public sealed class AppHostFixture : IAsyncLifetime
 
     public string DatabaseConnectionString { get; private set; } = null!;
 
+    public HttpClient CreateApiClient()
+    {
+        return application?.CreateHttpClient("api", "http")
+            ?? throw new InvalidOperationException(
+                "The API client is not available because the AppHost has not finished starting."
+            );
+    }
+
+    public HttpClient CreateApiClient(string userId)
+    {
+        var client = CreateApiClient();
+        client.DefaultRequestHeaders.Add(
+            TestAuthenticationDefaults.UserIdHeaderName,
+            userId
+        );
+
+        return client;
+    }
+
+    public HttpClient CreateApiClient(string userId, string organizationId)
+    {
+        var client = CreateApiClient(userId);
+        client.DefaultRequestHeaders.Add(
+            TestAuthenticationDefaults.OrganizationIdHeaderName,
+            organizationId
+        );
+
+        return client;
+    }
+
+    public HttpClient CreateApiClient(
+        string userId,
+        string organizationId,
+        string role)
+    {
+        var client = CreateApiClient(userId, organizationId);
+        client.DefaultRequestHeaders.Add(
+            TestAuthenticationDefaults.RoleHeaderName,
+            role
+        );
+
+        return client;
+    }
+
+    public HttpClient CreateFakeWorkOsClient()
+    {
+        return application?.CreateHttpClient("fake-workos", "http")
+            ?? throw new InvalidOperationException(
+                "The fake WorkOS client is not available because the AppHost has not finished starting."
+            );
+    }
+
     public PickleCrewDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<PickleCrewDbContext>()
@@ -38,9 +91,9 @@ public sealed class AppHostFixture : IAsyncLifetime
 
         var appHost =
             await DistributedApplicationTestingBuilder.CreateAsync<Projects.PickleCrew_AppHost>(
+                ["--Parameters:testing=true"],
                 timeout.Token
             );
-        appHost.Environment.EnvironmentName = "Testing";
         appHost.Configuration["Parameters:workos-client-id"] = "client_test";
         appHost.Configuration["Parameters:workos-api-key"] = "sk_test";
         appHost.Configuration["Parameters:workos-cookie-password"] =
@@ -51,6 +104,10 @@ public sealed class AppHostFixture : IAsyncLifetime
 
         await application.StartAsync(timeout.Token)
             .WaitAsync(DefaultTimeout, timeout.Token);
+        await application.ResourceNotifications.WaitForResourceHealthyAsync(
+            "fake-workos",
+            timeout.Token
+        ).WaitAsync(DefaultTimeout, timeout.Token);
         await application.ResourceNotifications.WaitForResourceHealthyAsync(
             "picklecrew",
             timeout.Token
