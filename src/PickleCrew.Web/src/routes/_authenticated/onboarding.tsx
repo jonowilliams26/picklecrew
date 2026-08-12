@@ -1,4 +1,5 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
 import { switchToOrganization } from '@workos/authkit-tanstack-react-start'
 import { CircleAlertIcon } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
@@ -14,35 +15,16 @@ import {
 import { Field, FieldDescription, FieldLabel } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
-import {
-  createCrew,
-  getActiveMemberships,
-} from '~/lib/onboarding/onboarding.functions'
-import { decideMembershipRoute } from '~/lib/onboarding/membership-routing'
+import { createCrew } from '~/lib/onboarding/onboarding.functions'
 
 export const Route = createFileRoute('/_authenticated/onboarding')({
-  loader: async () => {
-    const context = await getActiveMemberships()
-    const decision = decideMembershipRoute(
-      context.memberships,
-      context.currentOrganizationId,
-    )
-
-    if (decision.destination === '/dashboard') {
-      if (decision.organizationIdToActivate) {
-        await switchToOrganization({
-          data: { organizationId: decision.organizationIdToActivate },
-        })
-      }
-
-      throw redirect({ to: '/dashboard' })
-    }
-  },
   component: OnboardingPage,
 })
 
 function OnboardingPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
+  const createCrewServerFn = useServerFn(createCrew)
+  const switchToOrganizationServerFn = useServerFn(switchToOrganization)
   const [error, setError] = useState<string>()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -61,11 +43,11 @@ function OnboardingPage() {
     setIsSubmitting(true)
 
     try {
-      const crew = await createCrew({ data: { name } })
-      await switchToOrganization({
+      const crew = await createCrewServerFn({ data: { name } })
+      await switchToOrganizationServerFn({
         data: { organizationId: crew.organizationId },
       })
-      await navigate({ to: '/dashboard' })
+      await router.invalidate({ sync: true, forcePending: true })
     } catch (caughtError) {
       setError(
         caughtError instanceof Error

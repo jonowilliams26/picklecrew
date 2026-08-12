@@ -10,7 +10,7 @@
     "build": "vite build && tsc6 --noEmit",
     "cf-typegen": "wrangler types worker-configuration.d.ts --config ../../infra/web/wrangler.jsonc",
     "deploy": "pnpm build && wrangler deploy",
-    "test": "node --test --experimental-strip-types src/lib/onboarding/membership-routing.test.ts",
+    "test": "node --test --experimental-strip-types src/lib/crews/membership-routing.test.ts",
     "typecheck": "tsc6 --noEmit"
   },
   "dependencies": {
