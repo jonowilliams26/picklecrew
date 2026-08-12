@@ -27,13 +27,48 @@ public sealed class WorkOsUserContextEndpointFilterTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenSubjectClaimExists_ShouldSetUserContext()
+    public async Task InvokeAsync_WhenOnlySubjectClaimExists_ShouldSetUserIdAndContinue()
     {
         const string userId = "user_123";
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(
                 new ClaimsIdentity([new Claim(WorkOsClaimTypes.Subject, userId)], "Test")
+            ),
+        };
+        var workOsUserContext = new WorkOsUserContext();
+        var filter = new WorkOsUserContextEndpointFilter(workOsUserContext);
+        var invocationContext = new TestEndpointFilterInvocationContext(httpContext);
+        var handlerResult = new object();
+
+        var result = await filter.InvokeAsync(
+            invocationContext,
+            _ => ValueTask.FromResult<object?>(handlerResult)
+        );
+
+        Assert.Same(handlerResult, result);
+        Assert.Equal(userId, workOsUserContext.UserId);
+        Assert.Null(workOsUserContext.OrganizationId);
+        Assert.Null(workOsUserContext.Role);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenWorkOsClaimsExist_ShouldSetWorkOsUserContext()
+    {
+        const string organizationId = "org_123";
+        const string role = "admin";
+        const string userId = "user_123";
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity(
+                    [
+                        new Claim(WorkOsClaimTypes.OrganizationId, organizationId),
+                        new Claim(WorkOsClaimTypes.Role, role),
+                        new Claim(WorkOsClaimTypes.Subject, userId),
+                    ],
+                    "Test"
+                )
             ),
         };
         var workOsUserContext = new WorkOsUserContext();
@@ -46,6 +81,8 @@ public sealed class WorkOsUserContextEndpointFilterTests
         );
 
         Assert.Equal(userId, workOsUserContext.UserId);
+        Assert.Equal(organizationId, workOsUserContext.OrganizationId);
+        Assert.Equal(role, workOsUserContext.Role);
     }
 
     private sealed class TestEndpointFilterInvocationContext(HttpContext httpContext)

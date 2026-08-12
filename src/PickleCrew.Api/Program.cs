@@ -7,6 +7,7 @@ builder.AddServiceDefaults();
 builder.AddDatabase();
 builder.AddWorkOs();
 builder.Services.AddTimeProvider();
+builder.Services.AddUserContext();
 builder.Services.AddRequestLogging(builder.Environment);
 builder.Services.AddApiDocumentation();
 builder.Services.AddErrorHandling();

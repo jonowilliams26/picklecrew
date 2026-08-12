@@ -11,9 +11,17 @@ internal sealed class WorkOsUserContext
         );
         set => userId = value;
     }
+
+    public string? OrganizationId { get; set; }
+
+    public string? Role { get; set; }
 }
 
 internal static class WorkOsClaimTypes
 {
+    public const string OrganizationId = "org_id";
+
+    public const string Role = "role";
+
     public const string Subject = "sub";
 }
