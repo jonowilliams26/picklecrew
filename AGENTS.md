@@ -2,6 +2,7 @@
 - A pickleball stat tracking application.
 - Target audience is social friend groups wanting to track their stats for bragging rights.
 - Not targeting professional pickleball players.
+- Domain documentation and ubiquitous language are available at `docs/domain.md`
 
 ## Conversational Style
 
@@ -19,22 +20,35 @@ Backend:
 - Minimal APIs
 - Entity Framework Core
 - PostgreSQL
+- Hosted on Fly.io
+
+Frontend:
+- React 19, TypeScript, and TanStack Start
+- Vite, Tailwind CSS 4, and shadcn/ui with Base UI
+- WorkOS AuthKit authentication
+- Hosted on Cloudflare Workers
 
 Local Development Orchestration:
 - Aspire
 - Aspire is used for local development only and is not used for deployments to cloud environments.
 
-## Generated API Client
+## Generated Files
 
+- Never resolve merge conflicts in generated artifacts manually. Resolve conflicts in their source files and regenerate.
+
+### OpenAPI Schema
+
+- Treat `src/PickleCrew.Web/src/lib/api/openapi.json` and `src/PickleCrew.Web/src/lib/api/generated` as read-only generated artifacts.
 - After any API change, including changes to endpoints, HTTP contracts, OpenAPI metadata, or OpenAPI transformers, regenerate and commit the web API client:
   ```shell
   dotnet build src/PickleCrew.Api/PickleCrew.Api.csproj
   pnpm --dir src/PickleCrew.Web api:generate
   ```
-- Treat `src/PickleCrew.Web/src/lib/api/openapi.json` and `src/PickleCrew.Web/src/lib/api/generated` as read-only generated artifacts.
-- Never resolve merge conflicts in generated artifacts manually. Resolve conflicts in their source files or generator configuration, then rerun the owning generator.
-- For generated API artifacts, regenerate with the commands above.
-- Treat `src/PickleCrew.Web/worker-configuration.d.ts` as a read-only generated artifact. Resolve conflicts in the Wrangler configuration, then regenerate it with:
+
+### Wrangler Config
+
+- Treat `src/PickleCrew.Web/worker-configuration.d.ts` as a read-only generated artifact.
+- After any Wrangler configuration changes, regenerate and commit using:
   ```shell
   pnpm --dir src/PickleCrew.Web cf-typegen
   ```
@@ -43,12 +57,25 @@ Local Development Orchestration:
 
 - Run the complete validation sequence from the repository root before completing implementation work:
   ```shell
+  # Build the API and generate its OpenAPI document.
   dotnet build src/PickleCrew.Api/PickleCrew.Api.csproj
+
+  # Regenerate the frontend API client from OpenAPI.
   pnpm --dir src/PickleCrew.Web api:generate
+
+  # Run all .NET tests.
   dotnet test PickleCrew.slnx
+
+  # Run all frontend tests.
   pnpm --dir src/PickleCrew.Web test
+
+  # Build and type-check the frontend.
   pnpm --dir src/PickleCrew.Web build
+
+  # Verify the EF Core model does not require a migration.
   dotnet ef migrations has-pending-model-changes --project src/PickleCrew.Api/PickleCrew.Api.csproj --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj --context PickleCrewDbContext
+
+  # Verify generated Cloudflare binding types are current.
   pnpm --dir src/PickleCrew.Web cf-typegen --check
   ```
 - Confirm generated API artifacts remain current after generation.
