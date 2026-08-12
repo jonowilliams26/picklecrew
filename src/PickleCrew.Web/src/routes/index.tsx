@@ -1,4 +1,4 @@
-import { createFileRoute, useLoaderData } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { getAuth } from '@workos/authkit-tanstack-react-start'
 import { useEffect } from 'react'
 import {
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { LogoMark, PickleBall } from '~/components/picklecrew-brand'
 import { buttonVariants } from '~/components/ui/button'
+import { decideGuestHomepageRoute } from '~/lib/auth/guest-routing'
 import { cn } from '~/lib/utils'
 
 export const Route = createFileRoute('/')({
@@ -24,7 +25,11 @@ export const Route = createFileRoute('/')({
   ssr: true,
   loader: async () => {
     const { user } = await getAuth()
-    return { user }
+    const decision = decideGuestHomepageRoute({ isSignedIn: user !== null })
+
+    if (decision.type === 'redirect') {
+      throw redirect({ to: decision.destination, replace: true })
+    }
   },
 })
 
@@ -158,7 +163,6 @@ function useScrollReveals() {
 
 function HomePage() {
   useScrollReveals()
-  const { user } = useLoaderData({ from: '/' })
 
   return (
     <div className="landing-shell min-h-screen">
@@ -183,27 +187,13 @@ function HomePage() {
           </a>
         </nav>
         <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <span className="text-xs font-bold max-[680px]:hidden">
-                {user.firstName || user.email}
-              </span>
-              <a
-                className={buttonVariants({ variant: 'crew', size: 'lg' })}
-                href="/api/auth/sign-out"
-              >
-                Sign out
-              </a>
-            </>
-          ) : (
-            <a
-              className={buttonVariants({ variant: 'crew', size: 'lg' })}
-              href="/api/auth/sign-in"
-            >
-              Sign in
-              <ArrowRight data-icon="inline-end" />
-            </a>
-          )}
+          <a
+            className={buttonVariants({ variant: 'crew', size: 'lg' })}
+            href="/api/auth/sign-in"
+          >
+            Sign in
+            <ArrowRight data-icon="inline-end" />
+          </a>
         </div>
       </header>
 
