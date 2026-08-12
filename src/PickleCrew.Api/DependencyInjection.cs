@@ -1,10 +1,18 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.WorkOs;
+using WorkOS;
 
 namespace PickleCrew.Api;
 
@@ -22,6 +30,79 @@ internal static class DependencyInjection
         services.AddSingleton(TimeProvider.System);
 
         return services;
+    }
+
+    public static WebApplicationBuilder AddWorkOs(this WebApplicationBuilder builder)
+    {
+        var configuration = builder.Configuration.GetSection(WorkOsOptions.SectionName);
+        var isGeneratingOpenApi = Environment.GetCommandLineArgs()[0]
+            .EndsWith("GetDocument.Insider.dll", StringComparison.OrdinalIgnoreCase);
+        var clientId = configuration[nameof(WorkOsOptions.ClientId)] ?? "client_unconfigured";
+        var issuer = $"https://api.workos.com/user_management/{clientId}";
+        var jwksAddress = $"https://api.workos.com/sso/jwks/{clientId}";
+
+        var workOsOptions = builder.Services.AddOptions<WorkOsOptions>()
+            .Bind(configuration);
+
+        if (!isGeneratingOpenApi)
+        {
+            workOsOptions
+                .Validate(
+                    options => !string.IsNullOrWhiteSpace(options.ClientId),
+                    "ClientId is required.")
+                .Validate(
+                    options => !string.IsNullOrWhiteSpace(options.ApiKey),
+                    "ApiKey is required.")
+                .ValidateOnStart();
+        }
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = "sub",
+                    ValidIssuer = issuer,
+                    ValidateIssuer = true,
+                    ValidateAudience = false,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                };
+                options.ConfigurationManager =
+                    new ConfigurationManager<OpenIdConnectConfiguration>(
+                        jwksAddress,
+                        new WorkOsJwksConfigurationRetriever(issuer),
+                        new HttpDocumentRetriever { RequireHttps = true });
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
+                    {
+                        var tokenClientId = context.Principal?.FindFirst("client_id")?.Value;
+                        if (!string.Equals(tokenClientId, clientId, StringComparison.Ordinal))
+                        {
+                            context.Fail("The token client_id is invalid.");
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
+            });
+        builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
+        builder.Services.AddScoped<WorkOsUserContext>();
+
+        builder.Services.AddSingleton(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<WorkOsOptions>>().Value;
+            return new WorkOSClient(new WorkOSOptions
+            {
+                ApiKey = options.ApiKey,
+                ClientId = options.ClientId,
+            });
+        });
+        builder.Services.AddSingleton<IWorkOsProvisioningService, WorkOsProvisioningService>();
+
+        return builder;
     }
 
     public static IServiceCollection AddRequestLogging(

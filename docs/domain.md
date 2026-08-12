@@ -24,7 +24,8 @@ A person who uses Picklecrew.
 
 ### Business rules
 
-- WorkOS is authoritative for whether a user's crew membership is active.
+- WorkOS is authoritative for whether a user's crew membership is active and for the role assigned to that membership.
+- Crew administrator status is represented by the `admin` role on the user's WorkOS organization membership and is not stored separately by Picklecrew.
 - A user must have an active membership in one or more crews.
 - A user without an active crew membership must create a crew.
 - Any active crew membership allows a user to skip onboarding.

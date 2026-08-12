@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddDatabase();
+builder.AddWorkOs();
 builder.Services.AddTimeProvider();
 builder.Services.AddRequestLogging(builder.Environment);
 builder.Services.AddApiDocumentation();
@@ -18,6 +19,8 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseRequestTimeouts();
 app.UseOutputCache();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

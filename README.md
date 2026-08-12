@@ -19,11 +19,13 @@ values were saved. This command displays them in the terminal, so do not share i
 dotnet user-secrets list --project src/PickleCrew.AppHost/PickleCrew.AppHost.csproj
 ```
 
-Aspire reads these values as parameters and passes them to the web resource as
-`WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, and `WORKOS_COOKIE_PASSWORD`. It assigns the web resource a
-dynamic port and injects the matching `WORKOS_REDIRECT_URI` at startup. Local WorkOS configuration
-must not be stored in `.env` files. Remove an existing `infra/web/.env.local` after migrating its
-values to user secrets.
+Aspire reads these values as parameters. It passes the client ID and API key to the API as
+`WorkOS__ClientId` and `WorkOS__ApiKey`; the API uses them to validate access tokens and provision
+crews. It passes the AuthKit variables to the web resource as `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`,
+and `WORKOS_COOKIE_PASSWORD`. It also supplies the API endpoint as `API_BASE_URL`, assigns the web
+resource a dynamic port, and injects the matching `WORKOS_REDIRECT_URI` at startup. Local WorkOS
+configuration must not be stored in `.env` files. Remove an existing `infra/web/.env.local` after
+migrating its values to user secrets.
 
 Add `http://localhost:*/api/auth/callback` to the WorkOS application's allowed redirect URIs and
 `http://localhost:*/` to its sign-out redirect URIs.
@@ -69,10 +71,12 @@ Generate a different cookie password for each environment:
 openssl rand -base64 32
 ```
 
-The redirect URIs are non-secret Worker variables in `infra/web/wrangler.jsonc`. During deployment,
-the pipeline validates the WorkOS settings and uploads the other values as Cloudflare Worker
-secrets in the same operation as the Worker code. Pushes to `main` deploy development; stable
-`vMAJOR.MINOR.PATCH` tags deploy production.
+The API base URL and redirect URIs are non-secret Worker variables in
+`infra/web/wrangler.jsonc`. During deployment, the pipeline stages `WORKOS_CLIENT_ID` and
+`WORKOS_API_KEY` as Fly secrets for the API. It also validates the WorkOS settings and uploads the
+client ID, API key, and cookie password as Cloudflare Worker secrets in the same operation as the
+Worker code. Pushes to `main` deploy development; stable `vMAJOR.MINOR.PATCH` tags deploy
+production.
 
 ## Generate the API client
 

@@ -4,6 +4,16 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type CreateCrewHttpRequest = {
+    name: string;
+};
+
+export type CreateCrewHttpResponse = {
+    crewId: string;
+    name: string;
+    organizationId: string;
+};
+
 export type CreatePersistenceProbeHttpRequest = {
     value: string;
 };
@@ -69,3 +79,36 @@ export type CreatePersistenceProbeResponses = {
 };
 
 export type CreatePersistenceProbeResponse = CreatePersistenceProbeResponses[keyof CreatePersistenceProbeResponses];
+
+export type CreateOnboardingCrewData = {
+    body: CreateCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/onboarding/crew';
+};
+
+export type CreateOnboardingCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type CreateOnboardingCrewError = CreateOnboardingCrewErrors[keyof CreateOnboardingCrewErrors];
+
+export type CreateOnboardingCrewResponses = {
+    /**
+     * Created
+     */
+    201: CreateCrewHttpResponse;
+};
+
+export type CreateOnboardingCrewResponse = CreateOnboardingCrewResponses[keyof CreateOnboardingCrewResponses];

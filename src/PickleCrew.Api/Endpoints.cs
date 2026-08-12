@@ -1,3 +1,4 @@
+using PickleCrew.Api.Onboarding;
 using PickleCrew.Api.PersistenceProbe;
 
 namespace PickleCrew.Api;
@@ -8,7 +9,15 @@ internal static class Endpoints
     {
         return app.MapGroup(string.Empty)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .MapEndpoint<CreatePersistenceProbeEndpoint>();
+            .MapEndpoint<CreatePersistenceProbeEndpoint>()
+            .MapOnboardingEndpoints();
+    }
+
+    private static IEndpointRouteBuilder MapOnboardingEndpoints(
+        this IEndpointRouteBuilder app)
+    {
+        return app.MapGroup("/onboarding")
+            .MapEndpoint<CreateCrewEndpoint>();
     }
 
     public static IEndpointRouteBuilder MapEndpoint<TEndpoint>(this IEndpointRouteBuilder app)

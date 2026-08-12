@@ -4,8 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const workosVariables = Object.fromEntries(
+const runtimeVariables = Object.fromEntries(
   Object.entries({
+    API_BASE_URL: process.env.API_BASE_URL,
     WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
     WORKOS_API_KEY: process.env.WORKOS_API_KEY,
     WORKOS_COOKIE_PASSWORD: process.env.WORKOS_COOKIE_PASSWORD,
@@ -25,8 +26,8 @@ export default defineConfig(({ command }) => ({
     cloudflare({
       configPath: '../../infra/web/wrangler.jsonc',
       config:
-        command === 'serve' && Object.keys(workosVariables).length > 0
-          ? { vars: workosVariables }
+        command === 'serve' && Object.keys(runtimeVariables).length > 0
+          ? { vars: runtimeVariables }
           : undefined,
       viteEnvironment: { name: 'ssr' },
     }),

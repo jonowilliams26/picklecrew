@@ -22,6 +22,73 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PickleCrew.Api.Data.Crew", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Uuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkOsOrganizationId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Uuid")
+                        .IsUnique();
+
+                    b.HasIndex("WorkOsOrganizationId")
+                        .IsUnique();
+
+                    b.ToTable("Crews");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewProvisioningAttempt", b =>
+                {
+                    b.Property<Guid>("CrewUuid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CrewName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WorkOsMembershipId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkOsOrganizationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkOsUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CrewUuid");
+
+                    b.HasIndex("WorkOsUserId")
+                        .IsUnique();
+
+                    b.ToTable("CrewProvisioningAttempts");
+                });
+
             modelBuilder.Entity("PickleCrew.Api.Data.PersistenceProbe", b =>
                 {
                     b.Property<long>("Id")
@@ -40,6 +107,15 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PersistenceProbes");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.Crew", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.CrewProvisioningAttempt", null)
+                        .WithOne()
+                        .HasForeignKey("PickleCrew.Api.Data.Crew", "Uuid")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

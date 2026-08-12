@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreatePersistenceProbeData, CreatePersistenceProbeErrors, CreatePersistenceProbeResponses } from './types.gen';
+import type { CreateOnboardingCrewData, CreateOnboardingCrewErrors, CreateOnboardingCrewResponses, CreatePersistenceProbeData, CreatePersistenceProbeErrors, CreatePersistenceProbeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -23,6 +23,18 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  */
 export const createPersistenceProbe = <ThrowOnError extends boolean = false>(options: Options<CreatePersistenceProbeData, ThrowOnError>): RequestResult<CreatePersistenceProbeResponses, CreatePersistenceProbeErrors, ThrowOnError> => (options.client ?? client).post<CreatePersistenceProbeResponses, CreatePersistenceProbeErrors, ThrowOnError>({
     url: '/persistence-probes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Creates the signed-in user's first crew.
+ */
+export const createOnboardingCrew = <ThrowOnError extends boolean = false>(options: Options<CreateOnboardingCrewData, ThrowOnError>): RequestResult<CreateOnboardingCrewResponses, CreateOnboardingCrewErrors, ThrowOnError> => (options.client ?? client).post<CreateOnboardingCrewResponses, CreateOnboardingCrewErrors, ThrowOnError>({
+    url: '/onboarding/crew',
     ...options,
     headers: {
         'Content-Type': 'application/json',
