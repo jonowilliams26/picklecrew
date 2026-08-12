@@ -10,6 +10,8 @@ A named group that users belong to within Picklecrew.
 - Crew names do not need to be unique.
 - The user who creates a crew is its administrator.
 - A newly created crew becomes its creator's active crew.
+- After creating a crew during onboarding, its creator may invite friends or skip the invitation step.
+- The invitation step is offered only as part of the uninterrupted crew-creation flow; after a refresh or later sign-in, the creator's active crew membership takes them to the dashboard instead.
 
 ### Relationships
 
@@ -23,6 +25,7 @@ A person who uses Picklecrew.
 ### Business rules
 
 - WorkOS is authoritative for whether a user's crew membership is active and for the role assigned to that membership.
+- Each WorkOS organization membership has exactly one role.
 - Crew administrator status is represented by the `admin` role on the user's WorkOS organization membership and is not stored separately by Picklecrew.
 - A user must have an active membership in one or more crews.
 - A user without an active crew membership must create a crew.
@@ -34,6 +37,27 @@ A person who uses Picklecrew.
 - Users with multiple crew memberships may switch their active crew.
 - A user's statistics are calculated separately for each crew.
 - A user's historical games and statistics remain in a crew after their membership becomes inactive.
+
+## Crew invitation
+
+A request sent through WorkOS for a person identified by email address to join a crew.
+
+### Business rules
+
+- **Crew invitation** is the canonical domain term; onboarding may describe the action as "invite friends."
+- During the optional onboarding invitation step, the crew creator may send invitations to between one and ten email addresses at a time.
+- Only the crew creator, acting as the crew administrator, may send onboarding invitations.
+- A crew invitation grants the standard member role, not the administrator role, if accepted.
+- The same email address may appear only once in a submission.
+- An active crew member cannot be invited to that crew.
+- A person who uses Picklecrew but is not an active member of the crew may be invited.
+- An existing pending invitation is not sent again.
+- Invitation expiry, locale, and email delivery use WorkOS defaults.
+
+### Relationships
+
+- Each crew invitation is associated with exactly one crew.
+- Each crew invitation targets exactly one email address.
 
 ## Game
 

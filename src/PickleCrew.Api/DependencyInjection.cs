@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 using WorkOS;
 
@@ -28,6 +29,13 @@ internal static class DependencyInjection
     public static IServiceCollection AddTimeProvider(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
+
+        return services;
+    }
+
+    public static IServiceCollection AddUserContext(this IServiceCollection services)
+    {
+        services.AddScoped<UserContext>();
 
         return services;
     }

@@ -13,6 +13,13 @@ internal static class WorkOsUserContextEndpointFilterExtensions
             .AddEndpointFilter<WorkOsUserContextEndpointFilter>()
             .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
+
+    public static RouteGroupBuilder WithWorkOsUserContext(this RouteGroupBuilder builder)
+    {
+        return builder
+            .RequireAuthorization(AuthorizationPolicies.WorkOsUser)
+            .AddEndpointFilter<WorkOsUserContextEndpointFilter>();
+    }
 }
 
 internal sealed class WorkOsUserContextEndpointFilter(WorkOsUserContext workOsUserContext)
@@ -29,6 +36,10 @@ internal sealed class WorkOsUserContextEndpointFilter(WorkOsUserContext workOsUs
         }
 
         workOsUserContext.UserId = userId;
+        workOsUserContext.OrganizationId = context.HttpContext.User.FindFirstValue(
+            WorkOsClaimTypes.OrganizationId
+        );
+        workOsUserContext.Role = context.HttpContext.User.FindFirstValue(WorkOsClaimTypes.Role);
 
         return await next(context);
     }
