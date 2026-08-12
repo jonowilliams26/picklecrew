@@ -9,8 +9,6 @@ public sealed class PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> op
 
     public DbSet<CrewProvisioningAttempt> CrewProvisioningAttempts => Set<CrewProvisioningAttempt>();
 
-    public DbSet<PersistenceProbe> PersistenceProbes => Set<PersistenceProbe>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Crew>(crew =>

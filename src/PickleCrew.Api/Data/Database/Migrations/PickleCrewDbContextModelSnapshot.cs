@@ -89,26 +89,6 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.ToTable("CrewProvisioningAttempts");
                 });
 
-            modelBuilder.Entity("PickleCrew.Api.Data.PersistenceProbe", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PersistenceProbes");
-                });
-
             modelBuilder.Entity("PickleCrew.Api.Data.Crew", b =>
                 {
                     b.HasOne("PickleCrew.Api.Data.CrewProvisioningAttempt", null)
