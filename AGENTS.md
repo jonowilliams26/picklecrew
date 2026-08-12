@@ -32,3 +32,24 @@ Local Development Orchestration:
   pnpm --dir src/PickleCrew.Web api:generate
   ```
 - Treat `src/PickleCrew.Web/src/lib/api/openapi.json` and `src/PickleCrew.Web/src/lib/api/generated` as read-only generated artifacts.
+- Never resolve merge conflicts in generated artifacts manually. Resolve conflicts in their source files or generator configuration, then rerun the owning generator.
+- For generated API artifacts, regenerate with the commands above.
+- Treat `src/PickleCrew.Web/worker-configuration.d.ts` as a read-only generated artifact. Resolve conflicts in the Wrangler configuration, then regenerate it with:
+  ```shell
+  pnpm --dir src/PickleCrew.Web cf-typegen
+  ```
+
+## Verification
+
+- Run the complete validation sequence from the repository root before completing implementation work:
+  ```shell
+  dotnet build src/PickleCrew.Api/PickleCrew.Api.csproj
+  pnpm --dir src/PickleCrew.Web api:generate
+  dotnet test PickleCrew.slnx
+  pnpm --dir src/PickleCrew.Web test
+  pnpm --dir src/PickleCrew.Web build
+  dotnet ef migrations has-pending-model-changes --project src/PickleCrew.Api/PickleCrew.Api.csproj --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj --context PickleCrewDbContext
+  pnpm --dir src/PickleCrew.Web cf-typegen --check
+  ```
+- Confirm generated API artifacts remain current after generation.
+- Do not run the frontend outside Aspire for manual verification.

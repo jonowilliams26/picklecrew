@@ -125,7 +125,21 @@ test('renders onboarding only when there is no active crew', () => {
   )
   assert.deepEqual(
     decideCrewMembershipRoute({
+      pathname: '/onboarding/',
+      resolution: noActiveCrew,
+    }),
+    { type: 'render' },
+  )
+  assert.deepEqual(
+    decideCrewMembershipRoute({
       pathname: '/dashboard',
+      resolution: noActiveCrew,
+    }),
+    { type: 'redirect', destination: '/onboarding' },
+  )
+  assert.deepEqual(
+    decideCrewMembershipRoute({
+      pathname: '/future-protected-route',
       resolution: noActiveCrew,
     }),
     { type: 'redirect', destination: '/onboarding' },
@@ -149,6 +163,10 @@ test('renders protected content for an active crew', () => {
 test('prevents an active member from reopening onboarding', () => {
   assert.deepEqual(
     decideCrewMembershipRoute({ pathname: '/onboarding', resolution: activeCrew }),
+    { type: 'redirect', destination: '/dashboard' },
+  )
+  assert.deepEqual(
+    decideCrewMembershipRoute({ pathname: '/onboarding/', resolution: activeCrew }),
     { type: 'redirect', destination: '/dashboard' },
   )
   assert.deepEqual(

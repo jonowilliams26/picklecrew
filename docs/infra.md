@@ -73,9 +73,17 @@ Health responses do not expose connection strings or exception details. Database
    FLY_API_TOKEN
    DATABASE_CONNECTION_STRING
    MIGRATIONS_DATABASE_URL
+   WORKOS_API_KEY
+   WORKOS_COOKIE_PASSWORD
    ```
 
-   No Fly-related GitHub variables are required. `DATABASE_CONNECTION_STRING` must use the environment's non-DDL application role, PgBouncer port `6432`, Npgsql syntax, and `SSL Mode=VerifyFull`. `MIGRATIONS_DATABASE_URL` must use the environment's migrator role, direct port `5432`, and `psql`-compatible URL syntax. Development and production database credentials must differ. Keep production approval rules enabled.
+   Configure `WORKOS_CLIENT_ID` as an environment variable. Use credentials from the corresponding
+   WorkOS environment and generate an independent cookie password of at least 32 characters for
+   each deployment environment. The API receives `WORKOS_CLIENT_ID` and `WORKOS_API_KEY` as staged
+   Fly secrets. The Web Worker receives those values plus `WORKOS_COOKIE_PASSWORD` as Cloudflare
+   Worker secrets.
+
+   No Fly-related GitHub variables are required. `DATABASE_CONNECTION_STRING` must use the environment's non-DDL application role, PgBouncer port `6432`, Npgsql syntax, and `SSL Mode=VerifyFull`. `MIGRATIONS_DATABASE_URL` must use the environment's migrator role, direct port `5432`, and `psql`-compatible URL syntax. Development and production database and WorkOS credentials must differ. Keep production approval rules enabled.
 6. Configure `CLOUDFLARE_API_TOKEN` as a repository or environment secret. Configure `CLOUDFLARE_ACCOUNT_ID` as a repository or environment variable; a secret with the same name is also supported. Create the token from the **Edit Cloudflare Workers** template and restrict it to the PickleCrew account and `picklecrew.app` zone. Environment-scoped values can be used if separate Cloudflare tokens are required.
 
 If an app name changes, update both files in `infra/api/`, the static app hostnames and URLs in `.github/workflows/ci-cd.yml`, and this document.
@@ -141,13 +149,21 @@ CI restores tools and dependencies, builds and tests Release, checks for pending
 
 The API and Web Worker deployment jobs use static environment selection from the Git ref and run independently after CI. Both validate production tags. The API job installs PostgreSQL tools, downloads and validates the migration artifact, and applies that artifact with `psql` before making any Fly change. A migration failure prevents the API deployment.
 
-After migrations, CI installs the official Fly CLI, stages `DATABASE_CONNECTION_STRING` as the Fly secret `ConnectionStrings__picklecrew`, and deploys from the repository root. The commands used by CI are:
+After migrations, CI installs the official Fly CLI and stages these Fly runtime secrets:
+
+- `DATABASE_CONNECTION_STRING` as `ConnectionStrings__picklecrew`
+- `WORKOS_CLIENT_ID` as `WorkOS__ClientId`
+- `WORKOS_API_KEY` as `WorkOS__ApiKey`
+
+It then deploys from the repository root. The command shape used by CI is:
 
 ```bash
 flyctl secrets set \
   --stage \
   --config "$FLY_CONFIG" \
-  "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}"
+  "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}" \
+  "WorkOS__ClientId=${WORKOS_CLIENT_ID}" \
+  "WorkOS__ApiKey=${WORKOS_API_KEY}"
 
 flyctl deploy . --config "$FLY_CONFIG"
 ```

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { switchToOrganization } from '@workos/authkit-tanstack-react-start'
 import { Spinner } from '~/components/ui/spinner'
-import { getCrewMembership } from '~/lib/crews/membership-resolution.functions'
+import { getCrewMembership } from '~/lib/crews/membership.functions'
 import { decideCrewMembershipRoute } from '~/lib/crews/membership-routing'
 
 export const Route = createFileRoute('/_authenticated')({
