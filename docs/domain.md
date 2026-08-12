@@ -7,8 +7,6 @@ A named group that users belong to within Picklecrew.
 ### Business rules
 
 - A crew must have a name.
-- Crew names are trimmed of surrounding whitespace and must contain between 1 and 100 characters.
-- Each crew has a UUID used as its public identifier.
 - Crew names do not need to be unique.
 - The user who creates a crew is its administrator.
 - A newly created crew becomes its creator's active crew.
