@@ -180,6 +180,95 @@ a {
     radial-gradient(circle at 15% 10%, rgba(201, 244, 59, 0.18), transparent 22rem), var(--paper);
 }
 
+.onboarding-shell {
+  background:
+    radial-gradient(circle at 10% 18%, rgba(201, 244, 59, 0.42), transparent 20rem),
+    radial-gradient(circle at 92% 84%, rgba(128, 103, 238, 0.2), transparent 25rem),
+    var(--paper);
+}
+
+.onboarding-shell::before {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(21, 53, 45, 0.14) 1px, transparent 1px);
+  background-size: 22px 22px;
+  content: '';
+  mask-image: linear-gradient(120deg, black, transparent 28%, transparent 70%, black);
+  pointer-events: none;
+}
+
+.onboarding-heading-highlight {
+  background: linear-gradient(transparent 58%, var(--orange) 58%, var(--orange) 92%, transparent 92%);
+}
+
+.onboarding-form-card {
+  position: relative;
+  overflow: visible;
+  box-shadow: 11px 13px 0 var(--ink);
+}
+
+.onboarding-form-card::before {
+  position: absolute;
+  top: -12px;
+  right: 28px;
+  width: 68px;
+  height: 24px;
+  background: rgba(201, 244, 59, 0.84);
+  content: '';
+  transform: rotate(4deg);
+}
+
+.onboarding-form-tag {
+  position: absolute;
+  z-index: 3;
+  top: -28px;
+  right: -18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 2px solid var(--ink);
+  background: var(--orange);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 3px 4px 0 var(--ink);
+  transform: rotate(5deg);
+}
+
+.onboarding-form-tag svg {
+  width: 15px;
+  height: 15px;
+}
+
+.onboarding-ball-one {
+  top: 18%;
+  right: 4%;
+}
+
+.onboarding-ball-two {
+  bottom: 8%;
+  left: 3%;
+  background: var(--orange);
+  animation-delay: -2s;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .onboarding-intro {
+    animation: onboarding-intro-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .onboarding-form-card {
+    animation: onboarding-form-in 750ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .onboarding-form-tag {
+    animation: onboarding-tag-in 600ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
 .logo-mark {
   display: inline-block;
   width: 37px;
@@ -761,6 +850,42 @@ a {
   stroke-width: 1.4;
 }
 
+@keyframes onboarding-intro-in {
+  from {
+    opacity: 0;
+    transform: translateX(-45px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes onboarding-form-in {
+  from {
+    opacity: 0;
+    transform: translateY(55px) rotate(5deg) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes onboarding-tag-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35) rotate(-16deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(5deg);
+  }
+}
+
 @keyframes card-float {
   0%,
   100% {
@@ -1132,7 +1257,64 @@ a {
   }
 }
 
+@media (max-width: 960px) {
+  .onboarding-ball-one {
+    top: 10%;
+    right: -15px;
+  }
+}
+
 @media (max-width: 679px) {
+  .onboarding-form-card {
+    box-shadow: 7px 8px 0 var(--ink);
+    transform: none;
+  }
+
+  .onboarding-form-card::before {
+    right: 18px;
+  }
+
+  .onboarding-form-tag {
+    top: -22px;
+    right: 10px;
+  }
+
+  .onboarding-ball-two {
+    display: none;
+  }
+
+  .onboarding-ball-one {
+    top: 105px;
+    right: -24px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .onboarding-ball-one i:first-child {
+    top: 9px;
+    left: 24px;
+  }
+
+  .onboarding-ball-one i:nth-child(2) {
+    top: 23px;
+    left: 10px;
+  }
+
+  .onboarding-ball-one i:nth-child(3) {
+    top: 23px;
+    right: 10px;
+  }
+
+  .onboarding-ball-one i:nth-child(4) {
+    bottom: 8px;
+    left: 18px;
+  }
+
+  .onboarding-ball-one i:nth-child(5) {
+    right: 15px;
+    bottom: 11px;
+  }
+
   .hero-stage::before {
     width: 94%;
     height: 76%;
