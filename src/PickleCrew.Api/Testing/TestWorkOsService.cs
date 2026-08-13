@@ -5,7 +5,7 @@ using PickleCrew.Api.WorkOs;
 namespace PickleCrew.Api.Testing;
 
 internal sealed class TestWorkOsService(HttpClient client)
-    : IWorkOsProvisioningService
+    : IWorkOsService
 {
     public Task<string?> FindOrganizationByExternalIdAsync(
         string externalId,

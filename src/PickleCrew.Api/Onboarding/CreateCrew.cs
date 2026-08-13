@@ -62,7 +62,7 @@ internal sealed class CreateCrewEndpoint : IEndpoint
         CreateCrewHttpRequest request,
         UserContext userContext,
         PickleCrewDbContext dbContext,
-        IWorkOsProvisioningService workOs,
+        IWorkOsService workOs,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
