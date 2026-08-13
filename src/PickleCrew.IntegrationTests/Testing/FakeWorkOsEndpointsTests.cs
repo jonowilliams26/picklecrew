@@ -15,6 +15,7 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
 
         var setup = await client.SetupAsync(
             identity.UserId,
+            identity.EmailAddress,
             "Kitchen Legends",
             externalId,
             FakeMembershipRole.Member
@@ -41,7 +42,10 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
         var membershipId = $"om_test_{Guid.NewGuid():N}";
         using var client = fixture.CreateFakeWorkOsClient();
 
-        var createdUserId = await client.CreateUserAsync(identity.UserId);
+        var createdUserId = await client.CreateUserAsync(
+            identity.UserId,
+            identity.EmailAddress
+        );
         var createdOrganizationId = await client.CreateOrganizationAsync(
             identity.OrganizationId!,
             "Kitchen Legends",
@@ -78,7 +82,10 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
         var membershipId = $"om_test_{Guid.NewGuid():N}";
         using var client = fixture.CreateFakeWorkOsClient();
 
-        await client.CreateUserAsync(identity.UserId);
+        await client.CreateUserAsync(
+            identity.UserId,
+            identity.EmailAddress
+        );
         await client.CreateOrganizationAsync(
             identity.OrganizationId!,
             "Kitchen Legends",
@@ -98,6 +105,137 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
         );
 
         Assert.Null(foundMembershipId);
+    }
+
+    [Fact]
+    public async Task InvitationEndpoints_WhenInvitationStatesDiffer_ShouldExposeEligibilityAndInvitationDetails()
+    {
+        var creator = TestIdentity.Create(FakeMembershipRole.Admin.ToString());
+        var activeMember = TestIdentity.Create();
+        var inactiveMember = TestIdentity.Create();
+        var pendingEmailAddress = "pending@example.test";
+        var acceptedEmailAddress = "accepted@example.test";
+        using var client = fixture.CreateFakeWorkOsClient();
+
+        await client.CreateOrganizationAsync(
+            creator.OrganizationId!,
+            "Kitchen Legends",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+        await client.CreateUserAsync(
+            activeMember.UserId,
+            activeMember.EmailAddress
+        );
+        await client.CreateUserAsync(
+            inactiveMember.UserId,
+            inactiveMember.EmailAddress
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            activeMember.UserId,
+            creator.OrganizationId!,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            inactiveMember.UserId,
+            creator.OrganizationId!,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Inactive
+        );
+        var pendingInvitation = await client.CreateInvitationAsync(
+            $"invitation_test_{Guid.NewGuid():N}",
+            creator.OrganizationId!,
+            pendingEmailAddress,
+            FakeMembershipRole.Member,
+            creator.UserId
+        );
+        await client.CreateInvitationAsync(
+            $"invitation_test_{Guid.NewGuid():N}",
+            creator.OrganizationId!,
+            acceptedEmailAddress,
+            FakeMembershipRole.Member,
+            creator.UserId,
+            FakeInvitationState.Accepted
+        );
+
+        var activeEmailAddresses = await client.ListActiveMemberEmailAddressesAsync(
+            creator.OrganizationId!
+        );
+        var pendingInvitations = await client.ListPendingInvitationsAsync(
+            creator.OrganizationId!
+        );
+        var allInvitations = await client.ListInvitationsAsync(
+            creator.OrganizationId!
+        );
+
+        Assert.Equal([activeMember.EmailAddress], activeEmailAddresses);
+        var foundPendingInvitation = Assert.Single(pendingInvitations);
+        Assert.Equal(pendingInvitation, foundPendingInvitation);
+        Assert.Equal(FakeInvitationState.Pending, foundPendingInvitation.State);
+        Assert.Equal(FakeMembershipRole.Member, foundPendingInvitation.Role);
+        Assert.Equal(creator.UserId, foundPendingInvitation.InviterUserId);
+        Assert.Equal(2, allInvitations.Length);
+        Assert.Contains(
+            allInvitations,
+            invitation => invitation.EmailAddress == acceptedEmailAddress
+                && invitation.State == FakeInvitationState.Accepted
+        );
+    }
+
+    [Fact]
+    public async Task SendInvitation_WhenRecipientFaultExists_ShouldFailOnlyForRecipientAndScenario()
+    {
+        var identity = TestIdentity.Create(FakeMembershipRole.Admin.ToString());
+        var failedScenarioId = Guid.NewGuid().ToString("N");
+        var healthyScenarioId = Guid.NewGuid().ToString("N");
+        var failedRecipient = "failed@example.test";
+        var healthyRecipient = "healthy@example.test";
+        using var client = fixture.CreateFakeWorkOsClient();
+
+        await client.CreateOrganizationAsync(
+            identity.OrganizationId!,
+            "Kitchen Legends",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+        await client.FailInvitationAsync(
+            failedScenarioId,
+            failedRecipient.ToUpperInvariant()
+        );
+
+        using var failedResponse = await client.SendInvitationAsync(
+            identity.OrganizationId!,
+            failedRecipient,
+            FakeMembershipRole.Member,
+            identity.UserId,
+            failedScenarioId
+        );
+        using var otherRecipientResponse = await client.SendInvitationAsync(
+            identity.OrganizationId!,
+            healthyRecipient,
+            FakeMembershipRole.Member,
+            identity.UserId,
+            failedScenarioId
+        );
+        using var otherScenarioResponse = await client.SendInvitationAsync(
+            identity.OrganizationId!,
+            failedRecipient,
+            FakeMembershipRole.Member,
+            identity.UserId,
+            healthyScenarioId
+        );
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, failedResponse.StatusCode);
+        Assert.True(otherRecipientResponse.IsSuccessStatusCode);
+        Assert.True(otherScenarioResponse.IsSuccessStatusCode);
+
+        var invitations = await client.ListInvitationsAsync(identity.OrganizationId!);
+        Assert.Equal(2, invitations.Length);
+        Assert.All(
+            invitations,
+            invitation => Assert.Equal(FakeMembershipRole.Member, invitation.Role)
+        );
     }
 
     [Theory]
@@ -139,7 +277,10 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
         var identity = TestIdentity.Create();
         var externalId = $"crew_test_{Guid.NewGuid():N}";
 
-        await client.CreateUserAsync(identity.UserId);
+        await client.CreateUserAsync(
+            identity.UserId,
+            identity.EmailAddress
+        );
         await client.CreateOrganizationAsync(
             identity.OrganizationId!,
             "Kitchen Legends",
