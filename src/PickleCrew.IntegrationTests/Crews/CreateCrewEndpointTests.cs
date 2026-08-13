@@ -77,6 +77,42 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task CreateCrew_WhenWorkOsOperationFails_ShouldResumeOnRetry()
+    {
+        var identity = TestIdentity.CreateSubjectOnly();
+        var scenarioId = Guid.NewGuid().ToString("N");
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        using var failingApiClient = fixture.CreateApiClient(identity, scenarioId);
+        using var retryingApiClient = fixture.CreateApiClient(identity);
+
+        await fakeWorkOs.FailOperationAsync(
+            scenarioId,
+            FakeWorkOsOperation.CreateOrganization
+        );
+
+        using var failedResponse = await failingApiClient.PostAsJsonAsync(
+            "/crews",
+            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+        );
+        using var retriedResponse = await retryingApiClient.PostAsJsonAsync(
+            "/crews",
+            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+        );
+
+        Assert.Equal(HttpStatusCode.InternalServerError, failedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, retriedResponse.StatusCode);
+
+        await using var dbContext = fixture.CreateDbContext();
+        var attempt = await dbContext.CrewProvisioningAttempts
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.WorkOsUserId == identity.UserId);
+
+        Assert.NotNull(attempt.WorkOsOrganizationId);
+        Assert.NotNull(attempt.WorkOsMembershipId);
+        Assert.NotNull(attempt.CompletedAtUtc);
+    }
+
+    [Fact]
     public async Task CreateCrew_WhenScenariosRunConcurrently_ShouldKeepStateIsolated()
     {
         var identities = Enumerable.Range(0, 4)

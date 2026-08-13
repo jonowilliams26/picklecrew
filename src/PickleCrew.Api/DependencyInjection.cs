@@ -58,6 +58,7 @@ internal static class DependencyInjection
                     TestAuthenticationDefaults.AuthenticationScheme,
                     _ => { }
                 );
+            builder.Services.AddHttpContextAccessor();
             builder.Services
                 .AddHttpClient<IWorkOsService, TestWorkOsService>(
                     client => client.BaseAddress = new Uri("https+http://fake-workos")

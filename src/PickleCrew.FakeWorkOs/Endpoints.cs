@@ -5,13 +5,15 @@ namespace PickleCrew.FakeWorkOs;
 
 internal static class Endpoints
 {
+    private const string ScenarioIdHeaderName = "X-Test-Scenario-Id";
+
     public static IEndpointRouteBuilder MapFakeWorkOsEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/setup", CreateOrganizationWithUser);
         app.MapPost("/users", CreateUser);
         app.MapPost("/organizations", CreateOrganization);
         app.MapPost("/memberships", CreateMembership);
-        app.MapPost("/outcomes", CreateOutcome);
+        app.MapPost("/faults", FailOperation);
 
         app.MapGet(
             "/organizations/by-external-id/{externalId}",
@@ -62,16 +64,16 @@ internal static class Endpoints
     private static Results<Created<IdentifierHttpResponse>, ProblemHttpResult>
         CreateOrganization(
             CreateOrganizationHttpRequest request,
-            FakeWorkOsState state)
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
     {
-        var outcome = state.FindOutcome(
-            FakeWorkOsOperation.CreateOrganization,
-            request.ExternalId
-        );
-
-        if (outcome is not null)
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.CreateOrganization
+        ))
         {
-            return CreateProblem(outcome);
+            return CreateFaultProblem(FakeWorkOsOperation.CreateOrganization);
         }
 
         var organization = state.CreateOrganization(
@@ -89,16 +91,16 @@ internal static class Endpoints
     private static Results<Created<IdentifierHttpResponse>, ProblemHttpResult>
         CreateMembership(
             CreateMembershipHttpRequest request,
-            FakeWorkOsState state)
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
     {
-        var outcome = state.FindOutcome(
-            FakeWorkOsOperation.CreateMembership,
-            request.UserId
-        );
-
-        if (outcome is not null)
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.CreateMembership
+        ))
         {
-            return CreateProblem(outcome);
+            return CreateFaultProblem(FakeWorkOsOperation.CreateMembership);
         }
 
         var membership = state.CreateMembership(
@@ -115,55 +117,28 @@ internal static class Endpoints
         );
     }
 
-    private static Results<Created<CreateOutcomeHttpResponse>, ValidationProblem>
-        CreateOutcome(
-            CreateOutcomeHttpRequest request,
-            FakeWorkOsState state)
+    private static NoContent FailOperation(
+        FailOperationHttpRequest request,
+        FakeWorkOsState state)
     {
-        var isFailureStatusCode = request.StatusCode is >= 400 and <= 599;
-        if (!isFailureStatusCode)
-        {
-            return TypedResults.ValidationProblem(
-                new Dictionary<string, string[]>
-                {
-                    [nameof(request.StatusCode)] =
-                        ["The status code must represent an HTTP error response."],
-                }
-            );
-        }
+        state.FailOperation(request.ScenarioId, request.Operation);
 
-        var outcome = state.CreateOutcome(
-            request.Operation,
-            request.Scope,
-            request.StatusCode,
-            request.Detail
-        );
-
-        return TypedResults.Created(
-            "/outcomes",
-            new CreateOutcomeHttpResponse
-            {
-                Operation = request.Operation,
-                Scope = request.Scope,
-                StatusCode = outcome.StatusCode,
-                Detail = outcome.Detail,
-            }
-        );
+        return TypedResults.NoContent();
     }
 
     private static Results<Ok<IdentifierHttpResponse>, NotFound, ProblemHttpResult>
         FindOrganizationByExternalId(
             string externalId,
-            FakeWorkOsState state)
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
     {
-        var outcome = state.FindOutcome(
-            FakeWorkOsOperation.FindOrganizationByExternalId,
-            externalId
-        );
-
-        if (outcome is not null)
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.FindOrganizationByExternalId
+        ))
         {
-            return CreateProblem(outcome);
+            return CreateFaultProblem(FakeWorkOsOperation.FindOrganizationByExternalId);
         }
 
         var organization = state.FindOrganization(externalId);
@@ -177,16 +152,16 @@ internal static class Endpoints
         FindActiveMembership(
             string organizationId,
             string userId,
-            FakeWorkOsState state)
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
     {
-        var outcome = state.FindOutcome(
-            FakeWorkOsOperation.FindActiveMembership,
-            userId
-        );
-
-        if (outcome is not null)
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.FindActiveMembership
+        ))
         {
-            return CreateProblem(outcome);
+            return CreateFaultProblem(FakeWorkOsOperation.FindActiveMembership);
         }
 
         var membership = state.FindActiveMembership(userId, organizationId);
@@ -196,11 +171,22 @@ internal static class Endpoints
             : TypedResults.Ok(new IdentifierHttpResponse { Id = membership.Id });
     }
 
-    private static ProblemHttpResult CreateProblem(FakeOperationOutcome outcome)
+    private static bool ShouldFailOperation(
+        HttpRequest request,
+        FakeWorkOsState state,
+        FakeWorkOsOperation operation)
+    {
+        var scenarioId = request.Headers[ScenarioIdHeaderName].ToString();
+
+        return !string.IsNullOrWhiteSpace(scenarioId)
+            && state.ShouldFailOperation(scenarioId, operation);
+    }
+
+    private static ProblemHttpResult CreateFaultProblem(FakeWorkOsOperation operation)
     {
         return TypedResults.Problem(
-            detail: outcome.Detail,
-            statusCode: outcome.StatusCode
+            detail: $"Configured {operation} failure.",
+            statusCode: StatusCodes.Status503ServiceUnavailable
         );
     }
 }
@@ -252,26 +238,11 @@ public sealed record CreateMembershipHttpRequest
     public MembershipStatus Status { get; init; } = MembershipStatus.Active;
 }
 
-public sealed record CreateOutcomeHttpRequest
+public sealed record FailOperationHttpRequest
 {
+    public required string ScenarioId { get; init; }
+
     public required FakeWorkOsOperation Operation { get; init; }
-
-    public required string Scope { get; init; }
-
-    public required int StatusCode { get; init; }
-
-    public required string Detail { get; init; }
-}
-
-public sealed record CreateOutcomeHttpResponse
-{
-    public required FakeWorkOsOperation Operation { get; init; }
-
-    public required string Scope { get; init; }
-
-    public required int StatusCode { get; init; }
-
-    public required string Detail { get; init; }
 }
 
 public sealed record IdentifierHttpResponse

@@ -33,7 +33,9 @@ public sealed class AppHostFixture : IAsyncLifetime
             );
     }
 
-    internal HttpClient CreateApiClient(TestIdentity identity)
+    internal HttpClient CreateApiClient(
+        TestIdentity identity,
+        string? scenarioId = null)
     {
         var client = CreateApiClient();
         client.DefaultRequestHeaders.Add(
@@ -54,6 +56,14 @@ public sealed class AppHostFixture : IAsyncLifetime
             client.DefaultRequestHeaders.Add(
                 TestAuthenticationDefaults.RoleHeaderName,
                 identity.Role
+            );
+        }
+
+        if (scenarioId is not null)
+        {
+            client.DefaultRequestHeaders.Add(
+                TestScenarioDefaults.ScenarioIdHeaderName,
+                scenarioId
             );
         }
 

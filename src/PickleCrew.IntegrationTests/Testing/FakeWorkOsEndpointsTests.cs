@@ -105,25 +105,28 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
     [InlineData(FakeWorkOsOperation.CreateOrganization)]
     [InlineData(FakeWorkOsOperation.FindActiveMembership)]
     [InlineData(FakeWorkOsOperation.CreateMembership)]
-    public async Task ProvisioningOperation_WhenFailureOutcomeExists_ShouldKeepFailureScoped(
+    public async Task ProvisioningOperation_WhenFaultExists_ShouldFailOnlyForScenario(
         FakeWorkOsOperation operation)
     {
         using var client = fixture.CreateFakeWorkOsClient();
         var failedScenario = await CreateScenarioAsync(client);
         var healthyScenario = await CreateScenarioAsync(client);
-        var failureScope = GetOutcomeScope(operation, failedScenario);
+        var failedScenarioId = Guid.NewGuid().ToString("N");
+        var healthyScenarioId = Guid.NewGuid().ToString("N");
 
-        await client.CreateOutcomeAsync(operation, failureScope);
+        await client.FailOperationAsync(failedScenarioId, operation);
 
         using var failedResponse = await SendOperationAsync(
             client,
             operation,
-            failedScenario
+            failedScenario,
+            failedScenarioId
         );
         using var healthyResponse = await SendOperationAsync(
             client,
             operation,
-            healthyScenario
+            healthyScenario,
+            healthyScenarioId
         );
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, failedResponse.StatusCode);
@@ -158,41 +161,34 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
         };
     }
 
-    private static string GetOutcomeScope(
-        FakeWorkOsOperation operation,
-        FakeWorkOsScenario scenario)
-    {
-        return operation switch
-        {
-            FakeWorkOsOperation.FindOrganizationByExternalId
-                or FakeWorkOsOperation.CreateOrganization => scenario.OrganizationExternalId,
-            FakeWorkOsOperation.FindActiveMembership
-                or FakeWorkOsOperation.CreateMembership => scenario.UserId,
-            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null),
-        };
-    }
-
     private static Task<HttpResponseMessage> SendOperationAsync(
         FakeWorkOsClient client,
         FakeWorkOsOperation operation,
-        FakeWorkOsScenario scenario)
+        FakeWorkOsScenario scenario,
+        string scenarioId)
     {
         return operation switch
         {
             FakeWorkOsOperation.FindOrganizationByExternalId =>
-                client.GetOrganizationByExternalIdAsync(scenario.OrganizationExternalId),
+                client.GetOrganizationByExternalIdAsync(
+                    scenario.OrganizationExternalId,
+                    scenarioId
+                ),
             FakeWorkOsOperation.CreateOrganization => client.SendCreateOrganizationAsync(
                 "Kitchen Legends",
-                scenario.OrganizationExternalId
+                scenario.OrganizationExternalId,
+                scenarioId
             ),
             FakeWorkOsOperation.FindActiveMembership => client.GetActiveMembershipAsync(
                 scenario.UserId,
-                scenario.OrganizationId
+                scenario.OrganizationId,
+                scenarioId
             ),
             FakeWorkOsOperation.CreateMembership => client.SendCreateMembershipAsync(
                 scenario.UserId,
                 scenario.OrganizationId,
-                FakeMembershipRole.Member
+                FakeMembershipRole.Member,
+                scenarioId
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null),
         };
