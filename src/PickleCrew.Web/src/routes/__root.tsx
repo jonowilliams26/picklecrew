@@ -6,6 +6,7 @@ import {
   createRootRoute,
 } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { TooltipProvider } from '~/components/ui/tooltip'
 import appStyles from '~/styles/app.css?url'
 
 export const Route = createRootRoute({
@@ -49,7 +50,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <Scripts />
       </body>
     </html>
