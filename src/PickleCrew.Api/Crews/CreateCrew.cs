@@ -6,7 +6,7 @@ using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 
-namespace PickleCrew.Api.Onboarding;
+namespace PickleCrew.Api.Crews;
 
 public sealed record CreateCrewHttpRequest
 {
@@ -26,11 +26,10 @@ internal sealed class CreateCrewEndpoint : IEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapPost("/crew", HandleAsync)
-            .WithName("CreateOnboardingCrew")
-            .WithSummary("Creates the signed-in user's first crew.")
-            .WithRequestValidation<CreateCrewHttpRequest>(Validate)
-            .WithUserContext();
+        app.MapPost(string.Empty, HandleAsync)
+            .WithName("CreateCrew")
+            .WithSummary("Creates a crew for the signed-in user.")
+            .WithRequestValidation<CreateCrewHttpRequest>(Validate);
     }
 
     internal static Dictionary<string, string[]> Validate(CreateCrewHttpRequest request)

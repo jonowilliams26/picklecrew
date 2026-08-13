@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateOnboardingCrewData, CreateOnboardingCrewErrors, CreateOnboardingCrewResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,10 +19,10 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Creates the signed-in user's first crew.
+ * Creates a crew for the signed-in user.
  */
-export const createOnboardingCrew = <ThrowOnError extends boolean = false>(options: Options<CreateOnboardingCrewData, ThrowOnError>): RequestResult<CreateOnboardingCrewResponses, CreateOnboardingCrewErrors, ThrowOnError> => (options.client ?? client).post<CreateOnboardingCrewResponses, CreateOnboardingCrewErrors, ThrowOnError>({
-    url: '/onboarding/crew',
+export const createCrew = <ThrowOnError extends boolean = false>(options: Options<CreateCrewData, ThrowOnError>): RequestResult<CreateCrewResponses, CreateCrewErrors, ThrowOnError> => (options.client ?? client).post<CreateCrewResponses, CreateCrewErrors, ThrowOnError>({
+    url: '/crews',
     ...options,
     headers: {
         'Content-Type': 'application/json',

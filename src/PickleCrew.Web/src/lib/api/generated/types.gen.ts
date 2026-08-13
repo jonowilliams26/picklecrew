@@ -41,14 +41,14 @@ export type ProblemDetails = {
     traceId: string;
 };
 
-export type CreateOnboardingCrewData = {
+export type CreateCrewData = {
     body: CreateCrewHttpRequest;
     path?: never;
     query?: never;
-    url: '/onboarding/crew';
+    url: '/crews';
 };
 
-export type CreateOnboardingCrewErrors = {
+export type CreateCrewErrors = {
     /**
      * Bad Request
      */
@@ -67,13 +67,13 @@ export type CreateOnboardingCrewErrors = {
     500: ProblemDetails;
 };
 
-export type CreateOnboardingCrewError = CreateOnboardingCrewErrors[keyof CreateOnboardingCrewErrors];
+export type CreateCrewError = CreateCrewErrors[keyof CreateCrewErrors];
 
-export type CreateOnboardingCrewResponses = {
+export type CreateCrewResponses = {
     /**
      * Created
      */
     201: CreateCrewHttpResponse;
 };
 
-export type CreateOnboardingCrewResponse = CreateOnboardingCrewResponses[keyof CreateOnboardingCrewResponses];
+export type CreateCrewResponse = CreateCrewResponses[keyof CreateCrewResponses];

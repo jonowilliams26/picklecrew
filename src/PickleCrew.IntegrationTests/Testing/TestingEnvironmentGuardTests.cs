@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using PickleCrew.Api.Onboarding;
+using PickleCrew.Api.Crews;
 using PickleCrew.Api.Testing;
 using PickleCrew.FakeWorkOs;
 using Xunit;
@@ -26,7 +26,7 @@ public sealed class TestingEnvironmentGuardTests
                 builder.UseSetting("WorkOS:ApiKey", "sk_test_placeholder");
             });
         using var client = factory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/onboarding/crew")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/crews")
         {
             Content = JsonContent.Create(new CreateCrewHttpRequest
             {

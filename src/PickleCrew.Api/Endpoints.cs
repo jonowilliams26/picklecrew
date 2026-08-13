@@ -1,5 +1,5 @@
+using PickleCrew.Api.Crews;
 using PickleCrew.Api.EndpointFilters;
-using PickleCrew.Api.Onboarding;
 using PickleCrew.Api.Testing;
 
 namespace PickleCrew.Api;
@@ -11,25 +11,16 @@ internal static class Endpoints
         var endpoints = app.MapGroup(string.Empty)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-        endpoints.MapOnboardingEndpoints();
-        endpoints.MapCrewEndpoints();
+        endpoints.MapCrewsEndpoints();
         endpoints.MapTestingEndpoints();
 
         return endpoints;
     }
 
-    private static IEndpointRouteBuilder MapCrewEndpoints(this IEndpointRouteBuilder app)
+    private static IEndpointRouteBuilder MapCrewsEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGroup("/crew")
-            .WithCrewUserContext();
-
-        return app;
-    }
-
-    private static IEndpointRouteBuilder MapOnboardingEndpoints(
-        this IEndpointRouteBuilder app)
-    {
-        return app.MapGroup("/onboarding")
+        return app.MapGroup("/crews")
+            .WithUserContext()
             .MapEndpoint<CreateCrewEndpoint>();
     }
 
