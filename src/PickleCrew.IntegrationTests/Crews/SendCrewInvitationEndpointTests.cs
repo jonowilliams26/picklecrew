@@ -12,14 +12,8 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task SendCrewInvitation_WhenAdministratorInvitesFriend_ShouldSendMemberInvitation()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "admin",
-        };
-        using var apiClient = fixture.CreateApiClient(activeCreator);
+        var context = await fixture.CreateCrewWithAdministratorAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -44,34 +38,28 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
 
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         var invitation = Assert.Single(
-            await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId)
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
         );
 
-        Assert.Equal(crew.OrganizationId, invitation.OrganizationId);
+        Assert.Equal(context.Crew.OrganizationId, invitation.OrganizationId);
         Assert.Equal("friend@example.com", invitation.EmailAddress);
         Assert.Equal(FakeInvitationState.Pending, invitation.State);
         Assert.Equal(FakeMembershipRole.Member, invitation.Role);
-        Assert.Equal(creator.UserId, invitation.InviterUserId);
+        Assert.Equal(context.Administrator.UserId, invitation.InviterUserId);
     }
 
     [Fact]
     public async Task SendCrewInvitation_WhenRecipientIsActiveMember_ShouldNotSendInvitation()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "admin",
-        };
+        var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         await CreateMemberAsync(
             fakeWorkOs,
-            crew.OrganizationId,
+            context.Crew.OrganizationId,
             "active@example.com",
             FakeMembershipStatus.Active
         );
-        using var apiClient = fixture.CreateApiClient(activeCreator);
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -92,28 +80,24 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
             "Active@Example.com",
             CrewInvitationOutcomeStatus.AlreadyActiveMember
         );
-        Assert.Empty(await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId));
+        Assert.Empty(
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
+        );
     }
 
     [Fact]
     public async Task SendCrewInvitation_WhenRecipientHasPendingInvitation_ShouldNotSendAnotherInvitation()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "admin",
-        };
+        var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         await fakeWorkOs.CreateInvitationAsync(
             $"invitation_test_{Guid.NewGuid():N}",
-            crew.OrganizationId,
+            context.Crew.OrganizationId,
             "PENDING@example.com",
             FakeMembershipRole.Member,
-            creator.UserId
+            context.Administrator.UserId
         );
-        using var apiClient = fixture.CreateApiClient(activeCreator);
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -134,27 +118,23 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
             "pending@example.com",
             CrewInvitationOutcomeStatus.AlreadyPending
         );
-        Assert.Single(await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId));
+        Assert.Single(
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
+        );
     }
 
     [Fact]
     public async Task SendCrewInvitation_WhenExistingUserIsInactive_ShouldSendInvitation()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "admin",
-        };
+        var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         await CreateMemberAsync(
             fakeWorkOs,
-            crew.OrganizationId,
+            context.Crew.OrganizationId,
             "inactive@example.com",
             FakeMembershipStatus.Inactive
         );
-        using var apiClient = fixture.CreateApiClient(activeCreator);
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -177,7 +157,7 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
         );
 
         var invitation = Assert.Single(
-            await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId)
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
         );
         Assert.Equal(FakeMembershipRole.Member, invitation.Role);
     }
@@ -185,17 +165,14 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task SendCrewInvitation_WhenSendFails_ShouldReturnFailureAndAllowRetry()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "admin",
-        };
+        var context = await fixture.CreateCrewWithAdministratorAsync();
         var scenarioId = Guid.NewGuid().ToString("N");
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         await fakeWorkOs.FailInvitationAsync(scenarioId, "retry@example.com");
-        using var failingApiClient = fixture.CreateApiClient(activeCreator, scenarioId);
+        using var failingApiClient = fixture.CreateApiClient(
+            context.Administrator,
+            scenarioId
+        );
 
         using var failedResponse = await failingApiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -216,9 +193,11 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
             "retry@example.com",
             CrewInvitationOutcomeStatus.Failed
         );
-        Assert.Empty(await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId));
+        Assert.Empty(
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
+        );
 
-        using var retryingApiClient = fixture.CreateApiClient(activeCreator);
+        using var retryingApiClient = fixture.CreateApiClient(context.Administrator);
         using var retryResponse = await retryingApiClient.PostAsJsonAsync(
             "/crews/invitations",
             new SendCrewInvitationHttpRequest
@@ -238,20 +217,17 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
             "retry@example.com",
             CrewInvitationOutcomeStatus.Sent
         );
-        Assert.Single(await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId));
+        Assert.Single(
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
+        );
     }
 
     [Fact]
     public async Task SendCrewInvitation_WhenUserIsNotAdministrator_ShouldReturnForbidden()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
-        var activeCreator = creator with
-        {
-            OrganizationId = crew.OrganizationId,
-            Role = "member",
-        };
-        using var apiClient = fixture.CreateApiClient(activeCreator);
+        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var member = context.Administrator with { Role = "member" };
+        using var apiClient = fixture.CreateApiClient(member);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/invitations",
@@ -264,11 +240,10 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task SendCrewInvitation_WhenAdministratorDidNotCreateCrew_ShouldSendMemberInvitation()
     {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await CreateCrewAsync(creator);
+        var context = await fixture.CreateCrewWithAdministratorAsync();
         var otherAdministrator = TestIdentity.Create("admin") with
         {
-            OrganizationId = crew.OrganizationId,
+            OrganizationId = context.Crew.OrganizationId,
         };
         using var apiClient = fixture.CreateApiClient(otherAdministrator);
 
@@ -281,7 +256,7 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
 
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
         var invitation = Assert.Single(
-            await fakeWorkOs.ListInvitationsAsync(crew.OrganizationId)
+            await fakeWorkOs.ListInvitationsAsync(context.Crew.OrganizationId)
         );
         Assert.Equal(otherAdministrator.UserId, invitation.InviterUserId);
         Assert.Equal(FakeMembershipRole.Member, invitation.Role);
@@ -298,22 +273,6 @@ public sealed class SendCrewInvitationEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    private async Task<CreateCrewHttpResponse> CreateCrewAsync(TestIdentity identity)
-    {
-        using var apiClient = fixture.CreateApiClient(identity);
-        using var response = await apiClient.PostAsJsonAsync(
-            "/crews",
-            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadFromJsonAsync<CreateCrewHttpResponse>()
-            ?? throw new InvalidOperationException(
-                "The API returned an empty crew response."
-            );
     }
 
     private static async Task CreateMemberAsync(
