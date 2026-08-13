@@ -2,18 +2,19 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using PickleCrew.Api.EndpointFilters;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 using Xunit;
 
-namespace PickleCrew.IntegrationTests.EndpointFilters;
+namespace PickleCrew.UnitTests.EndpointFilters;
 
-public sealed class WorkOsUserContextEndpointFilterTests
+public sealed class UserContextEndpointFilterTests
 {
     [Fact]
     public async Task InvokeAsync_WhenSubjectClaimIsMissing_ShouldReturnUnauthorized()
     {
-        var workOsUserContext = new WorkOsUserContext();
-        var filter = new WorkOsUserContextEndpointFilter(workOsUserContext);
+        var userContext = new UserContext();
+        var filter = new UserContextEndpointFilter(userContext);
         var invocationContext = new TestEndpointFilterInvocationContext(
             new DefaultHttpContext()
         );
@@ -36,8 +37,8 @@ public sealed class WorkOsUserContextEndpointFilterTests
                 new ClaimsIdentity([new Claim(WorkOsClaimTypes.Subject, userId)], "Test")
             ),
         };
-        var workOsUserContext = new WorkOsUserContext();
-        var filter = new WorkOsUserContextEndpointFilter(workOsUserContext);
+        var userContext = new UserContext();
+        var filter = new UserContextEndpointFilter(userContext);
         var invocationContext = new TestEndpointFilterInvocationContext(httpContext);
         var handlerResult = new object();
 
@@ -47,13 +48,13 @@ public sealed class WorkOsUserContextEndpointFilterTests
         );
 
         Assert.Same(handlerResult, result);
-        Assert.Equal(userId, workOsUserContext.UserId);
-        Assert.Null(workOsUserContext.OrganizationId);
-        Assert.Null(workOsUserContext.Role);
+        Assert.Equal(userId, userContext.UserId);
+        Assert.Null(userContext.OrganizationId);
+        Assert.Null(userContext.Role);
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenWorkOsClaimsExist_ShouldSetWorkOsUserContext()
+    public async Task InvokeAsync_WhenOptionalClaimsExist_ShouldSetUserContext()
     {
         const string organizationId = "org_123";
         const string role = "admin";
@@ -71,8 +72,8 @@ public sealed class WorkOsUserContextEndpointFilterTests
                 )
             ),
         };
-        var workOsUserContext = new WorkOsUserContext();
-        var filter = new WorkOsUserContextEndpointFilter(workOsUserContext);
+        var userContext = new UserContext();
+        var filter = new UserContextEndpointFilter(userContext);
         var invocationContext = new TestEndpointFilterInvocationContext(httpContext);
 
         await filter.InvokeAsync(
@@ -80,9 +81,9 @@ public sealed class WorkOsUserContextEndpointFilterTests
             _ => ValueTask.FromResult<object?>(null)
         );
 
-        Assert.Equal(userId, workOsUserContext.UserId);
-        Assert.Equal(organizationId, workOsUserContext.OrganizationId);
-        Assert.Equal(role, workOsUserContext.Role);
+        Assert.Equal(userId, userContext.UserId);
+        Assert.Equal(organizationId, userContext.OrganizationId);
+        Assert.Equal(role, userContext.Role);
     }
 
     private sealed class TestEndpointFilterInvocationContext(HttpContext httpContext)

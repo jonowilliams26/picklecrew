@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
-import { createOnboardingCrew } from '~/lib/api/generated/sdk.gen'
+import { createCrew as createCrewRequest } from '~/lib/api/generated/sdk.gen'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
 
 export const createCrew = createServerFn({ method: 'POST' })
@@ -10,7 +10,7 @@ export const createCrew = createServerFn({ method: 'POST' })
     const client = createApiClient({
       accessToken: context.auth.accessToken,
     })
-    const result = await createOnboardingCrew({
+    const result = await createCrewRequest({
       client,
       body: { name: data.name },
     })

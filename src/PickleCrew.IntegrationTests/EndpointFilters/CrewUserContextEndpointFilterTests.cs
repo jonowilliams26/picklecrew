@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using PickleCrew.Api.Data;
@@ -9,58 +10,27 @@ using Xunit;
 namespace PickleCrew.IntegrationTests.EndpointFilters;
 
 [Collection(nameof(AppHostCollection))]
-public sealed class UserContextEndpointFilterTests(AppHostFixture fixture)
+public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
 {
-    [Fact]
-    public async Task InvokeAsync_WhenOrganizationClaimIsMissing_ShouldReturnUnauthorized()
+    [Theory]
+    [InlineData(null, "org_123", "admin")]
+    [InlineData("user_123", null, "admin")]
+    [InlineData("user_123", "org_123", null)]
+    public async Task InvokeAsync_WhenRequiredClaimIsMissing_ShouldReturnUnauthorized(
+        string? userId,
+        string? organizationId,
+        string? role)
     {
         await using var dbContext = fixture.CreateDbContext();
-        var workOsUserContext = new WorkOsUserContext
-        {
-            UserId = "user_123",
-            Role = "admin",
-        };
         var userContext = new UserContext();
-        var filter = new UserContextEndpointFilter(
-            workOsUserContext,
+        var crewUserContext = new CrewUserContext();
+        var filter = new CrewUserContextEndpointFilter(
             userContext,
+            crewUserContext,
             dbContext
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
-            new DefaultHttpContext()
-        );
-        var handlerCalled = false;
-
-        var result = await filter.InvokeAsync(
-            invocationContext,
-            _ =>
-            {
-                handlerCalled = true;
-                return ValueTask.FromResult<object?>(null);
-            }
-        );
-
-        Assert.IsType<UnauthorizedHttpResult>(result);
-        Assert.False(handlerCalled);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenRoleClaimIsMissing_ShouldReturnUnauthorized()
-    {
-        await using var dbContext = fixture.CreateDbContext();
-        var workOsUserContext = new WorkOsUserContext
-        {
-            UserId = "user_123",
-            OrganizationId = "org_123",
-        };
-        var userContext = new UserContext();
-        var filter = new UserContextEndpointFilter(
-            workOsUserContext,
-            userContext,
-            dbContext
-        );
-        var invocationContext = new TestEndpointFilterInvocationContext(
-            new DefaultHttpContext()
+            CreateHttpContext(userId, organizationId, role)
         );
         var handlerCalled = false;
 
@@ -81,20 +51,15 @@ public sealed class UserContextEndpointFilterTests(AppHostFixture fixture)
     public async Task InvokeAsync_WhenOrganizationIsNotMapped_ShouldReturnForbidden()
     {
         await using var dbContext = fixture.CreateDbContext();
-        var workOsUserContext = new WorkOsUserContext
-        {
-            UserId = "user_123",
-            OrganizationId = $"org_{Guid.NewGuid():N}",
-            Role = "admin",
-        };
         var userContext = new UserContext();
-        var filter = new UserContextEndpointFilter(
-            workOsUserContext,
+        var crewUserContext = new CrewUserContext();
+        var filter = new CrewUserContextEndpointFilter(
             userContext,
+            crewUserContext,
             dbContext
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
-            new DefaultHttpContext()
+            CreateHttpContext("user_123", $"org_{Guid.NewGuid():N}", "admin")
         );
         var handlerCalled = false;
 
@@ -137,20 +102,15 @@ public sealed class UserContextEndpointFilterTests(AppHostFixture fixture)
         dbContext.Crews.Add(crew);
         await dbContext.SaveChangesAsync();
 
-        var workOsUserContext = new WorkOsUserContext
-        {
-            UserId = userId,
-            OrganizationId = crew.WorkOsOrganizationId,
-            Role = role,
-        };
         var userContext = new UserContext();
-        var filter = new UserContextEndpointFilter(
-            workOsUserContext,
+        var crewUserContext = new CrewUserContext();
+        var filter = new CrewUserContextEndpointFilter(
             userContext,
+            crewUserContext,
             dbContext
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
-            new DefaultHttpContext()
+            CreateHttpContext(userId, crew.WorkOsOrganizationId, role)
         );
         var handlerResult = new object();
 
@@ -159,15 +119,44 @@ public sealed class UserContextEndpointFilterTests(AppHostFixture fixture)
             _ =>
             {
                 Assert.Equal(userId, userContext.UserId);
-                Assert.Equal(crew.Id, userContext.CrewId);
-                Assert.Equal(crew.Uuid, userContext.CrewUuid);
+                Assert.Equal(crew.WorkOsOrganizationId, userContext.OrganizationId);
                 Assert.Equal(role, userContext.Role);
+
+                Assert.Equal(userId, crewUserContext.UserId);
+                Assert.Equal(crew.WorkOsOrganizationId, crewUserContext.OrganizationId);
+                Assert.Equal(role, crewUserContext.Role);
+                Assert.Equal(crew.Id, crewUserContext.CrewId);
+                Assert.Equal(crew.Uuid, crewUserContext.CrewUuid);
 
                 return ValueTask.FromResult<object?>(handlerResult);
             }
         );
 
         Assert.Same(handlerResult, result);
+    }
+
+    private static DefaultHttpContext CreateHttpContext(
+        string? userId,
+        string? organizationId,
+        string? role)
+    {
+        var claims = new List<Claim>();
+        AddClaim(claims, WorkOsClaimTypes.Subject, userId);
+        AddClaim(claims, WorkOsClaimTypes.OrganizationId, organizationId);
+        AddClaim(claims, WorkOsClaimTypes.Role, role);
+
+        return new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test")),
+        };
+    }
+
+    private static void AddClaim(List<Claim> claims, string type, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            claims.Add(new Claim(type, value));
+        }
     }
 
     private sealed class TestEndpointFilterInvocationContext(HttpContext httpContext)

@@ -29,7 +29,7 @@ import {
 } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
-import { createCrew } from '~/lib/onboarding/onboarding.functions'
+import { createCrew } from '~/lib/crews/crews.functions'
 
 export const Route = createFileRoute('/_authenticated/onboarding')({
   component: OnboardingPage,

@@ -1,7 +1,7 @@
-using PickleCrew.Api.Onboarding;
+using PickleCrew.Api.Crews;
 using Xunit;
 
-namespace PickleCrew.IntegrationTests.Onboarding;
+namespace PickleCrew.UnitTests.Crews;
 
 public sealed class CreateCrewValidationTests
 {

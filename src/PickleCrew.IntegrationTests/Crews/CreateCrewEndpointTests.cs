@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Onboarding;
+using PickleCrew.Api.Crews;
 using PickleCrew.Api.Testing;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
-namespace PickleCrew.IntegrationTests.Onboarding;
+namespace PickleCrew.IntegrationTests.Crews;
 
 [Collection(nameof(AppHostCollection))]
 public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
@@ -19,7 +19,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
     public async Task CreateCrew_WhenUserHeaderIsMissingOrBlank_ShouldReturnUnauthorized(
         string? userId)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/onboarding/crew")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/crews")
         {
             Content = JsonContent.Create(new CreateCrewHttpRequest
             {
@@ -47,7 +47,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
         using var apiClient = fixture.CreateApiClient(identity);
 
         using var response = await apiClient.PostAsJsonAsync(
-            "/onboarding/crew",
+            "/crews",
             new CreateCrewHttpRequest { Name = "  Kitchen Legends  " }
         );
 
@@ -74,6 +74,42 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
         Assert.Equal(createdCrew.OrganizationId, storedAttempt.WorkOsOrganizationId);
         Assert.False(string.IsNullOrWhiteSpace(storedAttempt.WorkOsMembershipId));
         Assert.NotNull(storedAttempt.CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task CreateCrew_WhenWorkOsOperationFails_ShouldResumeOnRetry()
+    {
+        var identity = TestIdentity.CreateSubjectOnly();
+        var scenarioId = Guid.NewGuid().ToString("N");
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        using var failingApiClient = fixture.CreateApiClient(identity, scenarioId);
+        using var retryingApiClient = fixture.CreateApiClient(identity);
+
+        await fakeWorkOs.FailOperationAsync(
+            scenarioId,
+            FakeWorkOsOperation.CreateOrganization
+        );
+
+        using var failedResponse = await failingApiClient.PostAsJsonAsync(
+            "/crews",
+            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+        );
+        using var retriedResponse = await retryingApiClient.PostAsJsonAsync(
+            "/crews",
+            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+        );
+
+        Assert.Equal(HttpStatusCode.InternalServerError, failedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, retriedResponse.StatusCode);
+
+        await using var dbContext = fixture.CreateDbContext();
+        var attempt = await dbContext.CrewProvisioningAttempts
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.WorkOsUserId == identity.UserId);
+
+        Assert.NotNull(attempt.WorkOsOrganizationId);
+        Assert.NotNull(attempt.WorkOsMembershipId);
+        Assert.NotNull(attempt.CompletedAtUtc);
     }
 
     [Fact]
@@ -140,7 +176,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
     {
         using var client = fixture.CreateApiClient(identity);
         using var response = await client.PostAsJsonAsync(
-            "/onboarding/crew",
+            "/crews",
             new CreateCrewHttpRequest
             {
                 Name = $"Crew {identity.UserId}",

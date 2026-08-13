@@ -36,9 +36,10 @@ internal static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddUserContext(this IServiceCollection services)
+    public static IServiceCollection AddUserContexts(this IServiceCollection services)
     {
         services.AddScoped<UserContext>();
+        services.AddScoped<CrewUserContext>();
 
         return services;
     }
@@ -48,7 +49,6 @@ internal static class DependencyInjection
         var isTesting = builder.Environment.IsTesting();
 
         builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
-        builder.Services.AddScoped<WorkOsUserContext>();
 
         if (isTesting)
         {
@@ -58,8 +58,9 @@ internal static class DependencyInjection
                     TestAuthenticationDefaults.AuthenticationScheme,
                     _ => { }
                 );
+            builder.Services.AddHttpContextAccessor();
             builder.Services
-                .AddHttpClient<IWorkOsProvisioningService, TestWorkOsService>(
+                .AddHttpClient<IWorkOsService, TestWorkOsService>(
                     client => client.BaseAddress = new Uri("https+http://fake-workos")
                 );
 
@@ -130,7 +131,7 @@ internal static class DependencyInjection
                 ClientId = options.ClientId,
             });
         });
-        builder.Services.AddSingleton<IWorkOsProvisioningService, WorkOsProvisioningService>();
+        builder.Services.AddSingleton<IWorkOsService, WorkOsService>();
 
         return builder;
     }

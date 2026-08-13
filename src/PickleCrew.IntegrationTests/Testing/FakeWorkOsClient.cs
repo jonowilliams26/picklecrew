@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using PickleCrew.Api.Testing;
 
 namespace PickleCrew.IntegrationTests.Testing;
 
@@ -82,20 +83,17 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         );
     }
 
-    public async Task CreateOutcomeAsync(
+    public async Task FailOperationAsync(
+        string scenarioId,
         FakeWorkOsOperation operation,
-        string scope,
-        HttpStatusCode statusCode = HttpStatusCode.ServiceUnavailable,
         CancellationToken cancellationToken = default)
     {
         using var response = await client.PostAsJsonAsync(
-            "/outcomes",
-            new CreateOutcomeHttpRequest
+            "/faults",
+            new FailOperationHttpRequest
             {
+                ScenarioId = scenarioId,
                 Operation = operation.ToString(),
-                Scope = scope,
-                StatusCode = (int)statusCode,
-                Detail = $"Configured {operation} failure for '{scope}'.",
             },
             cancellationToken
         );
@@ -106,8 +104,9 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         string externalId,
         CancellationToken cancellationToken = default)
     {
-        using var response = await GetOrganizationByExternalIdAsync(
-            externalId,
+        var encodedExternalId = Uri.EscapeDataString(externalId);
+        using var response = await client.GetAsync(
+            $"/organizations/by-external-id/{encodedExternalId}",
             cancellationToken
         );
 
@@ -116,14 +115,16 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
     public Task<HttpResponseMessage> GetOrganizationByExternalIdAsync(
         string externalId,
+        string scenarioId,
         CancellationToken cancellationToken = default)
     {
         var encodedExternalId = Uri.EscapeDataString(externalId);
-
-        return client.GetAsync(
-            $"/organizations/by-external-id/{encodedExternalId}",
-            cancellationToken
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/organizations/by-external-id/{encodedExternalId}"
         );
+
+        return SendAsync(request, scenarioId, cancellationToken);
     }
 
     public async Task<string?> FindActiveMembershipAsync(
@@ -131,9 +132,10 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         string organizationId,
         CancellationToken cancellationToken = default)
     {
-        using var response = await GetActiveMembershipAsync(
-            userId,
-            organizationId,
+        var encodedUserId = Uri.EscapeDataString(userId);
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/active-memberships/{encodedUserId}",
             cancellationToken
         );
 
@@ -143,50 +145,69 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     public Task<HttpResponseMessage> GetActiveMembershipAsync(
         string userId,
         string organizationId,
+        string scenarioId,
         CancellationToken cancellationToken = default)
     {
         var encodedUserId = Uri.EscapeDataString(userId);
         var encodedOrganizationId = Uri.EscapeDataString(organizationId);
-
-        return client.GetAsync(
-            $"/organizations/{encodedOrganizationId}/active-memberships/{encodedUserId}",
-            cancellationToken
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/organizations/{encodedOrganizationId}/active-memberships/{encodedUserId}"
         );
+
+        return SendAsync(request, scenarioId, cancellationToken);
     }
 
     public Task<HttpResponseMessage> SendCreateOrganizationAsync(
         string name,
         string externalId,
+        string scenarioId,
         CancellationToken cancellationToken = default)
     {
-        return client.PostAsJsonAsync(
-            "/organizations",
-            new CreateOrganizationHttpRequest
+        var request = new HttpRequestMessage(HttpMethod.Post, "/organizations")
+        {
+            Content = JsonContent.Create(new CreateOrganizationHttpRequest
             {
                 Name = name,
                 ExternalId = externalId,
-            },
-            cancellationToken
-        );
+            }),
+        };
+
+        return SendAsync(request, scenarioId, cancellationToken);
     }
 
     public Task<HttpResponseMessage> SendCreateMembershipAsync(
         string userId,
         string organizationId,
         FakeMembershipRole role,
+        string scenarioId,
         CancellationToken cancellationToken = default)
     {
-        return client.PostAsJsonAsync(
-            "/memberships",
-            new CreateMembershipHttpRequest
+        var request = new HttpRequestMessage(HttpMethod.Post, "/memberships")
+        {
+            Content = JsonContent.Create(new CreateMembershipHttpRequest
             {
                 UserId = userId,
                 OrganizationId = organizationId,
                 Role = role.ToString(),
                 Status = FakeMembershipStatus.Active.ToString(),
-            },
-            cancellationToken
-        );
+            }),
+        };
+
+        return SendAsync(request, scenarioId, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        string scenarioId,
+        CancellationToken cancellationToken)
+    {
+        using (request)
+        {
+            request.Headers.Add(TestScenarioDefaults.ScenarioIdHeaderName, scenarioId);
+
+            return await client.SendAsync(request, cancellationToken);
+        }
     }
 
     private async Task<string> PostAndReadIdAsync<TRequest>(
@@ -274,15 +295,11 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         public required string Status { get; init; }
     }
 
-    private sealed record CreateOutcomeHttpRequest
+    private sealed record FailOperationHttpRequest
     {
+        public required string ScenarioId { get; init; }
+
         public required string Operation { get; init; }
-
-        public required string Scope { get; init; }
-
-        public required int StatusCode { get; init; }
-
-        public required string Detail { get; init; }
     }
 
     private sealed record IdentifierHttpResponse

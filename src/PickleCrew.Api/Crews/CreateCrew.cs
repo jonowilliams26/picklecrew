@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 
-namespace PickleCrew.Api.Onboarding;
+namespace PickleCrew.Api.Crews;
 
 public sealed record CreateCrewHttpRequest
 {
@@ -25,11 +26,10 @@ internal sealed class CreateCrewEndpoint : IEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapPost("/crew", HandleAsync)
-            .WithName("CreateOnboardingCrew")
-            .WithSummary("Creates the signed-in user's first crew.")
-            .WithRequestValidation<CreateCrewHttpRequest>(Validate)
-            .WithWorkOsUserContext();
+        app.MapPost(string.Empty, HandleAsync)
+            .WithName("CreateCrew")
+            .WithSummary("Creates a crew for the signed-in user.")
+            .WithRequestValidation<CreateCrewHttpRequest>(Validate);
     }
 
     internal static Dictionary<string, string[]> Validate(CreateCrewHttpRequest request)
@@ -59,14 +59,14 @@ internal sealed class CreateCrewEndpoint : IEndpoint
 
     internal static async Task<Created<CreateCrewHttpResponse>> HandleAsync(
         CreateCrewHttpRequest request,
-        WorkOsUserContext workOsUserContext,
+        UserContext userContext,
         PickleCrewDbContext dbContext,
-        IWorkOsProvisioningService workOs,
+        IWorkOsService workOs,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var normalizedName = request.Name.Trim();
-        var workOsUserId = workOsUserContext.UserId;
+        var workOsUserId = userContext.UserId;
         var attempt = await dbContext.CrewProvisioningAttempts
             .SingleOrDefaultAsync(
                 candidate => candidate.WorkOsUserId == workOsUserId,

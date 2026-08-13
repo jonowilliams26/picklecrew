@@ -6,7 +6,7 @@ internal sealed class FakeWorkOsState
 {
     private readonly ConcurrentDictionary<string, FakeUser> users = new();
     private readonly ConcurrentDictionary<string, FakeOrganization> organizations = new();
-    private readonly ConcurrentDictionary<FakeOperationOutcomeKey, FakeOperationOutcome> outcomes = new();
+    private readonly ConcurrentDictionary<FakeOperationFaultKey, byte> faults = new();
 
     public FakeUser CreateUser(string id)
     {
@@ -74,29 +74,27 @@ internal sealed class FakeWorkOsState
         );
     }
 
-    public FakeOperationOutcome CreateOutcome(
-        FakeWorkOsOperation operation,
-        string scope,
-        int statusCode,
-        string detail)
+    public void FailOperation(string scenarioId, FakeWorkOsOperation operation)
     {
-        return outcomes.GetOrAdd(
-            new FakeOperationOutcomeKey(operation, scope),
-            _ => new FakeOperationOutcome
+        faults.TryAdd(
+            new FakeOperationFaultKey
             {
-                StatusCode = statusCode,
-                Detail = detail,
-            }
+                ScenarioId = scenarioId,
+                Operation = operation,
+            },
+            0
         );
     }
 
-    public FakeOperationOutcome? FindOutcome(
-        FakeWorkOsOperation operation,
-        string scope)
+    public bool ShouldFailOperation(string scenarioId, FakeWorkOsOperation operation)
     {
-        outcomes.TryGetValue(new FakeOperationOutcomeKey(operation, scope), out var outcome);
-
-        return outcome;
+        return faults.ContainsKey(
+            new FakeOperationFaultKey
+            {
+                ScenarioId = scenarioId,
+                Operation = operation,
+            }
+        );
     }
 
     public FakeOrganizationWithUser CreateOrganizationWithUser(
@@ -125,15 +123,11 @@ internal sealed class FakeWorkOsState
     }
 }
 
-internal readonly record struct FakeOperationOutcomeKey(
-    FakeWorkOsOperation Operation,
-    string Scope);
-
-internal sealed record FakeOperationOutcome
+internal sealed record FakeOperationFaultKey
 {
-    public required int StatusCode { get; init; }
+    public required string ScenarioId { get; init; }
 
-    public required string Detail { get; init; }
+    public required FakeWorkOsOperation Operation { get; init; }
 }
 
 internal sealed record FakeUser

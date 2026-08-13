@@ -2,9 +2,6 @@ namespace PickleCrew.Api.Services;
 
 internal sealed class UserContext
 {
-    private long? crewId;
-    private Guid? crewUuid;
-    private string? role;
     private string? userId;
 
     public string UserId
@@ -15,27 +12,7 @@ internal sealed class UserContext
         set => userId = value;
     }
 
-    public long CrewId
-    {
-        get => crewId ?? throw new InvalidOperationException(
-            "The user context has not been initialized."
-        );
-        set => crewId = value;
-    }
+    public string? OrganizationId { get; set; }
 
-    public Guid CrewUuid
-    {
-        get => crewUuid ?? throw new InvalidOperationException(
-            "The user context has not been initialized."
-        );
-        set => crewUuid = value;
-    }
-
-    public string Role
-    {
-        get => role ?? throw new InvalidOperationException(
-            "The user context has not been initialized."
-        );
-        set => role = value;
-    }
+    public string? Role { get; set; }
 }

@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data.Database;
+using System.Security.Claims;
+using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 
@@ -7,57 +7,42 @@ namespace PickleCrew.Api.EndpointFilters;
 
 internal static class UserContextEndpointFilterExtensions
 {
+    public static RouteHandlerBuilder WithUserContext(this RouteHandlerBuilder builder)
+    {
+        return builder
+            .RequireAuthorization(AuthorizationPolicies.User)
+            .AddEndpointFilter<UserContextEndpointFilter>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+    }
+
     public static RouteGroupBuilder WithUserContext(this RouteGroupBuilder builder)
     {
         return builder
-            .WithWorkOsUserContext()
+            .RequireAuthorization(AuthorizationPolicies.User)
             .AddEndpointFilter<UserContextEndpointFilter>()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
     }
 }
 
-internal sealed class UserContextEndpointFilter(
-    WorkOsUserContext workOsUserContext,
-    UserContext userContext,
-    PickleCrewDbContext dbContext)
-    : IEndpointFilter
+internal sealed class UserContextEndpointFilter(UserContext userContext) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
     {
-        var organizationId = workOsUserContext.OrganizationId;
-        if (string.IsNullOrWhiteSpace(organizationId))
+        var userId = context.HttpContext.User.FindFirstValue(WorkOsClaimTypes.Subject);
+        if (string.IsNullOrWhiteSpace(userId))
         {
             return TypedResults.Unauthorized();
         }
 
-        var role = workOsUserContext.Role;
-        if (string.IsNullOrWhiteSpace(role))
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        var crew = await dbContext.Crews
-            .IgnoreQueryFilters()
-            .Where(candidate => candidate.WorkOsOrganizationId == organizationId)
-            .Select(candidate => new
-            {
-                candidate.Id,
-                candidate.Uuid,
-            })
-            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
-
-        if (crew is null)
-        {
-            return TypedResults.Forbid();
-        }
-
-        userContext.UserId = workOsUserContext.UserId;
-        userContext.CrewId = crew.Id;
-        userContext.CrewUuid = crew.Uuid;
-        userContext.Role = role;
+        userContext.UserId = userId;
+        userContext.OrganizationId = context.HttpContext.User.FindFirstValue(
+            WorkOsClaimTypes.OrganizationId
+        );
+        userContext.Role = context.HttpContext.User.FindFirstValue(WorkOsClaimTypes.Role);
 
         return await next(context);
     }

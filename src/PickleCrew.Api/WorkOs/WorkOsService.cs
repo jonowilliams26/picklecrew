@@ -2,7 +2,7 @@ using WorkOS;
 
 namespace PickleCrew.Api.WorkOs;
 
-internal interface IWorkOsProvisioningService
+internal interface IWorkOsService
 {
     Task<string?> FindOrganizationByExternalIdAsync(
         string externalId,
@@ -24,8 +24,8 @@ internal interface IWorkOsProvisioningService
         CancellationToken cancellationToken);
 }
 
-internal sealed class WorkOsProvisioningService(WorkOSClient client)
-    : IWorkOsProvisioningService
+internal sealed class WorkOsService(WorkOSClient client)
+    : IWorkOsService
 {
     public async Task<string?> FindOrganizationByExternalIdAsync(
         string externalId,

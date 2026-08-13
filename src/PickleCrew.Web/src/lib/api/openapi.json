@@ -5,13 +5,13 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/onboarding/crew": {
+    "/crews": {
       "post": {
         "tags": [
           "CreateCrewEndpoint"
         ],
-        "summary": "Creates the signed-in user's first crew.",
-        "operationId": "CreateOnboardingCrew",
+        "summary": "Creates a crew for the signed-in user.",
+        "operationId": "CreateCrew",
         "requestBody": {
           "content": {
             "application/json": {
@@ -25,6 +25,26 @@
         "responses": {
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -49,16 +69,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

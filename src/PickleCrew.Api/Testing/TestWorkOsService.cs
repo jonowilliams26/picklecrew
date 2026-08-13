@@ -4,9 +4,34 @@ using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Testing;
 
-internal sealed class TestWorkOsService(HttpClient client)
-    : IWorkOsProvisioningService
+internal static class TestScenarioDefaults
 {
+    public const string ScenarioIdHeaderName = "X-Test-Scenario-Id";
+}
+
+internal sealed class TestWorkOsService : IWorkOsService
+{
+    private readonly HttpClient client;
+
+    public TestWorkOsService(
+        HttpClient client,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        this.client = client;
+
+        var scenarioId = httpContextAccessor.HttpContext?
+            .Request.Headers[TestScenarioDefaults.ScenarioIdHeaderName]
+            .ToString();
+
+        if (!string.IsNullOrWhiteSpace(scenarioId))
+        {
+            client.DefaultRequestHeaders.Add(
+                TestScenarioDefaults.ScenarioIdHeaderName,
+                scenarioId
+            );
+        }
+    }
+
     public Task<string?> FindOrganizationByExternalIdAsync(
         string externalId,
         CancellationToken cancellationToken)
