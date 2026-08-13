@@ -1,3 +1,4 @@
+using PickleCrew.Api.Authorization;
 using WorkOS;
 
 namespace PickleCrew.Api.WorkOs;
@@ -21,6 +22,12 @@ internal interface IWorkOsService
     Task<string> CreateAdminMembershipAsync(
         string userId,
         string organizationId,
+        CancellationToken cancellationToken);
+
+    Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
         CancellationToken cancellationToken);
 }
 
@@ -90,11 +97,33 @@ internal sealed class WorkOsService(WorkOSClient client)
                 OrganizationId = organizationId,
                 Role = new OrganizationMembershipRoleSingle
                 {
-                    RoleSlug = "admin",
+                    RoleSlug = WorkOsRoles.Admin,
                 },
             },
             cancellationToken: cancellationToken);
 
         return membership.Id;
+    }
+
+    public async Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
+        CancellationToken cancellationToken)
+    {
+        await client.UserManagement.SendInvitationAsync(
+            new UserManagementSendInvitationOptions
+            {
+                Email = emailAddress,
+                OrganizationId = organizationId,
+                RoleSlug = WorkOsRoles.Member,
+                InviterUserId = inviterUserId,
+            },
+            new RequestOptions
+            {
+                MaxRetries = 0,
+            },
+            cancellationToken
+        );
     }
 }

@@ -14,6 +14,14 @@ export type CreateCrewHttpResponse = {
     organizationId: string;
 };
 
+export type CrewInvitationOutcomeStatus = 'Sent' | 'AlreadyActiveMember' | 'AlreadyPending' | 'Failed';
+
+export type CrewInvitationRecipientHttpResponse = {
+    emailAddress: string;
+    status: CrewInvitationOutcomeStatus;
+    message?: null | string;
+};
+
 export type HttpValidationProblemDetails = {
     type?: null | string;
     title?: null | string;
@@ -39,6 +47,14 @@ export type ProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type SendCrewInvitationsHttpRequest = {
+    emailAddresses: Array<string>;
+};
+
+export type SendCrewInvitationsHttpResponse = {
+    outcomes: Array<CrewInvitationRecipientHttpResponse>;
 };
 
 export type CreateCrewData = {
@@ -77,3 +93,40 @@ export type CreateCrewResponses = {
 };
 
 export type CreateCrewResponse = CreateCrewResponses[keyof CreateCrewResponses];
+
+export type SendCrewInvitationsData = {
+    body: SendCrewInvitationsHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews/invitations';
+};
+
+export type SendCrewInvitationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type SendCrewInvitationsError = SendCrewInvitationsErrors[keyof SendCrewInvitationsErrors];
+
+export type SendCrewInvitationsResponses = {
+    /**
+     * OK
+     */
+    200: SendCrewInvitationsHttpResponse;
+};
+
+export type SendCrewInvitationsResponse = SendCrewInvitationsResponses[keyof SendCrewInvitationsResponses];

@@ -45,8 +45,8 @@ A request sent through WorkOS for a person identified by email address to join a
 ### Business rules
 
 - **Crew invitation** is the canonical domain term; onboarding may describe the action as "invite friends."
-- During the optional onboarding invitation step, the crew creator may send invitations to between one and ten email addresses at a time.
-- Only the crew creator, acting as the crew administrator, may send onboarding invitations.
+- During the optional onboarding invitation step, a crew administrator may send invitations to between one and ten email addresses at a time.
+- Any crew administrator may send onboarding invitations.
 - A crew invitation grants the standard member role, not the administrator role, if accepted.
 - The same email address may appear only once in a submission.
 - An active crew member cannot be invited to that crew.

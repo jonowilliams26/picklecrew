@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using PickleCrew.Api.Authorization;
 using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Testing;
@@ -85,10 +86,30 @@ internal sealed class TestWorkOsService : IWorkOsService
             {
                 UserId = userId,
                 OrganizationId = organizationId,
-                Role = "admin",
+                Role = WorkOsRoles.Admin,
             },
             cancellationToken
         );
+    }
+
+    public async Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.PostAsJsonAsync(
+            "/invitations",
+            new CreateInvitationHttpRequest
+            {
+                OrganizationId = organizationId,
+                EmailAddress = emailAddress,
+                Role = WorkOsRoles.Member,
+                InviterUserId = inviterUserId,
+            },
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<string?> FindIdAsync(
@@ -145,6 +166,17 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string OrganizationId { get; init; }
 
         public required string Role { get; init; }
+    }
+
+    private sealed record CreateInvitationHttpRequest
+    {
+        public required string OrganizationId { get; init; }
+
+        public required string EmailAddress { get; init; }
+
+        public required string Role { get; init; }
+
+        public required string InviterUserId { get; init; }
     }
 
     private sealed record IdentifierHttpResponse
