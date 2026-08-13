@@ -45,13 +45,14 @@ A request sent through WorkOS for a person identified by email address to join a
 ### Business rules
 
 - **Crew invitation** is the canonical domain term; onboarding may describe the action as "invite friends."
-- During the optional onboarding invitation step, the crew creator may send invitations to between one and ten email addresses at a time.
-- Only the crew creator, acting as the crew administrator, may send onboarding invitations.
+- During the optional onboarding invitation step, a crew administrator sends one crew invitation at a time and may send additional invitations before continuing to the dashboard.
+- The invitation step does not limit how many crew invitations an administrator may send.
+- Any crew administrator may send onboarding invitations.
 - A crew invitation grants the standard member role, not the administrator role, if accepted.
-- The same email address may appear only once in a submission.
 - An active crew member cannot be invited to that crew.
 - A person who uses Picklecrew but is not an active member of the crew may be invited.
 - An existing pending invitation is not sent again.
+- A failed crew invitation may be retried without affecting invitations sent previously.
 - Invitation expiry, locale, and email delivery use WorkOS defaults.
 
 ### Relationships

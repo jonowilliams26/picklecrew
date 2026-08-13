@@ -1,6 +1,8 @@
+using System.Net.Http.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Crews;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Testing;
 using PickleCrew.IntegrationTests.Testing;
@@ -146,4 +148,51 @@ public sealed class AppHostFixture : IAsyncLifetime
             await application.DisposeAsync();
         }
     }
+}
+
+internal static class AppHostFixtureExtensions
+{
+    public static async Task<CreatedCrewContext> CreateCrewWithAdministratorAsync(
+        this AppHostFixture fixture,
+        string crewName = "Kitchen Legends")
+    {
+        var creator = TestIdentity.CreateSubjectOnly();
+        var crew = await fixture.CreateCrewAsync(creator, crewName);
+
+        return new CreatedCrewContext
+        {
+            Crew = crew,
+            Administrator = creator with
+            {
+                OrganizationId = crew.OrganizationId,
+                Role = "admin",
+            },
+        };
+    }
+
+    public static async Task<CreateCrewHttpResponse> CreateCrewAsync(
+        this AppHostFixture fixture,
+        TestIdentity creator,
+        string crewName = "Kitchen Legends")
+    {
+        using var apiClient = fixture.CreateApiClient(creator);
+        using var response = await apiClient.PostAsJsonAsync(
+            "/crews",
+            new CreateCrewHttpRequest { Name = crewName }
+        );
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<CreateCrewHttpResponse>()
+            ?? throw new InvalidOperationException(
+                "The API returned an empty crew response."
+            );
+    }
+}
+
+internal sealed record CreatedCrewContext
+{
+    public required CreateCrewHttpResponse Crew { get; init; }
+
+    public required TestIdentity Administrator { get; init; }
 }

@@ -8,6 +8,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 {
     public async Task<FakeWorkOsSetup> SetupAsync(
         string userId,
+        string userEmailAddress,
         string organizationName,
         string organizationExternalId,
         FakeMembershipRole role,
@@ -18,10 +19,12 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
             new SetupHttpRequest
             {
                 UserId = userId,
+                UserEmailAddress = userEmailAddress,
                 OrganizationName = organizationName,
                 OrganizationExternalId = organizationExternalId,
-                Role = role.ToString(),
+                Role = role,
             },
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
@@ -34,11 +37,16 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
     public Task<string> CreateUserAsync(
         string userId,
+        string emailAddress,
         CancellationToken cancellationToken = default)
     {
         return PostAndReadIdAsync(
             "/users",
-            new CreateUserHttpRequest { Id = userId },
+            new CreateUserHttpRequest
+            {
+                Id = userId,
+                EmailAddress = emailAddress,
+            },
             cancellationToken
         );
     }
@@ -76,8 +84,32 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
                 Id = membershipId,
                 UserId = userId,
                 OrganizationId = organizationId,
-                Role = role.ToString(),
-                Status = status.ToString(),
+                Role = role,
+                Status = status,
+            },
+            cancellationToken
+        );
+    }
+
+    public Task<FakeInvitation> CreateInvitationAsync(
+        string invitationId,
+        string organizationId,
+        string emailAddress,
+        FakeMembershipRole role,
+        string inviterUserId,
+        FakeInvitationState state = FakeInvitationState.Pending,
+        CancellationToken cancellationToken = default)
+    {
+        return PostAndReadAsync<CreateInvitationHttpRequest, FakeInvitation>(
+            "/invitations",
+            new CreateInvitationHttpRequest
+            {
+                Id = invitationId,
+                OrganizationId = organizationId,
+                EmailAddress = emailAddress,
+                Role = role,
+                InviterUserId = inviterUserId,
+                State = state,
             },
             cancellationToken
         );
@@ -88,16 +120,30 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         FakeWorkOsOperation operation,
         CancellationToken cancellationToken = default)
     {
-        using var response = await client.PostAsJsonAsync(
-            "/faults",
+        await ConfigureFaultAsync(
             new FailOperationHttpRequest
             {
                 ScenarioId = scenarioId,
-                Operation = operation.ToString(),
+                Operation = operation,
             },
             cancellationToken
         );
-        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task FailInvitationAsync(
+        string scenarioId,
+        string recipientEmailAddress,
+        CancellationToken cancellationToken = default)
+    {
+        await ConfigureFaultAsync(
+            new FailOperationHttpRequest
+            {
+                ScenarioId = scenarioId,
+                Operation = FakeWorkOsOperation.SendInvitation,
+                RecipientEmailAddress = recipientEmailAddress,
+            },
+            cancellationToken
+        );
     }
 
     public async Task<string?> FindOrganizationByExternalIdAsync(
@@ -158,6 +204,46 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         return SendAsync(request, scenarioId, cancellationToken);
     }
 
+    public async Task<string[]> ListActiveMemberEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/active-member-email-addresses",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<EmailAddressListHttpResponse>(
+            cancellationToken
+        );
+
+        return result?.EmailAddresses ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty email address list response."
+        );
+    }
+
+    public Task<FakeInvitation[]> ListPendingInvitationsAsync(
+        string organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        return ReadInvitationListAsync(
+            $"/organizations/{Uri.EscapeDataString(organizationId)}/pending-invitations",
+            cancellationToken
+        );
+    }
+
+    public Task<FakeInvitation[]> ListInvitationsAsync(
+        string organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        return ReadInvitationListAsync(
+            $"/organizations/{Uri.EscapeDataString(organizationId)}/invitations",
+            cancellationToken
+        );
+    }
+
     public Task<HttpResponseMessage> SendCreateOrganizationAsync(
         string name,
         string externalId,
@@ -185,16 +271,75 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/memberships")
         {
-            Content = JsonContent.Create(new CreateMembershipHttpRequest
-            {
-                UserId = userId,
-                OrganizationId = organizationId,
-                Role = role.ToString(),
-                Status = FakeMembershipStatus.Active.ToString(),
-            }),
+            Content = JsonContent.Create(
+                new CreateMembershipHttpRequest
+                {
+                    UserId = userId,
+                    OrganizationId = organizationId,
+                    Role = role,
+                    Status = FakeMembershipStatus.Active,
+                },
+                options: TestJsonSerializerOptions.Default
+            ),
         };
 
         return SendAsync(request, scenarioId, cancellationToken);
+    }
+
+    public Task<HttpResponseMessage> SendInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        FakeMembershipRole role,
+        string inviterUserId,
+        string scenarioId,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/invitations")
+        {
+            Content = JsonContent.Create(
+                new CreateInvitationHttpRequest
+                {
+                    OrganizationId = organizationId,
+                    EmailAddress = emailAddress,
+                    Role = role,
+                    InviterUserId = inviterUserId,
+                    State = FakeInvitationState.Pending,
+                },
+                options: TestJsonSerializerOptions.Default
+            ),
+        };
+
+        return SendAsync(request, scenarioId, cancellationToken);
+    }
+
+    private async Task ConfigureFaultAsync(
+        FailOperationHttpRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.PostAsJsonAsync(
+            "/faults",
+            request,
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task<FakeInvitation[]> ReadInvitationListAsync(
+        string requestUri,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.GetAsync(requestUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<InvitationListHttpResponse>(
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        );
+
+        return result?.Invitations ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty invitation list response."
+        );
     }
 
     private async Task<HttpResponseMessage> SendAsync(
@@ -215,14 +360,35 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         TRequest request,
         CancellationToken cancellationToken)
     {
-        using var response = await client.PostAsJsonAsync(
+        var response = await PostAndReadAsync<TRequest, IdentifierHttpResponse>(
             requestUri,
             request,
             cancellationToken
         );
+
+        return response.Id;
+    }
+
+    private async Task<TResponse> PostAndReadAsync<TRequest, TResponse>(
+        string requestUri,
+        TRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.PostAsJsonAsync(
+            requestUri,
+            request,
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        );
         response.EnsureSuccessStatusCode();
 
-        return await ReadIdAsync(response, cancellationToken);
+        return await response.Content.ReadFromJsonAsync<TResponse>(
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        )
+            ?? throw new InvalidOperationException(
+                "The fake WorkOS service returned an empty response."
+            );
     }
 
     private static async Task<string?> ReadOptionalIdAsync(
@@ -261,16 +427,20 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     {
         public required string UserId { get; init; }
 
+        public required string UserEmailAddress { get; init; }
+
         public required string OrganizationName { get; init; }
 
         public required string OrganizationExternalId { get; init; }
 
-        public required string Role { get; init; }
+        public required FakeMembershipRole Role { get; init; }
     }
 
     private sealed record CreateUserHttpRequest
     {
         public required string Id { get; init; }
+
+        public required string EmailAddress { get; init; }
     }
 
     private sealed record CreateOrganizationHttpRequest
@@ -290,21 +460,48 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
         public required string OrganizationId { get; init; }
 
-        public required string Role { get; init; }
+        public required FakeMembershipRole Role { get; init; }
 
-        public required string Status { get; init; }
+        public required FakeMembershipStatus Status { get; init; }
+    }
+
+    private sealed record CreateInvitationHttpRequest
+    {
+        public string? Id { get; init; }
+
+        public required string OrganizationId { get; init; }
+
+        public required string EmailAddress { get; init; }
+
+        public required FakeMembershipRole Role { get; init; }
+
+        public required string InviterUserId { get; init; }
+
+        public required FakeInvitationState State { get; init; }
     }
 
     private sealed record FailOperationHttpRequest
     {
         public required string ScenarioId { get; init; }
 
-        public required string Operation { get; init; }
+        public required FakeWorkOsOperation Operation { get; init; }
+
+        public string? RecipientEmailAddress { get; init; }
     }
 
     private sealed record IdentifierHttpResponse
     {
         public required string Id { get; init; }
+    }
+
+    private sealed record EmailAddressListHttpResponse
+    {
+        public required string[] EmailAddresses { get; init; }
+    }
+
+    private sealed record InvitationListHttpResponse
+    {
+        public required FakeInvitation[] Invitations { get; init; }
     }
 }
 
@@ -315,6 +512,21 @@ internal sealed record FakeWorkOsSetup
     public required string OrganizationId { get; init; }
 
     public required string MembershipId { get; init; }
+}
+
+internal sealed record FakeInvitation
+{
+    public required string Id { get; init; }
+
+    public required string OrganizationId { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public required FakeInvitationState State { get; init; }
+
+    public required FakeMembershipRole Role { get; init; }
+
+    public required string InviterUserId { get; init; }
 }
 
 internal enum FakeMembershipRole
@@ -329,10 +541,21 @@ internal enum FakeMembershipStatus
     Inactive,
 }
 
+internal enum FakeInvitationState
+{
+    Pending,
+    Accepted,
+    Revoked,
+    Expired,
+}
+
 public enum FakeWorkOsOperation
 {
     FindOrganizationByExternalId,
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
+    ListActiveMemberEmailAddresses,
+    ListPendingInvitations,
+    SendInvitation,
 }

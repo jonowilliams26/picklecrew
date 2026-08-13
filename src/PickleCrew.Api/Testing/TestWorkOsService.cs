@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using PickleCrew.Api.Authorization;
 using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Testing;
@@ -85,10 +86,73 @@ internal sealed class TestWorkOsService : IWorkOsService
             {
                 UserId = userId,
                 OrganizationId = organizationId,
-                Role = "admin",
+                Role = WorkOsRoles.Admin,
             },
             cancellationToken
         );
+    }
+
+    public async Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/active-member-email-addresses",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<EmailAddressListHttpResponse>(
+            cancellationToken
+        );
+
+        return result?.EmailAddresses ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty email address list response."
+        );
+    }
+
+    public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/pending-invitations",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<InvitationListHttpResponse>(
+            cancellationToken
+        );
+
+        return result?.Invitations
+            .Select(invitation => invitation.EmailAddress)
+            .ToArray()
+            ?? throw new InvalidOperationException(
+                "The fake WorkOS service returned an empty invitation list response."
+            );
+    }
+
+    public async Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.PostAsJsonAsync(
+            "/invitations",
+            new CreateInvitationHttpRequest
+            {
+                OrganizationId = organizationId,
+                EmailAddress = emailAddress,
+                Role = WorkOsRoles.Member,
+                InviterUserId = inviterUserId,
+            },
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<string?> FindIdAsync(
@@ -147,8 +211,34 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string Role { get; init; }
     }
 
+    private sealed record CreateInvitationHttpRequest
+    {
+        public required string OrganizationId { get; init; }
+
+        public required string EmailAddress { get; init; }
+
+        public required string Role { get; init; }
+
+        public required string InviterUserId { get; init; }
+    }
+
     private sealed record IdentifierHttpResponse
     {
         public required string Id { get; init; }
+    }
+
+    private sealed record EmailAddressListHttpResponse
+    {
+        public required string[] EmailAddresses { get; init; }
+    }
+
+    private sealed record InvitationListHttpResponse
+    {
+        public required InvitationHttpResponse[] Invitations { get; init; }
+    }
+
+    private sealed record InvitationHttpResponse
+    {
+        public required string EmailAddress { get; init; }
     }
 }

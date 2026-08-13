@@ -1,3 +1,4 @@
+using PickleCrew.Api.Authorization;
 using WorkOS;
 
 namespace PickleCrew.Api.WorkOs;
@@ -21,6 +22,20 @@ internal interface IWorkOsService
     Task<string> CreateAdminMembershipAsync(
         string userId,
         string organizationId,
+        CancellationToken cancellationToken);
+
+    Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken);
+
+    Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken);
+
+    Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
         CancellationToken cancellationToken);
 }
 
@@ -90,11 +105,79 @@ internal sealed class WorkOsService(WorkOSClient client)
                 OrganizationId = organizationId,
                 Role = new OrganizationMembershipRoleSingle
                 {
-                    RoleSlug = "admin",
+                    RoleSlug = WorkOsRoles.Admin,
                 },
             },
             cancellationToken: cancellationToken);
 
         return membership.Id;
+    }
+
+    public async Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var emailAddresses = new List<string>();
+        var memberships = client.OrganizationMembership.ListAutoPagingAsync(
+            new OrganizationMembershipListOptions
+            {
+                OrganizationId = organizationId,
+                Statuses = [OrganizationMembershipCreatedDataStatus.Active],
+            },
+            cancellationToken: cancellationToken
+        );
+
+        await foreach (var membership in memberships)
+        {
+            emailAddresses.Add(membership.User.Email);
+        }
+
+        return emailAddresses.ToArray();
+    }
+
+    public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var emailAddresses = new List<string>();
+        var invitations = client.UserManagement.ListInvitationsAutoPagingAsync(
+            new UserManagementListInvitationsOptions
+            {
+                OrganizationId = organizationId,
+            },
+            cancellationToken: cancellationToken
+        );
+
+        await foreach (var invitation in invitations)
+        {
+            if (invitation.State == InvitationAcceptedDataState.Pending)
+            {
+                emailAddresses.Add(invitation.Email);
+            }
+        }
+
+        return emailAddresses.ToArray();
+    }
+
+    public async Task SendCrewInvitationAsync(
+        string organizationId,
+        string emailAddress,
+        string inviterUserId,
+        CancellationToken cancellationToken)
+    {
+        await client.UserManagement.SendInvitationAsync(
+            new UserManagementSendInvitationOptions
+            {
+                Email = emailAddress,
+                OrganizationId = organizationId,
+                RoleSlug = WorkOsRoles.Member,
+                InviterUserId = inviterUserId,
+            },
+            new RequestOptions
+            {
+                MaxRetries = 0,
+            },
+            cancellationToken
+        );
     }
 }

@@ -11,17 +11,24 @@ internal static class Endpoints
         var endpoints = app.MapGroup(string.Empty)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-        endpoints.MapCrewsEndpoints();
-        endpoints.MapTestingEndpoints();
-
-        return endpoints;
+        return endpoints
+            .MapCrewsEndpoints()
+            .MapTestingEndpoints();
     }
 
     private static IEndpointRouteBuilder MapCrewsEndpoints(this IEndpointRouteBuilder app)
     {
-        return app.MapGroup("/crews")
+        var crews = app.MapGroup("/crews");
+
+        crews.MapGroup(string.Empty)
             .WithUserContext()
             .MapEndpoint<CreateCrewEndpoint>();
+
+        crews.MapGroup(string.Empty)
+            .WithCrewUserContext()
+            .MapEndpoint<SendCrewInvitationEndpoint>();
+
+        return app;
     }
 
     public static IEndpointRouteBuilder MapEndpoint<TEndpoint>(this IEndpointRouteBuilder app)

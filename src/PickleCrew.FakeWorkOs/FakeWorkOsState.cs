@@ -8,9 +8,16 @@ internal sealed class FakeWorkOsState
     private readonly ConcurrentDictionary<string, FakeOrganization> organizations = new();
     private readonly ConcurrentDictionary<FakeOperationFaultKey, byte> faults = new();
 
-    public FakeUser CreateUser(string id)
+    public FakeUser CreateUser(string id, string? emailAddress = null)
     {
-        return users.GetOrAdd(id, userId => new FakeUser { Id = userId });
+        return users.GetOrAdd(
+            id,
+            userId => new FakeUser
+            {
+                Id = userId,
+                EmailAddress = emailAddress ?? $"{userId}@picklecrew.test",
+            }
+        );
     }
 
     public FakeOrganization? FindOrganization(string externalId)
@@ -49,6 +56,18 @@ internal sealed class FakeWorkOsState
         return membership?.Status == MembershipStatus.Active ? membership : null;
     }
 
+    public string[] ListActiveMemberEmailAddresses(string organizationId)
+    {
+        var organization = GetOrganizationById(organizationId);
+
+        return organization.Memberships.Values
+            .Where(membership => membership.Status == MembershipStatus.Active)
+            .Select(membership => users[membership.UserId].EmailAddress)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     public FakeMembership CreateMembership(
         string userId,
         string organizationId,
@@ -57,10 +76,7 @@ internal sealed class FakeWorkOsState
         string? id = null)
     {
         var user = CreateUser(userId);
-        var organization = FindOrganizationById(organizationId)
-            ?? throw new InvalidOperationException(
-                $"Organization '{organizationId}' does not exist."
-            );
+        var organization = GetOrganizationById(organizationId);
 
         return organization.Memberships.GetOrAdd(
             user.Id,
@@ -74,36 +90,94 @@ internal sealed class FakeWorkOsState
         );
     }
 
-    public void FailOperation(string scenarioId, FakeWorkOsOperation operation)
+    public FakeInvitation CreateInvitation(
+        string organizationId,
+        string emailAddress,
+        MembershipRole role,
+        string inviterUserId,
+        InvitationState state = InvitationState.Pending,
+        string? id = null)
+    {
+        var organization = GetOrganizationById(organizationId);
+        var invitation = new FakeInvitation
+        {
+            Id = id ?? $"invitation_{Guid.NewGuid():N}",
+            OrganizationId = organization.Id,
+            EmailAddress = emailAddress.Trim(),
+            State = state,
+            Role = role,
+            InviterUserId = inviterUserId,
+        };
+
+        if (!organization.Invitations.TryAdd(invitation.Id, invitation))
+        {
+            throw new InvalidOperationException(
+                $"Invitation '{invitation.Id}' already exists."
+            );
+        }
+
+        return invitation;
+    }
+
+    public FakeInvitation[] ListInvitations(string organizationId)
+    {
+        var organization = GetOrganizationById(organizationId);
+
+        return organization.Invitations.Values
+            .OrderBy(invitation => invitation.Id, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    public FakeInvitation[] ListPendingInvitations(string organizationId)
+    {
+        return ListInvitations(organizationId)
+            .Where(invitation => invitation.State == InvitationState.Pending)
+            .ToArray();
+    }
+
+    public void FailOperation(
+        string scenarioId,
+        FakeWorkOsOperation operation,
+        string? recipientEmailAddress = null)
     {
         faults.TryAdd(
             new FakeOperationFaultKey
             {
                 ScenarioId = scenarioId,
                 Operation = operation,
+                RecipientEmailAddress = NormalizeEmailAddress(recipientEmailAddress),
             },
             0
         );
     }
 
-    public bool ShouldFailOperation(string scenarioId, FakeWorkOsOperation operation)
+    public bool ShouldFailOperation(
+        string scenarioId,
+        FakeWorkOsOperation operation,
+        string? recipientEmailAddress = null)
     {
-        return faults.ContainsKey(
-            new FakeOperationFaultKey
-            {
-                ScenarioId = scenarioId,
-                Operation = operation,
-            }
-        );
+        var operationFault = new FakeOperationFaultKey
+        {
+            ScenarioId = scenarioId,
+            Operation = operation,
+        };
+        var recipientFault = operationFault with
+        {
+            RecipientEmailAddress = NormalizeEmailAddress(recipientEmailAddress),
+        };
+
+        return faults.ContainsKey(operationFault)
+            || faults.ContainsKey(recipientFault);
     }
 
     public FakeOrganizationWithUser CreateOrganizationWithUser(
         string userId,
+        string userEmailAddress,
         string organizationName,
         string organizationExternalId,
         MembershipRole role)
     {
-        var user = CreateUser(userId);
+        var user = CreateUser(userId, userEmailAddress);
         var organization = CreateOrganization(organizationName, organizationExternalId);
         var membership = CreateMembership(user.Id, organization.Id, role);
 
@@ -115,11 +189,26 @@ internal sealed class FakeWorkOsState
         };
     }
 
+    private FakeOrganization GetOrganizationById(string organizationId)
+    {
+        return FindOrganizationById(organizationId)
+            ?? throw new InvalidOperationException(
+                $"Organization '{organizationId}' does not exist."
+            );
+    }
+
     private FakeOrganization? FindOrganizationById(string organizationId)
     {
         return organizations.Values.FirstOrDefault(
             candidate => candidate.Id == organizationId
         );
+    }
+
+    private static string? NormalizeEmailAddress(string? emailAddress)
+    {
+        return string.IsNullOrWhiteSpace(emailAddress)
+            ? null
+            : emailAddress.Trim().ToUpperInvariant();
     }
 }
 
@@ -128,11 +217,15 @@ internal sealed record FakeOperationFaultKey
     public required string ScenarioId { get; init; }
 
     public required FakeWorkOsOperation Operation { get; init; }
+
+    public string? RecipientEmailAddress { get; init; }
 }
 
 internal sealed record FakeUser
 {
     public required string Id { get; init; }
+
+    public required string EmailAddress { get; init; }
 }
 
 internal sealed record FakeOrganization
@@ -144,6 +237,8 @@ internal sealed record FakeOrganization
     public required string ExternalId { get; init; }
 
     public ConcurrentDictionary<string, FakeMembership> Memberships { get; } = new();
+
+    public ConcurrentDictionary<string, FakeInvitation> Invitations { get; } = new();
 }
 
 internal sealed record FakeMembership
@@ -155,6 +250,21 @@ internal sealed record FakeMembership
     public required MembershipRole Role { get; init; }
 
     public required MembershipStatus Status { get; init; }
+}
+
+internal sealed record FakeInvitation
+{
+    public required string Id { get; init; }
+
+    public required string OrganizationId { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public required InvitationState State { get; init; }
+
+    public required MembershipRole Role { get; init; }
+
+    public required string InviterUserId { get; init; }
 }
 
 internal sealed record FakeOrganizationWithUser
