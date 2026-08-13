@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Extensions;
 using PickleCrew.Api.Services;
+using PickleCrew.Api.Testing;
 using PickleCrew.Api.WorkOs;
 using WorkOS;
 
@@ -42,6 +45,27 @@ internal static class DependencyInjection
 
     public static WebApplicationBuilder AddWorkOs(this WebApplicationBuilder builder)
     {
+        var isTesting = builder.Environment.IsTesting();
+
+        builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
+        builder.Services.AddScoped<WorkOsUserContext>();
+
+        if (isTesting)
+        {
+            builder.Services
+                .AddAuthentication(TestAuthenticationDefaults.AuthenticationScheme)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationDefaults.AuthenticationScheme,
+                    _ => { }
+                );
+            builder.Services
+                .AddHttpClient<IWorkOsProvisioningService, TestWorkOsService>(
+                    client => client.BaseAddress = new Uri("https+http://fake-workos")
+                );
+
+            return builder;
+        }
+
         var configuration = builder.Configuration.GetSection(WorkOsOptions.SectionName);
         var isGeneratingOpenApi = Environment.GetCommandLineArgs()[0]
             .EndsWith("GetDocument.Insider.dll", StringComparison.OrdinalIgnoreCase);
@@ -96,8 +120,6 @@ internal static class DependencyInjection
                     },
                 };
             });
-        builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
-        builder.Services.AddScoped<WorkOsUserContext>();
 
         builder.Services.AddSingleton(serviceProvider =>
         {
