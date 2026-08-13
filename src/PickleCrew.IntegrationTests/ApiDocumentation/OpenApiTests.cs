@@ -50,16 +50,11 @@ public sealed class OpenApiTests(AppHostFixture fixture)
         var schemas = document.RootElement
             .GetProperty("components")
             .GetProperty("schemas");
-        var idSchema = schemas
-            .GetProperty("CreatePersistenceProbeHttpResponse")
-            .GetProperty("properties")
-            .GetProperty("id");
         var statusSchema = schemas
             .GetProperty("ProblemDetails")
             .GetProperty("properties")
             .GetProperty("status");
 
-        AssertIntegerSchema(idSchema);
         AssertIntegerSchema(statusSchema);
     }
 

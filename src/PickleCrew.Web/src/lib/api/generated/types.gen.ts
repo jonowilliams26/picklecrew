@@ -14,16 +14,6 @@ export type CreateCrewHttpResponse = {
     organizationId: string;
 };
 
-export type CreatePersistenceProbeHttpRequest = {
-    value: string;
-};
-
-export type CreatePersistenceProbeHttpResponse = {
-    id: number;
-    value: string;
-    createdAtUtc: string;
-};
-
 export type HttpValidationProblemDetails = {
     type?: null | string;
     title?: null | string;
@@ -50,35 +40,6 @@ export type ProblemDetails = {
      */
     traceId: string;
 };
-
-export type CreatePersistenceProbeData = {
-    body: CreatePersistenceProbeHttpRequest;
-    path?: never;
-    query?: never;
-    url: '/persistence-probes';
-};
-
-export type CreatePersistenceProbeErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type CreatePersistenceProbeError = CreatePersistenceProbeErrors[keyof CreatePersistenceProbeErrors];
-
-export type CreatePersistenceProbeResponses = {
-    /**
-     * Created
-     */
-    201: CreatePersistenceProbeHttpResponse;
-};
-
-export type CreatePersistenceProbeResponse = CreatePersistenceProbeResponses[keyof CreatePersistenceProbeResponses];
 
 export type CreateOnboardingCrewData = {
     body: CreateCrewHttpRequest;
