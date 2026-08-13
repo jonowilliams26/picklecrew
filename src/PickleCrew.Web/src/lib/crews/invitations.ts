@@ -1,6 +1,6 @@
 import type {
   CreateCrewHttpResponse,
-  SendCrewInvitationsHttpResponse,
+  SendCrewInvitationHttpResponse,
 } from '~/lib/api/generated/types.gen'
 import { failure, success, type Result } from '../results.ts'
 
@@ -30,7 +30,7 @@ export type CrewInvitationSubmissionError =
   | CrewInvitationUnavailableError
 
 export type CrewInvitationSubmissionResult = Result<
-  SendCrewInvitationsHttpResponse,
+  SendCrewInvitationHttpResponse,
   CrewInvitationSubmissionError
 >
 
@@ -39,11 +39,6 @@ export type OnboardingState =
   | Readonly<{
       type: 'invite-friends'
       crew: CreateCrewHttpResponse
-    }>
-  | Readonly<{
-      type: 'invitation-confirmation'
-      crew: CreateCrewHttpResponse
-      result: SendCrewInvitationsHttpResponse
     }>
 
 export const initialOnboardingState: OnboardingState = {
@@ -68,6 +63,27 @@ export function validateCrewInvitationEmail(
   return success(normalizedEmailAddress)
 }
 
+export function getCrewInvitationOutcomeMessage(
+  outcome: SendCrewInvitationHttpResponse,
+): string {
+  switch (outcome.status) {
+    case 'sent':
+      return `${outcome.emailAddress} has been invited.`
+    case 'already-active-member':
+      return `${outcome.emailAddress} is already a crew member.`
+    case 'already-pending':
+      return `${outcome.emailAddress} already has a pending invitation.`
+    case 'failed':
+      return outcome.message ?? 'Could not send this invitation. Try again.'
+  }
+}
+
+export function isCrewInvitationOutcomeTerminal(
+  outcome: SendCrewInvitationHttpResponse,
+): boolean {
+  return outcome.status !== 'failed'
+}
+
 export function transitionToInvitationStep({
   state,
   crew,
@@ -80,24 +96,4 @@ export function transitionToInvitationStep({
   }
 
   return { type: 'invite-friends', crew }
-}
-
-export function transitionToInvitationConfirmation({
-  state,
-  result,
-}: {
-  state: OnboardingState
-  result: SendCrewInvitationsHttpResponse
-}): OnboardingState {
-  if (state.type !== 'invite-friends') {
-    throw new Error(
-      'Invitation submission can only complete from the invite friends step.',
-    )
-  }
-
-  return {
-    type: 'invitation-confirmation',
-    crew: state.crew,
-    result,
-  }
 }

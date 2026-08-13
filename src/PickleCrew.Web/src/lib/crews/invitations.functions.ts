@@ -1,22 +1,22 @@
 import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
-import { sendCrewInvitations as sendCrewInvitationsRequest } from '~/lib/api/generated/sdk.gen'
+import { sendCrewInvitation as sendCrewInvitationRequest } from '~/lib/api/generated/sdk.gen'
 import { getProblemDetailsMessage } from '~/lib/api/problem-details'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
 import type { CrewInvitationSubmissionResult } from '~/lib/crews/invitations'
 import { failure, success } from '~/lib/results'
 
-export const sendCrewInvitations = createServerFn({ method: 'POST' })
+export const sendCrewInvitation = createServerFn({ method: 'POST' })
   .middleware([authenticatedMiddleware])
-  .validator((data: { emailAddresses: Array<string> }) => data)
+  .validator((data: { emailAddress: string }) => data)
   .handler(async ({ context, data }): Promise<CrewInvitationSubmissionResult> => {
     try {
       const client = createApiClient({
         accessToken: context.auth.accessToken,
       })
-      const result = await sendCrewInvitationsRequest({
+      const result = await sendCrewInvitationRequest({
         client,
-        body: { emailAddresses: data.emailAddresses },
+        body: { emailAddress: data.emailAddress },
       })
 
       if (!result.error) {

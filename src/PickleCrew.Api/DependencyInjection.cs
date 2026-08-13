@@ -265,7 +265,9 @@ internal static class DependencyInjection
         {
             options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
-            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.SerializerOptions.Converters.Add(
+                new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower)
+            );
         });
 
         return services;

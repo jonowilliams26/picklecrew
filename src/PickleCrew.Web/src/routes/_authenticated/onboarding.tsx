@@ -11,7 +11,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { LogoMark, PickleBall } from '~/components/picklecrew-brand'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
@@ -34,13 +34,14 @@ import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
 import type {
   CreateCrewHttpResponse,
-  SendCrewInvitationsHttpResponse,
+  SendCrewInvitationHttpResponse,
 } from '~/lib/api/generated/types.gen'
 import { createCrew } from '~/lib/crews/crews.functions'
-import { sendCrewInvitations } from '~/lib/crews/invitations.functions'
+import { sendCrewInvitation } from '~/lib/crews/invitations.functions'
 import {
+  getCrewInvitationOutcomeMessage,
   initialOnboardingState,
-  transitionToInvitationConfirmation,
+  isCrewInvitationOutcomeTerminal,
   transitionToInvitationStep,
   validateCrewInvitationEmail,
   type OnboardingState,
@@ -87,16 +88,6 @@ function OnboardingPage() {
             {onboardingState.type === 'invite-friends' ? (
               <InviteFriendStep
                 crewName={onboardingState.crew.name}
-                onComplete={(result) => {
-                  setOnboardingState((state) =>
-                    transitionToInvitationConfirmation({ state, result }),
-                  )
-                }}
-              />
-            ) : null}
-            {onboardingState.type === 'invitation-confirmation' ? (
-              <InvitationConfirmationStep
-                state={onboardingState}
                 onContinue={() =>
                   router.invalidate({ sync: true, forcePending: true })
                 }
@@ -132,42 +123,21 @@ function OnboardingIntro({ state }: { state: OnboardingState }) {
     )
   }
 
-  if (state.type === 'invite-friends') {
-    return (
-      <div className="onboarding-intro relative mx-auto max-w-[780px]">
-        <OnboardingBadge>
-          <Check aria-hidden="true" />
-          Crew created
-        </OnboardingBadge>
-        <h1
-          className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:text-[clamp(3.7rem,18vw,5.5rem)]"
-          id="onboarding-heading"
-        >
-          Bring the{' '}
-          <span className="onboarding-heading-highlight">chaos.</span>
-        </h1>
-        <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft">
-          {state.crew.name} is official. Invite a friend and give the leaderboard someone to judge.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div className="onboarding-intro relative mx-auto max-w-[780px]">
       <OnboardingBadge>
-        <Send aria-hidden="true" />
-        Invitation sent
+        <Check aria-hidden="true" />
+        Crew created
       </OnboardingBadge>
       <h1
         className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:text-[clamp(3.7rem,18vw,5.5rem)]"
         id="onboarding-heading"
       >
-        Game{' '}
-        <span className="onboarding-heading-highlight">on.</span>
+        Bring the{' '}
+        <span className="onboarding-heading-highlight">chaos.</span>
       </h1>
       <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft">
-        Your first invite is on its way. Continue when you're ready.
+        {state.crew.name} is official. Invite friends one at a time, then head to your dashboard.
       </p>
     </div>
   )
@@ -184,12 +154,10 @@ function OnboardingBadge({ children }: { children: React.ReactNode }) {
 function OnboardingTag({ state }: { state: OnboardingState }) {
   return (
     <div className="onboarding-form-tag" aria-hidden="true">
-      {state.type === 'create-crew' ? <Users /> : null}
-      {state.type === 'invite-friends' ? <Mail /> : null}
-      {state.type === 'invitation-confirmation' ? <Check /> : null}
-      {state.type === 'create-crew' ? 'Crew assembly point' : null}
-      {state.type === 'invite-friends' ? 'Friend assembly point' : null}
-      {state.type === 'invitation-confirmation' ? 'Ready to rally' : null}
+      {state.type === 'create-crew' ? <Users /> : <Mail />}
+      {state.type === 'create-crew'
+        ? 'Crew assembly point'
+        : 'Friend assembly point'}
     </div>
   )
 }
@@ -343,30 +311,30 @@ function CreateCrewStep({
 
 function InviteFriendStep({
   crewName,
-  onComplete,
+  onContinue,
 }: {
   crewName: string
-  onComplete: (result: SendCrewInvitationsHttpResponse) => void
+  onContinue: () => Promise<void>
 }) {
-  const sendCrewInvitationsServerFn = useServerFn(sendCrewInvitations)
+  const sendCrewInvitationServerFn = useServerFn(sendCrewInvitation)
+  const emailInputRef = useRef<HTMLInputElement>(null)
+  const [emailAddress, setEmailAddress] = useState('')
   const [emailValidationError, setEmailValidationError] = useState<string>()
   const [submissionError, setSubmissionError] = useState<string>()
-  const form = useForm({
-    defaultValues: {
-      emailAddress: '',
-    },
-    onSubmit: async ({ value }) => {
-      setEmailValidationError(undefined)
-      setSubmissionError(undefined)
-      const validation = validateCrewInvitationEmail(value.emailAddress)
+  const [outcome, setOutcome] = useState<SendCrewInvitationHttpResponse>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [navigationError, setNavigationError] = useState<string>()
+  const isBusy = isSubmitting || isNavigating
 
-      if (!validation.ok) {
-        setEmailValidationError(validation.error.message)
-        return
-      }
+  const submitInvitation = async (normalizedEmailAddress: string) => {
+    setSubmissionError(undefined)
+    setOutcome(undefined)
+    setIsSubmitting(true)
 
-      const result = await sendCrewInvitationsServerFn({
-        data: { emailAddresses: [validation.value] },
+    try {
+      const result = await sendCrewInvitationServerFn({
+        data: { emailAddress: normalizedEmailAddress },
       })
 
       if (!result.ok) {
@@ -374,121 +342,22 @@ function InviteFriendStep({
         return
       }
 
-      onComplete(result.value)
-    },
-  })
+      setOutcome(result.value)
 
-  return (
-    <form
-      className="flex flex-col gap-6"
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault()
-        void form.handleSubmit()
-      }}
-    >
-      <form.Subscribe selector={(state) => state.isSubmitting}>
-        {(isSubmitting) => (
-          <>
-            <CardHeader className="gap-3 pt-2">
-              <span className="text-[9px] font-black tracking-[.14em] text-orange uppercase">
-                Step 2 of 2
-              </span>
-              <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em]">
-                Add a rival.
-              </CardTitle>
-              <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft">
-                Invite one friend to join {crewName}.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <FieldGroup>
-                <form.Field name="emailAddress">
-                  {(field) => {
-                    const isInvalid = emailValidationError !== undefined
-
-                    return (
-                      <Field
-                        data-invalid={isInvalid || undefined}
-                        data-disabled={isSubmitting || undefined}
-                      >
-                        <FieldLabel
-                          className="font-heading text-sm font-extrabold"
-                          htmlFor="friend-email"
-                        >
-                          Friend's email
-                        </FieldLabel>
-                        <Input
-                          id="friend-email"
-                          name={field.name}
-                          type="email"
-                          value={field.state.value}
-                          variant="crew"
-                          placeholder="friend@example.com"
-                          onBlur={field.handleBlur}
-                          onChange={(event) => {
-                            field.handleChange(event.target.value)
-                            setEmailValidationError(undefined)
-                          }}
-                          autoComplete="email"
-                          autoFocus
-                          aria-invalid={isInvalid || undefined}
-                          disabled={isSubmitting}
-                        />
-                        <FieldError>{emailValidationError}</FieldError>
-                      </Field>
-                    )
-                  }}
-                </form.Field>
-              </FieldGroup>
-
-              {submissionError ? (
-                <Alert variant="destructive">
-                  <CircleAlertIcon />
-                  <AlertTitle>Could not send invitation</AlertTitle>
-                  <AlertDescription>{submissionError}</AlertDescription>
-                </Alert>
-              ) : null}
-            </CardContent>
-
-            <CardFooter className="flex-col items-stretch gap-4">
-              <Button
-                className="w-full"
-                variant="crew"
-                size="xl"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Spinner data-icon="inline-start" /> : null}
-                {isSubmitting ? 'Sending invitation…' : 'Send invitation'}
-                {isSubmitting ? null : <Send data-icon="inline-end" />}
-              </Button>
-              <p className="m-0 text-center text-[8px] font-bold tracking-[.08em] text-ink-soft uppercase">
-                Friendly competition sold separately.
-              </p>
-            </CardFooter>
-          </>
-        )}
-      </form.Subscribe>
-    </form>
-  )
-}
-
-function InvitationConfirmationStep({
-  state,
-  onContinue,
-}: {
-  state: Extract<OnboardingState, { type: 'invitation-confirmation' }>
-  onContinue: () => Promise<void>
-}) {
-  const recipient = state.result.outcomes[0]?.emailAddress
-  const [isNavigating, setIsNavigating] = useState(false)
-  const [navigationError, setNavigationError] = useState<string>()
+      if (isCrewInvitationOutcomeTerminal(result.value)) {
+        setEmailAddress('')
+        emailInputRef.current?.focus()
+      }
+    } catch {
+      setSubmissionError('Invitations are unavailable right now. Try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const continueToDashboard = async () => {
-    setIsNavigating(true)
     setNavigationError(undefined)
+    setIsNavigating(true)
 
     try {
       await onContinue()
@@ -499,28 +368,79 @@ function InvitationConfirmationStep({
   }
 
   return (
-    <>
+    <form
+      className="flex flex-col gap-6"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        setEmailValidationError(undefined)
+        setSubmissionError(undefined)
+        const validation = validateCrewInvitationEmail(emailAddress)
+
+        if (!validation.ok) {
+          setEmailValidationError(validation.error.message)
+          return
+        }
+
+        void submitInvitation(validation.value)
+      }}
+    >
       <CardHeader className="gap-3 pt-2">
         <span className="text-[9px] font-black tracking-[.14em] text-orange uppercase">
-          All set
+          Step 2 of 2
         </span>
         <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em]">
-          Invite sent.
+          Add a rival.
         </CardTitle>
         <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft">
-          {recipient
-            ? `${recipient} has been invited to ${state.crew.name}.`
-            : `Your invitation to ${state.crew.name} was sent.`}
+          Invite friends to {crewName} one at a time. Continue whenever you're ready.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Alert aria-live="polite">
-          <Check />
-          <AlertTitle>Invitation sent</AlertTitle>
-          <AlertDescription>
-            Continue to your dashboard when you're ready.
-          </AlertDescription>
-        </Alert>
+
+      <CardContent className="flex flex-col gap-5">
+        <FieldGroup>
+          <Field
+            data-invalid={emailValidationError !== undefined || undefined}
+            data-disabled={isBusy || undefined}
+          >
+            <FieldLabel
+              className="font-heading text-sm font-extrabold"
+              htmlFor="friend-email"
+            >
+              Friend's email
+            </FieldLabel>
+            <Input
+              ref={emailInputRef}
+              id="friend-email"
+              name="emailAddress"
+              type="email"
+              value={emailAddress}
+              variant="crew"
+              placeholder="friend@example.com"
+              onChange={(event) => {
+                setEmailAddress(event.target.value)
+                setEmailValidationError(undefined)
+                setOutcome(undefined)
+              }}
+              autoComplete="email"
+              autoFocus
+              aria-invalid={emailValidationError !== undefined || undefined}
+              disabled={isBusy}
+            />
+            <FieldError>{emailValidationError}</FieldError>
+          </Field>
+        </FieldGroup>
+
+        {outcome ? <CrewInvitationOutcomeAlert outcome={outcome} /> : null}
+
+        {submissionError ? (
+          <Alert variant="destructive">
+            <CircleAlertIcon />
+            <AlertTitle>Could not send invitation</AlertTitle>
+            <AlertDescription>{submissionError}</AlertDescription>
+          </Alert>
+        ) : null}
+
         {navigationError ? (
           <Alert variant="destructive">
             <CircleAlertIcon />
@@ -529,20 +449,75 @@ function InvitationConfirmationStep({
           </Alert>
         ) : null}
       </CardContent>
-      <CardFooter>
-        <Button
-          className="w-full"
-          variant="crew"
-          size="xl"
-          type="button"
-          disabled={isNavigating}
-          onClick={() => void continueToDashboard()}
-        >
-          {isNavigating ? <Spinner data-icon="inline-start" /> : null}
-          {isNavigating ? 'Opening dashboard…' : 'Continue to dashboard'}
-          {isNavigating ? null : <ArrowRight data-icon="inline-end" />}
-        </Button>
+
+      <CardFooter className="flex-col items-stretch gap-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button
+            className="w-full"
+            variant="crew"
+            size="xl"
+            type="submit"
+            disabled={isBusy}
+          >
+            {isSubmitting ? <Spinner data-icon="inline-start" /> : null}
+            {isSubmitting ? 'Sending invite…' : 'Send invite'}
+            {isSubmitting ? null : <Send data-icon="inline-end" />}
+          </Button>
+          <Button
+            className="w-full"
+            variant="paper"
+            size="xl"
+            type="button"
+            disabled={isBusy}
+            onClick={() => void continueToDashboard()}
+          >
+            {isNavigating ? <Spinner data-icon="inline-start" /> : null}
+            {isNavigating ? 'Opening dashboard…' : 'Continue to dashboard'}
+            {isNavigating ? null : <ArrowRight data-icon="inline-end" />}
+          </Button>
+        </div>
+        <p className="m-0 text-center text-[8px] font-bold tracking-[.08em] text-ink-soft uppercase">
+          Friendly competition sold separately.
+        </p>
       </CardFooter>
-    </>
+    </form>
   )
+}
+
+function CrewInvitationOutcomeAlert({
+  outcome,
+}: {
+  outcome: SendCrewInvitationHttpResponse
+}) {
+  const title = getCrewInvitationOutcomeTitle(outcome)
+  const isFailure = outcome.status === 'failed'
+
+  return (
+    <Alert
+      variant={isFailure ? 'destructive' : 'default'}
+      role="status"
+      aria-live="polite"
+    >
+      {isFailure ? <CircleAlertIcon /> : <Check />}
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        {getCrewInvitationOutcomeMessage(outcome)}
+      </AlertDescription>
+    </Alert>
+  )
+}
+
+function getCrewInvitationOutcomeTitle(
+  outcome: SendCrewInvitationHttpResponse,
+): string {
+  switch (outcome.status) {
+    case 'sent':
+      return 'Invitation sent'
+    case 'already-active-member':
+      return 'Already in the crew'
+    case 'already-pending':
+      return 'Invitation already pending'
+    case 'failed':
+      return 'Could not send invitation'
+  }
 }

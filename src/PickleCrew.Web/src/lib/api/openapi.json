@@ -79,15 +79,15 @@
     "/crews/invitations": {
       "post": {
         "tags": [
-          "SendCrewInvitationsEndpoint"
+          "SendCrewInvitationEndpoint"
         ],
-        "summary": "Sends crew invitations during onboarding.",
-        "operationId": "SendCrewInvitations",
+        "summary": "Sends a crew invitation during onboarding.",
+        "operationId": "SendCrewInvitation",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendCrewInvitationsHttpRequest"
+                "$ref": "#/components/schemas/SendCrewInvitationHttpRequest"
               }
             }
           },
@@ -129,7 +129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SendCrewInvitationsHttpResponse"
+                  "$ref": "#/components/schemas/SendCrewInvitationHttpResponse"
                 }
               }
             }
@@ -183,32 +183,11 @@
       },
       "CrewInvitationOutcomeStatus": {
         "enum": [
-          "Sent",
-          "AlreadyActiveMember",
-          "AlreadyPending",
-          "Failed"
+          "sent",
+          "already-active-member",
+          "already-pending",
+          "failed"
         ]
-      },
-      "CrewInvitationRecipientHttpResponse": {
-        "required": [
-          "emailAddress",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "emailAddress": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/CrewInvitationOutcomeStatus"
-          },
-          "message": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
       },
       "HttpValidationProblemDetails": {
         "required": [
@@ -305,31 +284,35 @@
           }
         }
       },
-      "SendCrewInvitationsHttpRequest": {
+      "SendCrewInvitationHttpRequest": {
         "required": [
-          "emailAddresses"
+          "emailAddress"
         ],
         "type": "object",
         "properties": {
-          "emailAddresses": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "emailAddress": {
+            "type": "string"
           }
         }
       },
-      "SendCrewInvitationsHttpResponse": {
+      "SendCrewInvitationHttpResponse": {
         "required": [
-          "outcomes"
+          "emailAddress",
+          "status"
         ],
         "type": "object",
         "properties": {
-          "outcomes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CrewInvitationRecipientHttpResponse"
-            }
+          "emailAddress": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CrewInvitationOutcomeStatus"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       }
@@ -340,7 +323,7 @@
       "name": "CreateCrewEndpoint"
     },
     {
-      "name": "SendCrewInvitationsEndpoint"
+      "name": "SendCrewInvitationEndpoint"
     }
   ]
 }

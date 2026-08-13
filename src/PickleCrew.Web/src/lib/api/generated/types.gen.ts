@@ -14,13 +14,7 @@ export type CreateCrewHttpResponse = {
     organizationId: string;
 };
 
-export type CrewInvitationOutcomeStatus = 'Sent' | 'AlreadyActiveMember' | 'AlreadyPending' | 'Failed';
-
-export type CrewInvitationRecipientHttpResponse = {
-    emailAddress: string;
-    status: CrewInvitationOutcomeStatus;
-    message?: null | string;
-};
+export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
 
 export type HttpValidationProblemDetails = {
     type?: null | string;
@@ -49,12 +43,14 @@ export type ProblemDetails = {
     traceId: string;
 };
 
-export type SendCrewInvitationsHttpRequest = {
-    emailAddresses: Array<string>;
+export type SendCrewInvitationHttpRequest = {
+    emailAddress: string;
 };
 
-export type SendCrewInvitationsHttpResponse = {
-    outcomes: Array<CrewInvitationRecipientHttpResponse>;
+export type SendCrewInvitationHttpResponse = {
+    emailAddress: string;
+    status: CrewInvitationOutcomeStatus;
+    message?: null | string;
 };
 
 export type CreateCrewData = {
@@ -94,14 +90,14 @@ export type CreateCrewResponses = {
 
 export type CreateCrewResponse = CreateCrewResponses[keyof CreateCrewResponses];
 
-export type SendCrewInvitationsData = {
-    body: SendCrewInvitationsHttpRequest;
+export type SendCrewInvitationData = {
+    body: SendCrewInvitationHttpRequest;
     path?: never;
     query?: never;
     url: '/crews/invitations';
 };
 
-export type SendCrewInvitationsErrors = {
+export type SendCrewInvitationErrors = {
     /**
      * Bad Request
      */
@@ -120,13 +116,13 @@ export type SendCrewInvitationsErrors = {
     500: ProblemDetails;
 };
 
-export type SendCrewInvitationsError = SendCrewInvitationsErrors[keyof SendCrewInvitationsErrors];
+export type SendCrewInvitationError = SendCrewInvitationErrors[keyof SendCrewInvitationErrors];
 
-export type SendCrewInvitationsResponses = {
+export type SendCrewInvitationResponses = {
     /**
      * OK
      */
-    200: SendCrewInvitationsHttpResponse;
+    200: SendCrewInvitationHttpResponse;
 };
 
-export type SendCrewInvitationsResponse = SendCrewInvitationsResponses[keyof SendCrewInvitationsResponses];
+export type SendCrewInvitationResponse = SendCrewInvitationResponses[keyof SendCrewInvitationResponses];

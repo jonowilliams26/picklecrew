@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace PickleCrew.FakeWorkOs;
@@ -425,21 +424,18 @@ public sealed record InvitationHttpResponse
     public required string InviterUserId { get; init; }
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<MembershipRole>))]
 public enum MembershipRole
 {
     Admin,
     Member,
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<MembershipStatus>))]
 public enum MembershipStatus
 {
     Active,
     Inactive,
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<InvitationState>))]
 public enum InvitationState
 {
     Pending,
@@ -448,7 +444,6 @@ public enum InvitationState
     Expired,
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<FakeWorkOsOperation>))]
 public enum FakeWorkOsOperation
 {
     FindOrganizationByExternalId,

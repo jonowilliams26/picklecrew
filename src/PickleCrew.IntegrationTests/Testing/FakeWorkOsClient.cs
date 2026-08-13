@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 using PickleCrew.Api.Testing;
 
 namespace PickleCrew.IntegrationTests.Testing;
@@ -23,8 +22,9 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
                 UserEmailAddress = userEmailAddress,
                 OrganizationName = organizationName,
                 OrganizationExternalId = organizationExternalId,
-                Role = role.ToString(),
+                Role = role,
             },
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
@@ -84,8 +84,8 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
                 Id = membershipId,
                 UserId = userId,
                 OrganizationId = organizationId,
-                Role = role.ToString(),
-                Status = status.ToString(),
+                Role = role,
+                Status = status,
             },
             cancellationToken
         );
@@ -107,9 +107,9 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
                 Id = invitationId,
                 OrganizationId = organizationId,
                 EmailAddress = emailAddress,
-                Role = role.ToString(),
+                Role = role,
                 InviterUserId = inviterUserId,
-                State = state.ToString(),
+                State = state,
             },
             cancellationToken
         );
@@ -124,7 +124,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
             new FailOperationHttpRequest
             {
                 ScenarioId = scenarioId,
-                Operation = operation.ToString(),
+                Operation = operation,
             },
             cancellationToken
         );
@@ -139,7 +139,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
             new FailOperationHttpRequest
             {
                 ScenarioId = scenarioId,
-                Operation = FakeWorkOsOperation.SendInvitation.ToString(),
+                Operation = FakeWorkOsOperation.SendInvitation,
                 RecipientEmailAddress = recipientEmailAddress,
             },
             cancellationToken
@@ -271,13 +271,16 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/memberships")
         {
-            Content = JsonContent.Create(new CreateMembershipHttpRequest
-            {
-                UserId = userId,
-                OrganizationId = organizationId,
-                Role = role.ToString(),
-                Status = FakeMembershipStatus.Active.ToString(),
-            }),
+            Content = JsonContent.Create(
+                new CreateMembershipHttpRequest
+                {
+                    UserId = userId,
+                    OrganizationId = organizationId,
+                    Role = role,
+                    Status = FakeMembershipStatus.Active,
+                },
+                options: TestJsonSerializerOptions.Default
+            ),
         };
 
         return SendAsync(request, scenarioId, cancellationToken);
@@ -293,14 +296,17 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/invitations")
         {
-            Content = JsonContent.Create(new CreateInvitationHttpRequest
-            {
-                OrganizationId = organizationId,
-                EmailAddress = emailAddress,
-                Role = role.ToString(),
-                InviterUserId = inviterUserId,
-                State = FakeInvitationState.Pending.ToString(),
-            }),
+            Content = JsonContent.Create(
+                new CreateInvitationHttpRequest
+                {
+                    OrganizationId = organizationId,
+                    EmailAddress = emailAddress,
+                    Role = role,
+                    InviterUserId = inviterUserId,
+                    State = FakeInvitationState.Pending,
+                },
+                options: TestJsonSerializerOptions.Default
+            ),
         };
 
         return SendAsync(request, scenarioId, cancellationToken);
@@ -313,6 +319,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         using var response = await client.PostAsJsonAsync(
             "/faults",
             request,
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
@@ -326,6 +333,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<InvitationListHttpResponse>(
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
 
@@ -369,11 +377,15 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         using var response = await client.PostAsJsonAsync(
             requestUri,
             request,
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken)
+        return await response.Content.ReadFromJsonAsync<TResponse>(
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        )
             ?? throw new InvalidOperationException(
                 "The fake WorkOS service returned an empty response."
             );
@@ -421,7 +433,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
         public required string OrganizationExternalId { get; init; }
 
-        public required string Role { get; init; }
+        public required FakeMembershipRole Role { get; init; }
     }
 
     private sealed record CreateUserHttpRequest
@@ -448,9 +460,9 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
         public required string OrganizationId { get; init; }
 
-        public required string Role { get; init; }
+        public required FakeMembershipRole Role { get; init; }
 
-        public required string Status { get; init; }
+        public required FakeMembershipStatus Status { get; init; }
     }
 
     private sealed record CreateInvitationHttpRequest
@@ -461,18 +473,18 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
         public required string EmailAddress { get; init; }
 
-        public required string Role { get; init; }
+        public required FakeMembershipRole Role { get; init; }
 
         public required string InviterUserId { get; init; }
 
-        public required string State { get; init; }
+        public required FakeInvitationState State { get; init; }
     }
 
     private sealed record FailOperationHttpRequest
     {
         public required string ScenarioId { get; init; }
 
-        public required string Operation { get; init; }
+        public required FakeWorkOsOperation Operation { get; init; }
 
         public string? RecipientEmailAddress { get; init; }
     }
@@ -517,7 +529,6 @@ internal sealed record FakeInvitation
     public required string InviterUserId { get; init; }
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<FakeMembershipRole>))]
 internal enum FakeMembershipRole
 {
     Admin,
@@ -530,7 +541,6 @@ internal enum FakeMembershipStatus
     Inactive,
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter<FakeInvitationState>))]
 internal enum FakeInvitationState
 {
     Pending,

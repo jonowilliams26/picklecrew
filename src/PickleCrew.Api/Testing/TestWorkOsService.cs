@@ -92,6 +92,49 @@ internal sealed class TestWorkOsService : IWorkOsService
         );
     }
 
+    public async Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/active-member-email-addresses",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<EmailAddressListHttpResponse>(
+            cancellationToken
+        );
+
+        return result?.EmailAddresses ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty email address list response."
+        );
+    }
+
+    public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.GetAsync(
+            $"/organizations/{encodedOrganizationId}/pending-invitations",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<InvitationListHttpResponse>(
+            cancellationToken
+        );
+
+        return result?.Invitations
+            .Select(invitation => invitation.EmailAddress)
+            .ToArray()
+            ?? throw new InvalidOperationException(
+                "The fake WorkOS service returned an empty invitation list response."
+            );
+    }
+
     public async Task SendCrewInvitationAsync(
         string organizationId,
         string emailAddress,
@@ -182,5 +225,20 @@ internal sealed class TestWorkOsService : IWorkOsService
     private sealed record IdentifierHttpResponse
     {
         public required string Id { get; init; }
+    }
+
+    private sealed record EmailAddressListHttpResponse
+    {
+        public required string[] EmailAddresses { get; init; }
+    }
+
+    private sealed record InvitationListHttpResponse
+    {
+        public required InvitationHttpResponse[] Invitations { get; init; }
+    }
+
+    private sealed record InvitationHttpResponse
+    {
+        public required string EmailAddress { get; init; }
     }
 }

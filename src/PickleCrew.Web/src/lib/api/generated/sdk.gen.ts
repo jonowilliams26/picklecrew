@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, SendCrewInvitationsData, SendCrewInvitationsErrors, SendCrewInvitationsResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -31,9 +31,9 @@ export const createCrew = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Sends crew invitations during onboarding.
+ * Sends a crew invitation during onboarding.
  */
-export const sendCrewInvitations = <ThrowOnError extends boolean = false>(options: Options<SendCrewInvitationsData, ThrowOnError>): RequestResult<SendCrewInvitationsResponses, SendCrewInvitationsErrors, ThrowOnError> => (options.client ?? client).post<SendCrewInvitationsResponses, SendCrewInvitationsErrors, ThrowOnError>({
+export const sendCrewInvitation = <ThrowOnError extends boolean = false>(options: Options<SendCrewInvitationData, ThrowOnError>): RequestResult<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError> => (options.client ?? client).post<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError>({
     url: '/crews/invitations',
     ...options,
     headers: {

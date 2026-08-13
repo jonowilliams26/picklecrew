@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import type {
   CreateCrewHttpResponse,
-  SendCrewInvitationsHttpResponse,
+  SendCrewInvitationHttpResponse,
 } from '~/lib/api/generated/types.gen.ts'
 import {
+  getCrewInvitationOutcomeMessage,
   initialOnboardingState,
-  transitionToInvitationConfirmation,
+  isCrewInvitationOutcomeTerminal,
   transitionToInvitationStep,
   validateCrewInvitationEmail,
 } from './invitations.ts'
@@ -17,30 +18,73 @@ const crew: CreateCrewHttpResponse = {
   organizationId: 'org_123',
 }
 
-const invitationResult: SendCrewInvitationsHttpResponse = {
-  outcomes: [
-    {
-      emailAddress: 'friend@example.com',
-      status: 'Sent',
-    },
-  ],
-}
-
-test('validates and normalizes one invitation email address', () => {
+test('validates and normalizes an invitation email address', () => {
   assert.deepEqual(validateCrewInvitationEmail(' friend@example.com '), {
     ok: true,
     value: 'friend@example.com',
   })
 })
 
-test('rejects an invalid invitation email address', () => {
-  assert.deepEqual(validateCrewInvitationEmail('not-an-email'), {
-    ok: false,
-    error: {
-      type: 'invalid-crew-invitation-email',
-      message: 'Enter a valid email address.',
+test('rejects blank and malformed invitation email addresses', () => {
+  assert.equal(validateCrewInvitationEmail(' ').ok, false)
+  assert.equal(validateCrewInvitationEmail('not-an-email').ok, false)
+})
+
+test('describes each invitation outcome for its recipient', () => {
+  const outcomes: SendCrewInvitationHttpResponse[] = [
+    { emailAddress: 'sent@example.com', status: 'sent' },
+    {
+      emailAddress: 'member@example.com',
+      status: 'already-active-member',
     },
-  })
+    {
+      emailAddress: 'pending@example.com',
+      status: 'already-pending',
+    },
+    {
+      emailAddress: 'failed@example.com',
+      status: 'failed',
+      message: 'Try again.',
+    },
+  ]
+
+  assert.deepEqual(outcomes.map(getCrewInvitationOutcomeMessage), [
+    'sent@example.com has been invited.',
+    'member@example.com is already a crew member.',
+    'pending@example.com already has a pending invitation.',
+    'Try again.',
+  ])
+})
+
+test('treats sent, active member, and pending outcomes as terminal', () => {
+  assert.equal(
+    isCrewInvitationOutcomeTerminal({
+      emailAddress: 'sent@example.com',
+      status: 'sent',
+    }),
+    true,
+  )
+  assert.equal(
+    isCrewInvitationOutcomeTerminal({
+      emailAddress: 'member@example.com',
+      status: 'already-active-member',
+    }),
+    true,
+  )
+  assert.equal(
+    isCrewInvitationOutcomeTerminal({
+      emailAddress: 'pending@example.com',
+      status: 'already-pending',
+    }),
+    true,
+  )
+  assert.equal(
+    isCrewInvitationOutcomeTerminal({
+      emailAddress: 'failed@example.com',
+      status: 'failed',
+    }),
+    false,
+  )
 })
 
 test('transitions from crew creation to the invitation step', () => {
@@ -52,25 +96,6 @@ test('transitions from crew creation to the invitation step', () => {
     {
       type: 'invite-friends',
       crew,
-    },
-  )
-})
-
-test('transitions from invitations to confirmation while preserving the crew', () => {
-  const invitationStep = transitionToInvitationStep({
-    state: initialOnboardingState,
-    crew,
-  })
-
-  assert.deepEqual(
-    transitionToInvitationConfirmation({
-      state: invitationStep,
-      result: invitationResult,
-    }),
-    {
-      type: 'invitation-confirmation',
-      crew,
-      result: invitationResult,
     },
   )
 })
