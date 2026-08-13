@@ -26,5 +26,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="PickleCrew.IntegrationTests" />
+    <InternalsVisibleTo Include="PickleCrew.UnitTests" />
   </ItemGroup>
 </Project>

@@ -39,6 +39,23 @@ jobs:
       - name: Build
         run: dotnet build PickleCrew.slnx --configuration Release --no-restore
 
+      - name: Test API unit tests
+        run: >-
+          dotnet test src/PickleCrew.UnitTests/PickleCrew.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+
+      - name: Check for pending EF Core model changes
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project src/PickleCrew.Api/PickleCrew.Api.csproj
+          --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj
+          --context PickleCrewDbContext
+          --configuration Release
+          --no-build
+          --no-color
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
         with:
@@ -121,18 +138,12 @@ jobs:
             flyctl config validate --strict --config "$config"
           done
 
-      - name: Test
-        run: dotnet test PickleCrew.slnx --configuration Release --no-build --no-restore
-
-      - name: Check for pending EF Core model changes
+      - name: Test API integration tests
         run: >-
-          dotnet ef migrations has-pending-model-changes
-          --project src/PickleCrew.Api/PickleCrew.Api.csproj
-          --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj
-          --context PickleCrewDbContext
+          dotnet test src/PickleCrew.IntegrationTests/PickleCrew.IntegrationTests.csproj
           --configuration Release
           --no-build
-          --no-color
+          --no-restore
 
       - name: Generate EF Core migration script
         run: |

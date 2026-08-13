@@ -1,7 +1,7 @@
 using PickleCrew.Api.Services;
 using Xunit;
 
-namespace PickleCrew.IntegrationTests;
+namespace PickleCrew.UnitTests;
 
 public sealed class UserContextTests
 {

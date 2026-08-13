@@ -6,7 +6,7 @@ using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 using Xunit;
 
-namespace PickleCrew.IntegrationTests.EndpointFilters;
+namespace PickleCrew.UnitTests.EndpointFilters;
 
 public sealed class UserContextEndpointFilterTests
 {

@@ -63,17 +63,20 @@ Local Development Orchestration:
   # Regenerate the frontend API client from OpenAPI.
   pnpm --dir src/PickleCrew.Web api:generate
 
-  # Run all .NET tests.
-  dotnet test PickleCrew.slnx
+  # Run API unit tests first.
+  dotnet test src/PickleCrew.UnitTests/PickleCrew.UnitTests.csproj
+
+  # Verify the EF Core model does not require a migration.
+  dotnet ef migrations has-pending-model-changes --project src/PickleCrew.Api/PickleCrew.Api.csproj --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj --context PickleCrewDbContext
+
+  # Run Aspire-backed API integration tests.
+  dotnet test src/PickleCrew.IntegrationTests/PickleCrew.IntegrationTests.csproj
 
   # Run all frontend tests.
   pnpm --dir src/PickleCrew.Web test
 
   # Build and type-check the frontend.
   pnpm --dir src/PickleCrew.Web build
-
-  # Verify the EF Core model does not require a migration.
-  dotnet ef migrations has-pending-model-changes --project src/PickleCrew.Api/PickleCrew.Api.csproj --startup-project src/PickleCrew.Api/PickleCrew.Api.csproj --context PickleCrewDbContext
 
   # Verify generated Cloudflare binding types are current.
   pnpm --dir src/PickleCrew.Web cf-typegen --check
