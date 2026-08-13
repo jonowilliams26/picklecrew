@@ -1,12 +1,12 @@
-import { createFileRoute, getRouteApi } from '@tanstack/react-router'
-import { Button } from '~/components/ui/button'
+import { createFileRoute } from '@tanstack/react-router'
+import { Construction } from 'lucide-react'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card'
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '~/components/ui/empty'
 
 export const Route = createFileRoute(
   '/_authenticated/_active-crew/dashboard',
@@ -14,28 +14,29 @@ export const Route = createFileRoute(
   component: DashboardPage,
 })
 
-const authenticatedRoute = getRouteApi('/_authenticated')
-
 function DashboardPage() {
-  const { activeCrew } = authenticatedRoute.useLoaderData()
-
-  if (!activeCrew) {
-    throw new Error('Dashboard rendered without an active crew.')
-  }
-
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <Card className="w-full max-w-xl border-2 border-ink shadow-[6px_7px_0_var(--ink)]">
-        <CardHeader>
-          <CardTitle className="font-heading text-3xl">Crew dashboard</CardTitle>
-          <CardDescription>{activeCrew.name}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="paper" render={<a href="/api/auth/sign-out" />}>
-            Sign out
-          </Button>
-        </CardContent>
-      </Card>
-    </main>
+    <div className="relative flex flex-1 items-center justify-center p-5 pb-28 md:p-10">
+      <Empty className="dashboard-empty max-w-2xl border-2 border-border bg-card px-6 py-16 shadow-[8px_9px_0_var(--ink)] md:px-12">
+        <EmptyHeader className="max-w-lg gap-3">
+          <EmptyMedia
+            className="size-14 rotate-[-4deg] rounded-full border-2 border-foreground bg-secondary shadow-[3px_4px_0_var(--ink)]"
+            variant="icon"
+          >
+            <Construction aria-hidden="true" />
+          </EmptyMedia>
+          <span className="text-[9px] font-extrabold tracking-[.14em] text-accent uppercase">
+            Court under construction
+          </span>
+          <EmptyTitle className="font-heading text-3xl font-black tracking-[-.045em] md:text-5xl">
+            The dashboard is warming up.
+          </EmptyTitle>
+          <EmptyDescription className="max-w-md font-heading text-base">
+            Crew stats, standings, and recent games will land here soon. For
+            now, the application shell is ready for the next rally.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    </div>
   )
 }

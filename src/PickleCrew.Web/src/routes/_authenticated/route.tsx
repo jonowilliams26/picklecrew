@@ -1,12 +1,18 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-import { switchToOrganization } from '@workos/authkit-tanstack-react-start'
+import {
+  getAuth,
+  switchToOrganization,
+} from '@workos/authkit-tanstack-react-start'
 import { Spinner } from '~/components/ui/spinner'
 import { getCrewMembership } from '~/lib/crews/membership.functions'
 import { decideCrewMembershipRoute } from '~/lib/crews/membership-routing'
 
 export const Route = createFileRoute('/_authenticated')({
   loader: async ({ location }) => {
-    const resolution = await getCrewMembership()
+    const [auth, resolution] = await Promise.all([
+      getAuth(),
+      getCrewMembership(),
+    ])
     const decision = decideCrewMembershipRoute({
       pathname: location.pathname,
       resolution,
@@ -34,7 +40,7 @@ export const Route = createFileRoute('/_authenticated')({
         ? resolution.crew
         : undefined
 
-    return { activeCrew }
+    return { activeCrew, user: auth.user ?? undefined }
   },
   shouldReload: true,
   pendingComponent: MembershipPending,
