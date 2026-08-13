@@ -54,13 +54,12 @@ internal sealed class TestWorkOsService(HttpClient client)
         string organizationId,
         CancellationToken cancellationToken)
     {
-        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
-
         return CreateAsync(
-            $"/organizations/{encodedOrganizationId}/memberships",
+            "/memberships",
             new CreateMembershipHttpRequest
             {
                 UserId = userId,
+                OrganizationId = organizationId,
                 Role = "admin",
             },
             cancellationToken
@@ -117,6 +116,8 @@ internal sealed class TestWorkOsService(HttpClient client)
     private sealed record CreateMembershipHttpRequest
     {
         public required string UserId { get; init; }
+
+        public required string OrganizationId { get; init; }
 
         public required string Role { get; init; }
     }

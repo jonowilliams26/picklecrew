@@ -1,6 +1,7 @@
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Onboarding;
 using PickleCrew.Api.PersistenceProbe;
+using PickleCrew.Api.Testing;
 
 namespace PickleCrew.Api;
 
@@ -14,6 +15,7 @@ internal static class Endpoints
 
         endpoints.MapOnboardingEndpoints();
         endpoints.MapCrewEndpoints();
+        endpoints.MapTestingEndpoints();
 
         return endpoints;
     }

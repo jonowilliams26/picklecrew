@@ -3,6 +3,7 @@ using Aspire.Hosting.Testing;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Testing;
+using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
 namespace PickleCrew.IntegrationTests;
@@ -32,48 +33,41 @@ public sealed class AppHostFixture : IAsyncLifetime
             );
     }
 
-    public HttpClient CreateApiClient(string userId)
+    internal HttpClient CreateApiClient(TestIdentity identity)
     {
         var client = CreateApiClient();
         client.DefaultRequestHeaders.Add(
             TestAuthenticationDefaults.UserIdHeaderName,
-            userId
+            identity.UserId
         );
+
+        if (identity.OrganizationId is not null)
+        {
+            client.DefaultRequestHeaders.Add(
+                TestAuthenticationDefaults.OrganizationIdHeaderName,
+                identity.OrganizationId
+            );
+        }
+
+        if (identity.Role is not null)
+        {
+            client.DefaultRequestHeaders.Add(
+                TestAuthenticationDefaults.RoleHeaderName,
+                identity.Role
+            );
+        }
 
         return client;
     }
 
-    public HttpClient CreateApiClient(string userId, string organizationId)
+    internal FakeWorkOsClient CreateFakeWorkOsClient()
     {
-        var client = CreateApiClient(userId);
-        client.DefaultRequestHeaders.Add(
-            TestAuthenticationDefaults.OrganizationIdHeaderName,
-            organizationId
-        );
-
-        return client;
-    }
-
-    public HttpClient CreateApiClient(
-        string userId,
-        string organizationId,
-        string role)
-    {
-        var client = CreateApiClient(userId, organizationId);
-        client.DefaultRequestHeaders.Add(
-            TestAuthenticationDefaults.RoleHeaderName,
-            role
-        );
-
-        return client;
-    }
-
-    public HttpClient CreateFakeWorkOsClient()
-    {
-        return application?.CreateHttpClient("fake-workos", "http")
+        var client = application?.CreateHttpClient("fake-workos", "http")
             ?? throw new InvalidOperationException(
                 "The fake WorkOS client is not available because the AppHost has not finished starting."
             );
+
+        return new FakeWorkOsClient(client);
     }
 
     public PickleCrewDbContext CreateDbContext()
