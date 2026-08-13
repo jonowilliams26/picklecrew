@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Onboarding;
@@ -29,7 +30,7 @@ internal sealed class CreateCrewEndpoint : IEndpoint
             .WithName("CreateOnboardingCrew")
             .WithSummary("Creates the signed-in user's first crew.")
             .WithRequestValidation<CreateCrewHttpRequest>(Validate)
-            .WithWorkOsUserContext();
+            .WithUserContext();
     }
 
     internal static Dictionary<string, string[]> Validate(CreateCrewHttpRequest request)
@@ -59,14 +60,14 @@ internal sealed class CreateCrewEndpoint : IEndpoint
 
     internal static async Task<Created<CreateCrewHttpResponse>> HandleAsync(
         CreateCrewHttpRequest request,
-        WorkOsUserContext workOsUserContext,
+        UserContext userContext,
         PickleCrewDbContext dbContext,
         IWorkOsProvisioningService workOs,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var normalizedName = request.Name.Trim();
-        var workOsUserId = workOsUserContext.UserId;
+        var workOsUserId = userContext.UserId;
         var attempt = await dbContext.CrewProvisioningAttempts
             .SingleOrDefaultAsync(
                 candidate => candidate.WorkOsUserId == workOsUserId,

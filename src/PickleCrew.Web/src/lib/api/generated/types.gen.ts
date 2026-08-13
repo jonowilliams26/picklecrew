@@ -58,6 +58,10 @@ export type CreateOnboardingCrewErrors = {
      */
     401: ProblemDetails;
     /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;

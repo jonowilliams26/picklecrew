@@ -21,7 +21,7 @@ internal static class Endpoints
     private static IEndpointRouteBuilder MapCrewEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/crew")
-            .WithUserContext();
+            .WithCrewUserContext();
 
         return app;
     }

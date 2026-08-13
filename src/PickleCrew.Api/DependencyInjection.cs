@@ -36,9 +36,10 @@ internal static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddUserContext(this IServiceCollection services)
+    public static IServiceCollection AddUserContexts(this IServiceCollection services)
     {
         services.AddScoped<UserContext>();
+        services.AddScoped<CrewUserContext>();
 
         return services;
     }
@@ -48,7 +49,6 @@ internal static class DependencyInjection
         var isTesting = builder.Environment.IsTesting();
 
         builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
-        builder.Services.AddScoped<WorkOsUserContext>();
 
         if (isTesting)
         {
