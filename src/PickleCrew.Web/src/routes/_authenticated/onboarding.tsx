@@ -68,14 +68,14 @@ function OnboardingPage() {
       </div>
 
       <section
-        className="relative z-2 mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-[900px] flex-col items-center justify-center gap-12 py-28 text-center max-[680px]:w-[calc(100%-28px)] max-[680px]:gap-10 max-[680px]:pt-28 max-[680px]:pb-16"
+        className="relative z-2 mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-[900px] flex-col items-center justify-center gap-12 py-28 text-center max-[680px]:w-[calc(100%-28px)] max-[680px]:gap-7 max-[680px]:pt-20 max-[680px]:pb-12"
         aria-labelledby="onboarding-heading"
       >
         <OnboardingIntro state={onboardingState} />
 
         <div className="relative mx-auto w-full max-w-[560px] text-left">
           <OnboardingTag state={onboardingState} />
-          <Card className="onboarding-form-card border-2 border-ink bg-cream shadow-none ring-0">
+          <Card className="onboarding-form-card border-2 border-ink bg-cream shadow-none ring-0 max-[680px]:[--card-spacing:--spacing(4)]">
             {onboardingState.type === 'create-crew' ? (
               <CreateCrewStep
                 onComplete={(crew) => {
@@ -109,13 +109,13 @@ function OnboardingIntro({ state }: { state: OnboardingState }) {
           Welcome to the club
         </OnboardingBadge>
         <h1
-          className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:text-[clamp(3.7rem,18vw,5.5rem)]"
+          className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:mt-4 max-[680px]:mb-3 max-[680px]:text-[clamp(2.75rem,13vw,3.5rem)] max-[680px]:leading-[.86]"
           id="onboarding-heading"
         >
           Name your{' '}
           <span className="onboarding-heading-highlight">chaos.</span>
         </h1>
-        <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft">
+        <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft max-[680px]:text-[.95rem] max-[680px]:leading-[1.4]">
           Every legendary rivalry needs a home. Give your pickleball crew a name worthy of the
           group chat.
         </p>
@@ -130,13 +130,13 @@ function OnboardingIntro({ state }: { state: OnboardingState }) {
         Crew created
       </OnboardingBadge>
       <h1
-        className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:text-[clamp(3.7rem,18vw,5.5rem)]"
+        className="mt-7 mb-6 font-heading text-[clamp(4rem,7vw,7rem)] font-black leading-[.82] tracking-[-.075em] max-[680px]:mt-4 max-[680px]:mb-3 max-[680px]:text-[clamp(2.75rem,13vw,3.5rem)] max-[680px]:leading-[.86]"
         id="onboarding-heading"
       >
         Bring the{' '}
         <span className="onboarding-heading-highlight">chaos.</span>
       </h1>
-      <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft">
+      <p className="mx-auto my-0 max-w-[620px] font-heading text-[clamp(1.05rem,1.7vw,1.25rem)] leading-[1.55] font-[540] text-ink-soft max-[680px]:text-[.95rem] max-[680px]:leading-[1.4]">
         {state.crew.name} is official. Invite friends one at a time, then head to your dashboard.
       </p>
     </div>
@@ -145,7 +145,7 @@ function OnboardingIntro({ state }: { state: OnboardingState }) {
 
 function OnboardingBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex rotate-[-1deg] items-center gap-2 rounded-full border border-ink bg-lime px-3 py-2 text-[10px] font-extrabold tracking-[.12em] uppercase shadow-[3px_3px_0_var(--ink)]">
+    <div className="inline-flex rotate-[-1deg] items-center gap-2 rounded-full border border-ink bg-lime px-3 py-2 text-[10px] font-extrabold tracking-[.12em] uppercase shadow-[3px_3px_0_var(--ink)] max-[680px]:py-1.5">
       {children}
     </div>
   )
@@ -210,10 +210,10 @@ function CreateCrewStep({
               <span className="text-[9px] font-black tracking-[.14em] text-orange uppercase">
                 One tiny step
               </span>
-              <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em]">
+              <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em] max-[680px]:text-[2rem]">
                 Plant your flag.
               </CardTitle>
-              <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft">
+              <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft max-[680px]:text-sm">
                 This is the name your wins, streaks, and highly disputed rankings will live under.
               </CardDescription>
             </CardHeader>
@@ -389,10 +389,10 @@ function InviteFriendStep({
         <span className="text-[9px] font-black tracking-[.14em] text-orange uppercase">
           Step 2 of 2
         </span>
-        <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em]">
+        <CardTitle className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] leading-[.9] font-black tracking-[-.055em] max-[680px]:text-[2rem]">
           Add a rival.
         </CardTitle>
-        <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft">
+        <CardDescription className="font-heading text-base leading-[1.5] text-ink-soft max-[680px]:text-sm">
           Invite friends to {crewName} one at a time. Continue whenever you're ready.
         </CardDescription>
       </CardHeader>
