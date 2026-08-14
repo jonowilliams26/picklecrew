@@ -3,7 +3,7 @@ import {
   getAuth,
   switchToOrganization,
 } from '@workos/authkit-tanstack-react-start'
-import { Spinner } from '~/components/ui/spinner'
+import { LoadingScreen } from '~/components/loading-screen'
 import { getCrewMembership } from '~/lib/crews/membership.functions'
 import { decideCrewMembershipRoute } from '~/lib/crews/membership-routing'
 
@@ -54,14 +54,5 @@ function AuthenticatedLayout() {
 }
 
 function MembershipPending() {
-  return (
-    <main
-      className="flex min-h-screen items-center justify-center gap-3 p-6 text-sm text-ink-soft"
-      aria-live="polite"
-      aria-busy="true"
-    >
-      <Spinner />
-      <span>Loading…</span>
-    </main>
-  )
+  return <LoadingScreen />
 }
