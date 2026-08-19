@@ -458,6 +458,46 @@ a {
   background: color-mix(in oklch, var(--card) 94%, transparent);
 }
 
+.dashboard-stat-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dashboard-stat-card:hover {
+  box-shadow: 3px 4px 0 var(--ink);
+  transform: translate(3px, 3px);
+}
+
+.dashboard-stat-card-lime {
+  background-image: radial-gradient(rgba(21, 53, 45, 0.16) 1px, transparent 1px);
+  background-size: 17px 17px;
+}
+
+.dashboard-pair-card::after {
+  position: absolute;
+  right: -70px;
+  bottom: -95px;
+  width: 210px;
+  height: 210px;
+  border: 2px solid rgba(255, 255, 255, 0.26);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.dashboard-streak-card::after {
+  position: absolute;
+  right: -65px;
+  bottom: -95px;
+  width: 220px;
+  height: 220px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--lime);
+  content: '';
+}
+
 .dashboard-nav-link {
   position: relative;
 }
