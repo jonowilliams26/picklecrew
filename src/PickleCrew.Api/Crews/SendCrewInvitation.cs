@@ -63,16 +63,15 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
         CancellationToken cancellationToken)
     {
         var emailAddress = NormalizeEmailAddress(request.EmailAddress);
-        var activeMemberEmailAddresses = await workOs
-            .ListActiveCrewMemberEmailAddressesAsync(
-                crewUserContext.OrganizationId,
-                cancellationToken
-            );
-
-        var isActiveMember = activeMemberEmailAddresses.Contains(
-            emailAddress,
-            StringComparer.OrdinalIgnoreCase
+        var activeMembers = await workOs.ListActiveCrewMembersAsync(
+            crewUserContext.OrganizationId,
+            cancellationToken
         );
+        var isActiveMember = activeMembers.Any(member => string.Equals(
+            member.EmailAddress,
+            emailAddress,
+            StringComparison.OrdinalIgnoreCase
+        ));
 
         if (isActiveMember)
         {

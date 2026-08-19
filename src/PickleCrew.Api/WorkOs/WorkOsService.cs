@@ -3,6 +3,17 @@ using WorkOS;
 
 namespace PickleCrew.Api.WorkOs;
 
+internal sealed record ActiveCrewMember
+{
+    public required string WorkOsUserId { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
+}
+
 internal interface IWorkOsService
 {
     Task<string?> FindOrganizationByExternalIdAsync(
@@ -24,7 +35,7 @@ internal interface IWorkOsService
         string organizationId,
         CancellationToken cancellationToken);
 
-    Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+    Task<ActiveCrewMember[]> ListActiveCrewMembersAsync(
         string organizationId,
         CancellationToken cancellationToken);
 
@@ -113,11 +124,11 @@ internal sealed class WorkOsService(WorkOSClient client)
         return membership.Id;
     }
 
-    public async Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+    public async Task<ActiveCrewMember[]> ListActiveCrewMembersAsync(
         string organizationId,
         CancellationToken cancellationToken)
     {
-        var emailAddresses = new List<string>();
+        var activeMembers = new List<ActiveCrewMember>();
         var memberships = client.OrganizationMembership.ListAutoPagingAsync(
             new OrganizationMembershipListOptions
             {
@@ -129,10 +140,16 @@ internal sealed class WorkOsService(WorkOSClient client)
 
         await foreach (var membership in memberships)
         {
-            emailAddresses.Add(membership.User.Email);
+            activeMembers.Add(new ActiveCrewMember
+            {
+                WorkOsUserId = membership.User.Id,
+                DisplayName = GetDisplayName(membership.User),
+                EmailAddress = membership.User.Email,
+                ProfilePictureUrl = membership.User.ProfilePictureUrl,
+            });
         }
 
-        return emailAddresses.ToArray();
+        return activeMembers.ToArray();
     }
 
     public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
@@ -157,6 +174,23 @@ internal sealed class WorkOsService(WorkOSClient client)
         }
 
         return emailAddresses.ToArray();
+    }
+
+    private static string GetDisplayName(User user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Name))
+        {
+            return user.Name.Trim();
+        }
+
+        var nameParts = new[] { user.FirstName, user.LastName }
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .Select(part => part!.Trim());
+        var displayName = string.Join(' ', nameParts);
+
+        return string.IsNullOrWhiteSpace(displayName)
+            ? user.Email
+            : displayName;
     }
 
     public async Task SendCrewInvitationAsync(

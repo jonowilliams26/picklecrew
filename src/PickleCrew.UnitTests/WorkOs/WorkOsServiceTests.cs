@@ -61,34 +61,70 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
-    public async Task ListActiveCrewMemberEmailAddressesAsync_WhenResultsSpanPages_ShouldReturnEveryActiveMemberEmailAddress()
+    public async Task ListActiveCrewMembersAsync_WhenResultsSpanPages_ShouldReturnIdsNamesPicturesAndEmailFallback()
     {
         var handler = new RecordingHttpMessageHandler(
             (
                 HttpStatusCode.OK,
                 CreateMembershipListResponse(
+                    "user_one",
                     "member-one@example.com",
-                    "membership_cursor"
+                    "Ada",
+                    "Lovelace",
+                    "Ada L.",
+                    "membership_cursor_one",
+                    "https://images.example.test/ada.png"
                 )
             ),
             (
                 HttpStatusCode.OK,
-                CreateMembershipListResponse("member-two@example.com")
+                CreateMembershipListResponse(
+                    "user_two",
+                    "member-two@example.com",
+                    "Grace",
+                    "Hopper",
+                    after: "membership_cursor_two"
+                )
+            ),
+            (
+                HttpStatusCode.OK,
+                CreateMembershipListResponse(
+                    "user_three",
+                    "member-three@example.com"
+                )
             )
         );
         using var client = CreateClient(handler);
         var service = new WorkOsService(client);
 
-        var emailAddresses = await service.ListActiveCrewMemberEmailAddressesAsync(
+        var members = await service.ListActiveCrewMembersAsync(
             "org_123",
             CancellationToken.None
         );
 
-        Assert.Equal(
-            ["member-one@example.com", "member-two@example.com"],
-            emailAddresses
+        Assert.Collection(
+            members,
+            member => AssertActiveMember(
+                member,
+                "user_one",
+                "Ada L.",
+                "member-one@example.com",
+                "https://images.example.test/ada.png"
+            ),
+            member => AssertActiveMember(
+                member,
+                "user_two",
+                "Grace Hopper",
+                "member-two@example.com"
+            ),
+            member => AssertActiveMember(
+                member,
+                "user_three",
+                "member-three@example.com",
+                "member-three@example.com"
+            )
         );
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Equal(3, handler.Requests.Count);
         Assert.All(
             handler.Requests,
             request => Assert.Equal(
@@ -98,7 +134,8 @@ public sealed class WorkOsServiceTests
         );
         Assert.Contains("organization_id=org_123", handler.Requests[0].RequestUri.Query);
         Assert.Contains("statuses[]=active", handler.Requests[0].RequestUri.Query);
-        Assert.Contains("after=membership_cursor", handler.Requests[1].RequestUri.Query);
+        Assert.Contains("after=membership_cursor_one", handler.Requests[1].RequestUri.Query);
+        Assert.Contains("after=membership_cursor_two", handler.Requests[2].RequestUri.Query);
     }
 
     [Fact]
@@ -160,30 +197,55 @@ public sealed class WorkOsServiceTests
         });
     }
 
-    private static string CreateMembershipListResponse(
+    private static void AssertActiveMember(
+        ActiveCrewMember member,
+        string workOsUserId,
+        string displayName,
         string emailAddress,
-        string? after = null)
+        string? profilePictureUrl = null)
     {
-        return $$"""
+        Assert.Equal(workOsUserId, member.WorkOsUserId);
+        Assert.Equal(displayName, member.DisplayName);
+        Assert.Equal(emailAddress, member.EmailAddress);
+        Assert.Equal(profilePictureUrl, member.ProfilePictureUrl);
+    }
+
+    private static string CreateMembershipListResponse(
+        string userId,
+        string emailAddress,
+        string? firstName = null,
+        string? lastName = null,
+        string? name = null,
+        string? after = null,
+        string? profilePictureUrl = null)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            list_metadata = new
             {
-              "list_metadata": {
-                "before": null,
-                "after": {{JsonSerializer.Serialize(after)}}
-              },
-              "data": [
+                before = (string?)null,
+                after,
+            },
+            data = new[]
+            {
+                new
                 {
-                  "id": "membership_123",
-                  "user_id": "user_123",
-                  "organization_id": "org_123",
-                  "status": "active",
-                  "user": {
-                    "id": "user_123",
-                    "email": "{{emailAddress}}"
-                  }
-                }
-              ]
-            }
-            """;
+                    id = $"membership_{userId}",
+                    user_id = userId,
+                    organization_id = "org_123",
+                    status = "active",
+                    user = new
+                    {
+                        id = userId,
+                        email = emailAddress,
+                        first_name = firstName,
+                        last_name = lastName,
+                        name,
+                        profile_picture_url = profilePictureUrl,
+                    },
+                },
+            },
+        });
     }
 
     private static string CreateInvitationListResponse(

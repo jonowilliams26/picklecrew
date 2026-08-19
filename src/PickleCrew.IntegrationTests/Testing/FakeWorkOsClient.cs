@@ -12,6 +12,10 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         string organizationName,
         string organizationExternalId,
         FakeMembershipRole role,
+        string? userFirstName = null,
+        string? userLastName = null,
+        string? userDisplayName = null,
+        string? userProfilePictureUrl = null,
         CancellationToken cancellationToken = default)
     {
         using var response = await client.PostAsJsonAsync(
@@ -20,6 +24,10 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
             {
                 UserId = userId,
                 UserEmailAddress = userEmailAddress,
+                UserFirstName = userFirstName,
+                UserLastName = userLastName,
+                UserDisplayName = userDisplayName,
+                UserProfilePictureUrl = userProfilePictureUrl,
                 OrganizationName = organizationName,
                 OrganizationExternalId = organizationExternalId,
                 Role = role,
@@ -38,6 +46,10 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     public Task<string> CreateUserAsync(
         string userId,
         string emailAddress,
+        string? firstName = null,
+        string? lastName = null,
+        string? displayName = null,
+        string? profilePictureUrl = null,
         CancellationToken cancellationToken = default)
     {
         return PostAndReadIdAsync(
@@ -46,6 +58,10 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
             {
                 Id = userId,
                 EmailAddress = emailAddress,
+                FirstName = firstName,
+                LastName = lastName,
+                DisplayName = displayName,
+                ProfilePictureUrl = profilePictureUrl,
             },
             cancellationToken
         );
@@ -204,23 +220,23 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         return SendAsync(request, scenarioId, cancellationToken);
     }
 
-    public async Task<string[]> ListActiveMemberEmailAddressesAsync(
+    public async Task<FakeActiveCrewMember[]> ListActiveMembersAsync(
         string organizationId,
         CancellationToken cancellationToken = default)
     {
         var encodedOrganizationId = Uri.EscapeDataString(organizationId);
         using var response = await client.GetAsync(
-            $"/organizations/{encodedOrganizationId}/active-member-email-addresses",
+            $"/organizations/{encodedOrganizationId}/active-members",
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<EmailAddressListHttpResponse>(
+        var result = await response.Content.ReadFromJsonAsync<ActiveCrewMemberListHttpResponse>(
             cancellationToken
         );
 
-        return result?.EmailAddresses ?? throw new InvalidOperationException(
-            "The fake WorkOS service returned an empty email address list response."
+        return result?.Members ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty active member list response."
         );
     }
 
@@ -429,6 +445,14 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
 
         public required string UserEmailAddress { get; init; }
 
+        public string? UserFirstName { get; init; }
+
+        public string? UserLastName { get; init; }
+
+        public string? UserDisplayName { get; init; }
+
+        public string? UserProfilePictureUrl { get; init; }
+
         public required string OrganizationName { get; init; }
 
         public required string OrganizationExternalId { get; init; }
@@ -441,6 +465,14 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         public required string Id { get; init; }
 
         public required string EmailAddress { get; init; }
+
+        public string? FirstName { get; init; }
+
+        public string? LastName { get; init; }
+
+        public string? DisplayName { get; init; }
+
+        public string? ProfilePictureUrl { get; init; }
     }
 
     private sealed record CreateOrganizationHttpRequest
@@ -494,9 +526,9 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         public required string Id { get; init; }
     }
 
-    private sealed record EmailAddressListHttpResponse
+    private sealed record ActiveCrewMemberListHttpResponse
     {
-        public required string[] EmailAddresses { get; init; }
+        public required FakeActiveCrewMember[] Members { get; init; }
     }
 
     private sealed record InvitationListHttpResponse
@@ -512,6 +544,17 @@ internal sealed record FakeWorkOsSetup
     public required string OrganizationId { get; init; }
 
     public required string MembershipId { get; init; }
+}
+
+internal sealed record FakeActiveCrewMember
+{
+    public required string WorkOsUserId { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
 }
 
 internal sealed record FakeInvitation
@@ -555,7 +598,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
-    ListActiveMemberEmailAddresses,
+    ListActiveMembers,
     ListPendingInvitations,
     SendInvitation,
 }

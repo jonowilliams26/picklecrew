@@ -24,8 +24,8 @@ internal static class Endpoints
             FindActiveMembership
         );
         app.MapGet(
-            "/organizations/{organizationId}/active-member-email-addresses",
-            ListActiveMemberEmailAddresses
+            "/organizations/{organizationId}/active-members",
+            ListActiveMembers
         );
         app.MapGet(
             "/organizations/{organizationId}/pending-invitations",
@@ -48,7 +48,11 @@ internal static class Endpoints
             request.UserEmailAddress,
             request.OrganizationName,
             request.OrganizationExternalId,
-            request.Role
+            request.Role,
+            request.UserFirstName,
+            request.UserLastName,
+            request.UserDisplayName,
+            request.UserProfilePictureUrl
         );
 
         return TypedResults.Created(
@@ -66,7 +70,14 @@ internal static class Endpoints
         CreateUserHttpRequest request,
         FakeWorkOsState state)
     {
-        var user = state.CreateUser(request.Id, request.EmailAddress);
+        var user = state.CreateUser(
+            request.Id,
+            request.EmailAddress,
+            request.FirstName,
+            request.LastName,
+            request.DisplayName,
+            request.ProfilePictureUrl
+        );
 
         return TypedResults.Created(
             $"/users/{user.Id}",
@@ -219,8 +230,8 @@ internal static class Endpoints
             : TypedResults.Ok(new IdentifierHttpResponse { Id = membership.Id });
     }
 
-    private static Results<Ok<EmailAddressListHttpResponse>, ProblemHttpResult>
-        ListActiveMemberEmailAddresses(
+    private static Results<Ok<ActiveCrewMemberListHttpResponse>, ProblemHttpResult>
+        ListActiveMembers(
             string organizationId,
             FakeWorkOsState state,
             HttpRequest httpRequest)
@@ -228,19 +239,24 @@ internal static class Endpoints
         if (ShouldFailOperation(
             httpRequest,
             state,
-            FakeWorkOsOperation.ListActiveMemberEmailAddresses
+            FakeWorkOsOperation.ListActiveMembers
         ))
         {
-            return CreateFaultProblem(
-                FakeWorkOsOperation.ListActiveMemberEmailAddresses
-            );
+            return CreateFaultProblem(FakeWorkOsOperation.ListActiveMembers);
         }
 
-        return TypedResults.Ok(
-            new EmailAddressListHttpResponse
+        var members = state.ListActiveMembers(organizationId)
+            .Select(member => new ActiveCrewMemberHttpResponse
             {
-                EmailAddresses = state.ListActiveMemberEmailAddresses(organizationId),
-            }
+                WorkOsUserId = member.WorkOsUserId,
+                DisplayName = member.DisplayName,
+                EmailAddress = member.EmailAddress,
+                ProfilePictureUrl = member.ProfilePictureUrl,
+            })
+            .ToArray();
+
+        return TypedResults.Ok(
+            new ActiveCrewMemberListHttpResponse { Members = members }
         );
     }
 
@@ -325,6 +341,14 @@ public sealed record CreateOrganizationWithUserHttpRequest
 
     public required string UserEmailAddress { get; init; }
 
+    public string? UserFirstName { get; init; }
+
+    public string? UserLastName { get; init; }
+
+    public string? UserDisplayName { get; init; }
+
+    public string? UserProfilePictureUrl { get; init; }
+
     public required string OrganizationName { get; init; }
 
     public required string OrganizationExternalId { get; init; }
@@ -346,6 +370,14 @@ public sealed record CreateUserHttpRequest
     public required string Id { get; init; }
 
     public required string EmailAddress { get; init; }
+
+    public string? FirstName { get; init; }
+
+    public string? LastName { get; init; }
+
+    public string? DisplayName { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
 }
 
 public sealed record CreateOrganizationHttpRequest
@@ -399,9 +431,20 @@ public sealed record IdentifierHttpResponse
     public required string Id { get; init; }
 }
 
-public sealed record EmailAddressListHttpResponse
+public sealed record ActiveCrewMemberListHttpResponse
 {
-    public required string[] EmailAddresses { get; init; }
+    public required ActiveCrewMemberHttpResponse[] Members { get; init; }
+}
+
+public sealed record ActiveCrewMemberHttpResponse
+{
+    public required string WorkOsUserId { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
 }
 
 public sealed record InvitationListHttpResponse
@@ -450,7 +493,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
-    ListActiveMemberEmailAddresses,
+    ListActiveMembers,
     ListPendingInvitations,
     SendInvitation,
 }
