@@ -1,4 +1,4 @@
-using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.Services;
 using Xunit;
 
 namespace PickleCrew.UnitTests.Games;

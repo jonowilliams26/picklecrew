@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
@@ -70,25 +69,23 @@ internal sealed class RecordGameEndpoint : IEndpoint
         app.MapPost(string.Empty, HandleAsync)
             .WithName("RecordGame")
             .WithSummary("Records a completed game for the active Crew.")
-            .WithRequestValidation<RecordGameHttpRequest>(Validate)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .WithRequestValidation<RecordGameHttpRequest>(Validate);
     }
 
     internal static Dictionary<string, string[]> Validate(RecordGameHttpRequest request)
     {
-        var errors = new Dictionary<string, List<string>>();
-        var formatIsSupported = request.Format is GameFormat.Singles or GameFormat.Doubles;
+        var errors = new Dictionary<string, string[]>();
+        var formatIsSupported = Enum.IsDefined(request.Format);
 
         if (!formatIsSupported)
         {
-            AddError(errors, nameof(request.Format), "Select singles or doubles.");
+            errors.AddError(nameof(request.Format), "Select singles or doubles.");
         }
 
         if (request.Sides is not { Length: 2 })
         {
-            AddError(errors, nameof(request.Sides), "A game must have exactly two Sides.");
-            return ToValidationErrors(errors);
+            errors.AddError(nameof(request.Sides), "A game must have exactly two Sides.");
+            return errors;
         }
 
         var expectedParticipantCount = request.Format == GameFormat.Doubles ? 2 : 1;
@@ -103,7 +100,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
             if (side is null)
             {
-                AddError(errors, sideKey, "Enter a Side with participants and a score.");
+                errors.AddError(sideKey, "Enter a Side with participants and a score.");
                 continue;
             }
 
@@ -111,15 +108,14 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
             if (side.Participants is not { } participants)
             {
-                AddError(errors, participantsKey, "Enter the participants for this Side.");
+                errors.AddError(participantsKey, "Enter the participants for this Side.");
                 continue;
             }
 
             if (formatIsSupported && participants.Length != expectedParticipantCount)
             {
                 var formatName = request.Format == GameFormat.Singles ? "singles" : "doubles";
-                AddError(
-                    errors,
+                errors.AddError(
                     participantsKey,
                     $"Each Side in a {formatName} game must have exactly {expectedParticipantCount} participant{(expectedParticipantCount == 1 ? string.Empty : "s")}."
                 );
@@ -133,8 +129,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
                 if (participant is null)
                 {
-                    AddError(
-                        errors,
+                    errors.AddError(
                         participantKey,
                         "Select an active Crew member or enter a Guest."
                     );
@@ -154,8 +149,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         if (validMemberCount == 0)
         {
-            AddError(
-                errors,
+            errors.AddError(
                 nameof(request.Sides),
                 "At least one participant must be an active member of the current Crew."
             );
@@ -169,8 +163,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
             if (hasNegativeScore)
             {
-                AddError(
-                    errors,
+                errors.AddError(
                     nameof(request.Sides),
                     "Scores must be non-negative whole numbers."
                 );
@@ -180,21 +173,20 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 request.Sides[1].Score
             ))
             {
-                AddError(
-                    errors,
+                errors.AddError(
                     nameof(request.Sides),
                     "Enter a completed score played to 11 and won by two."
                 );
             }
         }
 
-        return ToValidationErrors(errors);
+        return errors;
     }
 
     private static async Task<Results<
         Ok<RecordGameHttpResponse>,
         ValidationProblem,
-        ProblemHttpResult>> HandleAsync(
+        ForbidHttpResult>> HandleAsync(
         RecordGameHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
@@ -202,20 +194,10 @@ internal sealed class RecordGameEndpoint : IEndpoint
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await ActiveCrewRoster.TryListAsync(
-            workOs,
+        var activeMembers = await workOs.ListActiveCrewMembersAsync(
             crewUserContext.OrganizationId,
             cancellationToken
         );
-
-        if (activeMembers is null)
-        {
-            return TypedResults.Problem(
-                detail: "Crew membership could not be verified. Try saving again.",
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Game could not be saved"
-            );
-        }
 
         var activeUserIds = activeMembers
             .Select(member => member.WorkOsUserId)
@@ -223,11 +205,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         if (!activeUserIds.Contains(crewUserContext.UserId))
         {
-            return TypedResults.Problem(
-                detail: "Your active Crew membership could not be verified.",
-                statusCode: StatusCodes.Status403Forbidden,
-                title: "Crew membership required"
-            );
+            return TypedResults.Forbid();
         }
 
         var membershipErrors = ValidateActiveParticipants(request, activeUserIds);
@@ -237,30 +215,62 @@ internal sealed class RecordGameEndpoint : IEndpoint
             return TypedResults.ValidationProblem(membershipErrors);
         }
 
-        var playedAtUtc = NormalizeForPersistence(timeProvider.GetUtcNow());
-        var game = CreateGame(request, crewUserContext, playedAtUtc);
+        var game = new Game
+        {
+            CrewId = crewUserContext.CrewId,
+            CrewUuid = crewUserContext.CrewUuid,
+            Format = request.Format,
+            RecorderUserId = crewUserContext.UserId,
+            PlayedAtUtc = timeProvider.GetUtcNow(),
+            Sides = request.Sides
+                .Select((side, sideIndex) => new GameSide
+                {
+                    SideNumber = sideIndex + 1,
+                    Score = side.Score,
+                    Participants = side.Participants
+                        .Select((participant, participantIndex) => new GameParticipant
+                        {
+                            SlotNumber = participantIndex + 1,
+                            UserId = participant.UserId,
+                            GuestName = participant.GuestName?.Trim(),
+                        })
+                        .ToList(),
+                })
+                .ToList(),
+        };
+
         dbContext.Games.Add(game);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
-        try
+        return TypedResults.Ok(new RecordGameHttpResponse
         {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            return TypedResults.Problem(
-                detail: "The Game was not saved. Try again.",
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Game could not be saved"
-            );
-        }
-
-        return TypedResults.Ok(ToHttpResponse(game, crewUserContext.CrewUuid));
+            GameId = game.Uuid,
+            CrewId = game.CrewUuid,
+            Format = game.Format,
+            RecorderUserId = game.RecorderUserId,
+            PlayedAtUtc = game.PlayedAtUtc,
+            Sides = game.Sides
+                .Select(side => new RecordedGameSideHttpResponse
+                {
+                    SideNumber = side.SideNumber,
+                    Score = side.Score,
+                    Participants = side.Participants
+                        .Select(participant => new RecordedGameParticipantHttpResponse
+                        {
+                            SlotNumber = participant.SlotNumber,
+                            UserId = participant.UserId,
+                            GuestName = participant.GuestName,
+                        })
+                        .ToArray(),
+                })
+                .ToArray(),
+        });
     }
 
     private static void ValidateParticipant(
         RecordGameParticipantHttpRequest participant,
         string participantKey,
-        Dictionary<string, List<string>> errors,
+        Dictionary<string, string[]> errors,
         Dictionary<string, string> memberLocations,
         Dictionary<string, string> guestLocations,
         ref int validMemberCount)
@@ -272,18 +282,17 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         if (participant.UserId is not null && !hasUserId)
         {
-            AddError(errors, userIdKey, "Select an active Crew member.");
+            errors.AddError(userIdKey, "Select an active Crew member.");
         }
 
         if (participant.GuestName is not null && !hasGuestName)
         {
-            AddError(errors, guestNameKey, "Enter a nonblank Guest name.");
+            errors.AddError(guestNameKey, "Enter a nonblank Guest name.");
         }
 
         if (hasUserId == hasGuestName)
         {
-            AddError(
-                errors,
+            errors.AddError(
                 participantKey,
                 "Choose exactly one participant type: an active Crew member or a Guest."
             );
@@ -298,8 +307,8 @@ internal sealed class RecordGameEndpoint : IEndpoint
             if (memberLocations.TryGetValue(userId, out var existingMemberKey))
             {
                 const string message = "A Crew member may participate only once in a Game.";
-                AddError(errors, existingMemberKey, message);
-                AddError(errors, userIdKey, message);
+                errors.AddError(existingMemberKey, message);
+                errors.AddError(userIdKey, message);
             }
             else
             {
@@ -314,8 +323,8 @@ internal sealed class RecordGameEndpoint : IEndpoint
         if (guestLocations.TryGetValue(guestName, out var existingGuestKey))
         {
             const string message = "Guest names must be distinct within a Game.";
-            AddError(errors, existingGuestKey, message);
-            AddError(errors, guestNameKey, message);
+            errors.AddError(existingGuestKey, message);
+            errors.AddError(guestNameKey, message);
         }
         else
         {
@@ -327,7 +336,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         RecordGameHttpRequest request,
         HashSet<string> activeUserIds)
     {
-        var errors = new Dictionary<string, List<string>>();
+        var errors = new Dictionary<string, string[]>();
         var activeParticipantCount = 0;
 
         for (var sideIndex = 0; sideIndex < request.Sides.Length; sideIndex++)
@@ -351,8 +360,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 }
                 else
                 {
-                    AddError(
-                        errors,
+                    errors.AddError(
                         key,
                         "This participant is not an active member of the current Crew."
                     );
@@ -362,140 +370,14 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         if (activeParticipantCount == 0)
         {
-            AddError(
-                errors,
+            errors.AddError(
                 nameof(request.Sides),
                 "At least one participant must be an active member of the current Crew."
             );
         }
 
-        return ToValidationErrors(errors);
-    }
-
-    private static DateTimeOffset NormalizeForPersistence(DateTimeOffset timestamp)
-    {
-        var utcTimestamp = timestamp.ToUniversalTime();
-        var persistedTicks = utcTimestamp.Ticks
-            - utcTimestamp.Ticks % TimeSpan.TicksPerMicrosecond;
-
-        return new DateTimeOffset(persistedTicks, TimeSpan.Zero);
-    }
-
-    private static Game CreateGame(
-        RecordGameHttpRequest request,
-        CrewUserContext crewUserContext,
-        DateTimeOffset playedAtUtc)
-    {
-        var game = new Game
-        {
-            CrewId = crewUserContext.CrewId,
-            Format = request.Format,
-            RecorderUserId = crewUserContext.UserId,
-            PlayedAtUtc = playedAtUtc,
-        };
-
-        for (var sideIndex = 0; sideIndex < request.Sides.Length; sideIndex++)
-        {
-            var requestSide = request.Sides[sideIndex];
-            var side = new GameSide
-            {
-                SideNumber = sideIndex + 1,
-                Score = requestSide.Score,
-            };
-
-            for (var participantIndex = 0; participantIndex < requestSide.Participants.Length; participantIndex++)
-            {
-                var requestParticipant = requestSide.Participants[participantIndex];
-                side.Participants.Add(new GameParticipant
-                {
-                    SlotNumber = participantIndex + 1,
-                    UserId = requestParticipant.UserId,
-                    GuestName = requestParticipant.GuestName is null
-                        ? null
-                        : NormalizeGuestName(requestParticipant.GuestName),
-                });
-            }
-
-            game.Sides.Add(side);
-        }
-
-        return game;
-    }
-
-    private static RecordGameHttpResponse ToHttpResponse(Game game, Guid crewUuid)
-    {
-        return new RecordGameHttpResponse
-        {
-            GameId = game.Uuid,
-            CrewId = crewUuid,
-            Format = game.Format,
-            RecorderUserId = game.RecorderUserId,
-            PlayedAtUtc = game.PlayedAtUtc,
-            Sides = game.Sides
-                .Select(side => new RecordedGameSideHttpResponse
-                {
-                    SideNumber = side.SideNumber,
-                    Score = side.Score,
-                    Participants = side.Participants
-                        .Select(participant => new RecordedGameParticipantHttpResponse
-                        {
-                            SlotNumber = participant.SlotNumber,
-                            UserId = participant.UserId,
-                            GuestName = participant.GuestName,
-                        })
-                        .ToArray(),
-                })
-                .ToArray(),
-        };
+        return errors;
     }
 
     private static string NormalizeGuestName(string guestName) => guestName.Trim();
-
-    private static void AddError(
-        Dictionary<string, List<string>> errors,
-        string key,
-        string message)
-    {
-        if (!errors.TryGetValue(key, out var messages))
-        {
-            messages = [];
-            errors[key] = messages;
-        }
-
-        if (!messages.Contains(message, StringComparer.Ordinal))
-        {
-            messages.Add(message);
-        }
-    }
-
-    private static Dictionary<string, string[]> ToValidationErrors(
-        Dictionary<string, List<string>> errors)
-    {
-        return errors.ToDictionary(
-            error => error.Key,
-            error => error.Value.ToArray(),
-            StringComparer.Ordinal
-        );
-    }
-}
-
-internal static class GameScoreRules
-{
-    public static bool IsValidFinalScore(int firstScore, int secondScore)
-    {
-        if (firstScore < 0 || secondScore < 0 || firstScore == secondScore)
-        {
-            return false;
-        }
-
-        var winningScore = Math.Max(firstScore, secondScore);
-        var losingScore = Math.Min(firstScore, secondScore);
-
-        if (winningScore == 11)
-        {
-            return losingScore <= 9;
-        }
-
-        return losingScore >= 10 && winningScore - losingScore == 2;
-    }
 }

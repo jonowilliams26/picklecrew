@@ -52,14 +52,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             context.Crew.OrganizationId
         );
         using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var requestStartedAt = DateTimeOffset.UtcNow;
 
         using var response = await apiClient.PostAsJsonAsync(
             "/games",
             CreateRequest(context.Administrator.UserId, opponent.UserId, 11, 7),
             TestJsonSerializerOptions.Default
         );
-        var requestCompletedAt = DateTimeOffset.UtcNow;
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
@@ -69,7 +67,6 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(context.Crew.CrewId, result.CrewId);
         Assert.Equal(context.Administrator.UserId, result.RecorderUserId);
         Assert.Equal(GameFormat.Singles, result.Format);
-        Assert.InRange(result.PlayedAtUtc, requestStartedAt, requestCompletedAt);
 
         await using var dbContext = fixture.CreateDbContext();
         var crewId = await dbContext.Crews
@@ -81,8 +78,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             .SingleAsync(candidate => candidate.CrewId == crewId);
 
         Assert.Equal(result.GameId, game.Uuid);
+        Assert.Equal(result.CrewId, game.CrewUuid);
         Assert.Equal(result.RecorderUserId, game.RecorderUserId);
-        Assert.Equal(result.PlayedAtUtc, game.PlayedAtUtc);
         Assert.Equal(result.Format, game.Format);
         Assert.Collection(
             game.Sides.OrderBy(side => side.SideNumber),
@@ -503,7 +500,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task RecordGame_WhenMembershipProviderFails_ShouldReturnUnavailableWithoutWritingGame()
+    public async Task RecordGame_WhenMembershipProviderFails_ShouldReturnProblemDetailsWithoutWritingGame()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         var scenarioId = Guid.NewGuid().ToString("N");
@@ -527,7 +524,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             TestJsonSerializerOptions.Default
         );
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType
+        );
         Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
     }
 

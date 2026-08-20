@@ -20,6 +20,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Uuid = table.Column<Guid>(type: "uuid", nullable: false),
                     CrewId = table.Column<long>(type: "bigint", nullable: false),
+                    CrewUuid = table.Column<Guid>(type: "uuid", nullable: false),
                     Format = table.Column<string>(type: "text", nullable: false),
                     RecorderUserId = table.Column<string>(type: "text", nullable: false),
                     PlayedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

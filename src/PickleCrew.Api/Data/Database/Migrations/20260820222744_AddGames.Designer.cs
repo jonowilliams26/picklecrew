@@ -13,7 +13,7 @@ using PickleCrew.Api.Data.Database;
 namespace PickleCrew.Api.Data.Database.Migrations
 {
     [DbContext(typeof(PickleCrewDbContext))]
-    [Migration("20260819230533_AddGames")]
+    [Migration("20260820222744_AddGames")]
     partial class AddGames
     {
         /// <inheritdoc />
@@ -103,6 +103,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.Property<long>("CrewId")
                         .HasColumnType("bigint");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Format")
                         .IsRequired()

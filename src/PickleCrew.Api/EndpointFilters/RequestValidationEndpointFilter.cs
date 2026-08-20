@@ -2,6 +2,23 @@ namespace PickleCrew.Api.EndpointFilters;
 
 internal static class RequestValidationEndpointFilterExtensions
 {
+    public static void AddError(
+        this Dictionary<string, string[]> errors,
+        string key,
+        string message)
+    {
+        if (!errors.TryGetValue(key, out var messages))
+        {
+            errors[key] = [message];
+            return;
+        }
+
+        if (!messages.Contains(message, StringComparer.Ordinal))
+        {
+            errors[key] = [.. messages, message];
+        }
+    }
+
     public static RouteHandlerBuilder WithRequestValidation<TRequest>(
         this RouteHandlerBuilder builder,
         Func<TRequest, Dictionary<string, string[]>> validate)

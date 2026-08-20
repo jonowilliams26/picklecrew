@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type {
   GameFormat,
   GetGameRecordingOptionsHttpResponse,
@@ -193,118 +194,28 @@ export function isValidFinalScore({
 export function createRecordGameRequest(
   values: GameFormValues,
 ): Result<RecordGameHttpRequest, InvalidGameError> {
+  const result = gameFormSchema.safeParse(values)
+
+  if (result.success) {
+    return success(result.data)
+  }
+
   const fieldErrors: Record<string, string> = {}
-  const memberLocations = new Map<string, string>()
-  const guestLocations = new Map<string, string>()
-  const participants: RecordGameHttpRequest['sides'][number]['participants'][] =
-    []
-  let memberCount = 0
 
-  for (const [sideIndex, side] of values.sides.entries()) {
-    const sideParticipants: RecordGameHttpRequest['sides'][number]['participants'] =
-      []
-    const expectedParticipantCount = values.format === 'doubles' ? 2 : 1
+  for (const issue of result.error.issues) {
+    const key = issue.path.map(String).join('.')
 
-    if (side.participants.length !== expectedParticipantCount) {
-      fieldErrors.participants = `Each Side must have exactly ${expectedParticipantCount} participant${expectedParticipantCount === 1 ? '' : 's'} for this format.`
+    if (key && fieldErrors[key] === undefined) {
+      fieldErrors[key] = issue.message
     }
-
-    for (const [participantIndex, participant] of side.participants.entries()) {
-      if (participant.kind === 'member') {
-        const key = participantFieldName({
-          sideIndex,
-          participantIndex,
-          field: 'userId',
-        })
-
-        if (!participant.userId) {
-          fieldErrors[key] = `Select an active Crew member for Side ${sideIndex + 1}.`
-        } else {
-          memberCount++
-          addDuplicateError({
-            value: participant.userId,
-            key,
-            locations: memberLocations,
-            fieldErrors,
-            message: 'A Crew member may participate only once in a Game.',
-          })
-        }
-
-        sideParticipants.push({ userId: participant.userId })
-        continue
-      }
-
-      const key = participantFieldName({
-        sideIndex,
-        participantIndex,
-        field: 'guestName',
-      })
-      const guestName = normalizeGuestName(participant.guestName)
-
-      if (!guestName) {
-        fieldErrors[key] = `Enter a Guest name for Side ${sideIndex + 1}.`
-      } else {
-        addDuplicateError({
-          value: guestName.toLowerCase(),
-          key,
-          locations: guestLocations,
-          fieldErrors,
-          message: 'Guest names must be distinct within a Game.',
-        })
-      }
-
-      sideParticipants.push({ guestName })
-    }
-
-    participants.push(sideParticipants)
   }
 
-  if (memberCount === 0) {
-    fieldErrors.participants =
-      'At least one participant must be an active member of the current Crew.'
-  }
-
-  const firstScore = parseScore(values.sides[0].score)
-  const secondScore = parseScore(values.sides[1].score)
-
-  if (firstScore === undefined) {
-    fieldErrors[scoreFieldName({ sideIndex: 0 })] =
-      'Enter a non-negative whole number.'
-  }
-
-  if (secondScore === undefined) {
-    fieldErrors[scoreFieldName({ sideIndex: 1 })] =
-      'Enter a non-negative whole number.'
-  }
-
-  const scoresArePresent = firstScore !== undefined && secondScore !== undefined
-
-  if (scoresArePresent && !isValidFinalScore({ firstScore, secondScore })) {
-    const message = 'Enter a completed score played to 11 and won by two.'
-    fieldErrors[scoreFieldName({ sideIndex: 0 })] = message
-    fieldErrors[scoreFieldName({ sideIndex: 1 })] = message
-  }
-
-  if (Object.keys(fieldErrors).length > 0) {
-    return failure({
-      type: 'invalid-game',
-      message:
-        fieldErrors.participants ??
-        'Correct the highlighted fields and try again.',
-      fieldErrors,
-    })
-  }
-
-  if (firstScore === undefined || secondScore === undefined) {
-    throw new Error('Validated Game scores must be present.')
-  }
-
-  return success({
-    format: values.format,
-    sides: [
-      { score: firstScore, participants: participants[0] ?? [] },
-      { score: secondScore, participants: participants[1] ?? [] },
-    ],
+  return failure({
+    type: 'invalid-game',
+    message:
+      fieldErrors.participants ??
+      'Correct the highlighted fields and try again.',
+    fieldErrors,
   })
 }
 
@@ -379,38 +290,210 @@ function updateParticipant({
   return { ...values, sides }
 }
 
-function addDuplicateError({
-  value,
-  key,
+const invalidScoreMessage = 'Enter a non-negative whole number.'
+const scoreSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, invalidScoreMessage)
+  .refine((score) => Number.isSafeInteger(Number(score)), invalidScoreMessage)
+
+function createParticipantSchema({ sideIndex }: { sideIndex: number }) {
+  return z.discriminatedUnion('kind', [
+    z.object({
+      kind: z.literal('member'),
+      userId: z
+        .string()
+        .min(1, `Select an active Crew member for Side ${sideIndex + 1}.`),
+      guestName: z.string(),
+    }),
+    z.object({
+      kind: z.literal('guest'),
+      userId: z.string(),
+      guestName: z
+        .string()
+        .transform(normalizeGuestName)
+        .pipe(
+          z
+            .string()
+            .min(1, `Enter a Guest name for Side ${sideIndex + 1}.`),
+        ),
+    }),
+  ])
+}
+
+function createSideSchema({ sideIndex }: { sideIndex: number }) {
+  return z.object({
+    score: scoreSchema,
+    participants: z.array(createParticipantSchema({ sideIndex })),
+  })
+}
+
+const gameFormSchema = z
+  .discriminatedUnion('format', [
+    z.object({
+      format: z.literal('singles'),
+      sides: z.tuple([
+        createSideSchema({ sideIndex: 0 }),
+        createSideSchema({ sideIndex: 1 }),
+      ]),
+    }),
+    z.object({
+      format: z.literal('doubles'),
+      sides: z.tuple([
+        createSideSchema({ sideIndex: 0 }),
+        createSideSchema({ sideIndex: 1 }),
+      ]),
+    }),
+  ])
+  .superRefine((values, context) => {
+    const expectedParticipantCount = values.format === 'doubles' ? 2 : 1
+    const participantCountLabel = `${expectedParticipantCount} participant${expectedParticipantCount === 1 ? '' : 's'}`
+
+    if (
+      values.sides.some(
+        (side) => side.participants.length !== expectedParticipantCount,
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['participants'],
+        message: `Each Side must have exactly ${participantCountLabel} for this format.`,
+      })
+    }
+
+    const memberLocations = new Map<
+      string,
+      Array<ReadonlyArray<string | number>>
+    >()
+    const guestLocations = new Map<
+      string,
+      Array<ReadonlyArray<string | number>>
+    >()
+
+    for (const [sideIndex, side] of values.sides.entries()) {
+      for (const [participantIndex, participant] of side.participants.entries()) {
+        const participantPath = [
+          'sides',
+          sideIndex,
+          'participants',
+          participantIndex,
+        ] as const
+
+        if (participant.kind === 'member') {
+          if (participant.userId) {
+            addLocation({
+              locations: memberLocations,
+              value: participant.userId,
+              path: [...participantPath, 'userId'],
+            })
+          }
+          continue
+        }
+
+        if (participant.guestName) {
+          addLocation({
+            locations: guestLocations,
+            value: participant.guestName.toLowerCase(),
+            path: [...participantPath, 'guestName'],
+          })
+        }
+      }
+    }
+
+    if (memberLocations.size === 0) {
+      context.addIssue({
+        code: 'custom',
+        path: ['participants'],
+        message:
+          'At least one participant must be an active member of the current Crew.',
+      })
+    }
+
+    addDuplicateIssues({
+      context,
+      locations: memberLocations,
+      message: 'A Crew member may participate only once in a Game.',
+    })
+    addDuplicateIssues({
+      context,
+      locations: guestLocations,
+      message: 'Guest names must be distinct within a Game.',
+    })
+
+    const [firstSide, secondSide] = values.sides
+    const firstScore = parseScore(firstSide.score)
+    const secondScore = parseScore(secondSide.score)
+
+    if (
+      firstScore !== undefined &&
+      secondScore !== undefined &&
+      !isValidFinalScore({ firstScore, secondScore })
+    ) {
+      const message = 'Enter a completed score played to 11 and won by two.'
+      context.addIssue({
+        code: 'custom',
+        path: ['sides', 0, 'score'],
+        message,
+      })
+      context.addIssue({
+        code: 'custom',
+        path: ['sides', 1, 'score'],
+        message,
+      })
+    }
+  })
+  .transform(
+    (values): RecordGameHttpRequest => ({
+      format: values.format,
+      sides: values.sides.map((side) => ({
+        score: Number(side.score),
+        participants: side.participants.map((participant) =>
+          participant.kind === 'member'
+            ? { userId: participant.userId }
+            : { guestName: participant.guestName },
+        ),
+      })),
+    }),
+  )
+
+function addLocation({
   locations,
-  fieldErrors,
-  message,
+  value,
+  path,
 }: {
+  locations: Map<string, Array<ReadonlyArray<string | number>>>
   value: string
-  key: string
-  locations: Map<string, string>
-  fieldErrors: Record<string, string>
-  message: string
+  path: ReadonlyArray<string | number>
 }): void {
-  const existingKey = locations.get(value)
-
-  if (existingKey) {
-    fieldErrors[existingKey] = message
-    fieldErrors[key] = message
-    return
-  }
-
-  locations.set(value, key)
+  const paths = locations.get(value) ?? []
+  paths.push(path)
+  locations.set(value, paths)
 }
 
 function parseScore(score: string): number | undefined {
-  const normalizedScore = score.trim()
+  const parsedScore = Number(score)
 
-  if (!/^\d+$/.test(normalizedScore)) {
-    return undefined
+  return /^\d+$/.test(score) && Number.isSafeInteger(parsedScore)
+    ? parsedScore
+    : undefined
+}
+
+function addDuplicateIssues({
+  context,
+  locations,
+  message,
+}: {
+  context: z.RefinementCtx
+  locations: ReadonlyMap<string, ReadonlyArray<ReadonlyArray<string | number>>>
+  message: string
+}): void {
+  for (const paths of locations.values()) {
+    if (paths.length < 2) {
+      continue
+    }
+
+    for (const path of paths) {
+      context.addIssue({ code: 'custom', path: [...path], message })
+    }
   }
-
-  const parsedScore = Number(normalizedScore)
-
-  return Number.isSafeInteger(parsedScore) ? parsedScore : undefined
 }

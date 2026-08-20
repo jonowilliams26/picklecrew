@@ -101,6 +101,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<long>("CrewId")
                         .HasColumnType("bigint");
 
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Format")
                         .IsRequired()
                         .HasColumnType("text");

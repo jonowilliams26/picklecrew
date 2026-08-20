@@ -314,6 +314,46 @@ describe('createRecordGameRequest', () => {
       'Enter a non-negative whole number.',
     )
   })
+
+  test('rejects a score where play should have ended earlier', () => {
+    const values = setScores({
+      values: createValidSinglesValues(),
+      firstScore: '11',
+      secondScore: '10',
+    })
+
+    const result = createRecordGameRequest(values)
+
+    assert.equal(result.ok, false)
+
+    if (result.ok) {
+      return
+    }
+
+    const message = 'Enter a completed score played to 11 and won by two.'
+    assert.equal(result.error.fieldErrors['sides.0.score'], message)
+    assert.equal(result.error.fieldErrors['sides.1.score'], message)
+  })
+
+  test('rejects participant counts that do not match the format', () => {
+    const values = {
+      ...createValidSinglesValues(),
+      format: 'doubles',
+    } as const
+
+    const result = createRecordGameRequest(values)
+
+    assert.equal(result.ok, false)
+
+    if (result.ok) {
+      return
+    }
+
+    assert.equal(
+      result.error.fieldErrors.participants,
+      'Each Side must have exactly 2 participants for this format.',
+    )
+  })
 })
 
 function createValidSinglesValues(): GameFormValues {

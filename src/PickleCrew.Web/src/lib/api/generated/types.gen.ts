@@ -195,10 +195,6 @@ export type GetGameRecordingOptionsErrors = {
      * Internal Server Error
      */
     500: ProblemDetails;
-    /**
-     * Service Unavailable
-     */
-    503: ProblemDetails;
 };
 
 export type GetGameRecordingOptionsError = GetGameRecordingOptionsErrors[keyof GetGameRecordingOptionsErrors];
@@ -236,10 +232,6 @@ export type RecordGameErrors = {
      * Internal Server Error
      */
     500: ProblemDetails;
-    /**
-     * Service Unavailable
-     */
-    503: ProblemDetails;
 };
 
 export type RecordGameError = RecordGameErrors[keyof RecordGameErrors];
