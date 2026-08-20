@@ -93,14 +93,14 @@ function ActiveCrewLayout() {
         <header className="flex h-18 shrink-0 items-center justify-between border-b-2 border-border bg-background/90 px-5 backdrop-blur-sm md:hidden">
           <div className="flex items-center gap-2">
             <SidebarTrigger aria-label="Open navigation" />
-            <a
+            <Link
               className="inline-flex items-center gap-2.5 font-heading text-lg font-black tracking-[-.045em]"
-              href="/dashboard"
+              to="/dashboard"
               aria-label="PickleCrew dashboard"
             >
               <LogoMark />
               <span>PickleCrew</span>
-            </a>
+            </Link>
           </div>
           <span className="max-w-40 truncate rounded-full border border-border bg-background px-3 py-1.5 text-[9px] font-extrabold tracking-[.08em] uppercase">
             {activeCrew.name}
@@ -139,14 +139,14 @@ function ActiveCrewSidebar({
   return (
     <Sidebar className="border-r-2" collapsible="offcanvas">
       <SidebarHeader className="gap-5 p-5">
-        <a
+        <Link
           className="inline-flex items-center gap-2.5 font-heading text-xl font-black tracking-[-.045em]"
-          href="/dashboard"
+          to="/dashboard"
           aria-label="PickleCrew dashboard"
         >
           <LogoMark />
           <span>PickleCrew</span>
-        </a>
+        </Link>
 
         <div className="flex min-w-0 items-stretch gap-3 px-2">
           <span
@@ -189,7 +189,7 @@ function ActiveCrewSidebar({
                     <SidebarMenuButton
                       className="dashboard-nav-link h-9 rounded-lg px-3 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground data-active:bg-transparent data-active:font-bold data-active:text-foreground"
                       render={
-                        item.isActive ? <a href="/dashboard" /> : undefined
+                        item.isActive ? <Link to="/dashboard" /> : undefined
                       }
                       isActive={item.isActive}
                     >

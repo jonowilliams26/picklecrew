@@ -42,7 +42,7 @@ export const Route = createFileRoute('/_authenticated')({
 
     return { activeCrew, user: auth.user ?? undefined }
   },
-  shouldReload: true,
+  shouldReload: false,
   pendingComponent: MembershipPending,
   pendingMs: 0,
   pendingMinMs: 200,
