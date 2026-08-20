@@ -120,7 +120,7 @@ function DashboardPage() {
   })
 
   return (
-    <main className="relative flex flex-1 flex-col overflow-hidden p-5 pb-28 md:p-8 md:pb-10 xl:p-10">
+    <main className="relative flex flex-1 flex-col overflow-hidden p-5 md:p-8 md:pb-10 xl:p-10">
       <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-12">
         <section className="flex flex-col gap-6" aria-labelledby="personal-stats-heading">
           <SectionHeading
