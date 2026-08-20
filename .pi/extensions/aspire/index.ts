@@ -1,6 +1,12 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { platform } from "node:os";
 
 type LifecycleCommand = "start" | "stop";
+
+type BrowserCommand = Readonly<{
+	executable: string;
+	args: readonly string[];
+}>;
 
 type CommandConfiguration = Readonly<{
 	args: readonly string[];
@@ -9,15 +15,16 @@ type CommandConfiguration = Readonly<{
 }>;
 
 const STATUS_KEY = "aspire-lifecycle";
+const DASHBOARD_URL_PATTERN = /"dashboardUrl"\s*:\s*"(https?:\/\/[^"\r\n]+)"/i;
 const LIFECYCLE_COMMANDS = ["start", "stop"] as const satisfies readonly LifecycleCommand[];
 const COMMAND_CONFIGURATIONS: Readonly<Record<LifecycleCommand, CommandConfiguration>> = {
 	start: {
-		args: ["start", "--isolated"],
+		args: ["start", "--isolated", "--format", "Json", "--non-interactive", "--nologo"],
 		inProgressMessage: "Starting Aspire...",
 		successMessage: "Aspire application started",
 	},
 	stop: {
-		args: ["stop"],
+		args: ["stop", "--non-interactive", "--nologo"],
 		inProgressMessage: "Stopping Aspire...",
 		successMessage: "Aspire application stopped",
 	},
@@ -25,6 +32,24 @@ const COMMAND_CONFIGURATIONS: Readonly<Record<LifecycleCommand, CommandConfigura
 
 function formatCommandOutput({ stdout, stderr }: { stdout: string; stderr: string }): string {
 	return stdout.trim() || stderr.trim();
+}
+
+function extractDashboardUrl({ output }: { output: string }): string | undefined {
+	return DASHBOARD_URL_PATTERN.exec(output)?.[1];
+}
+
+function createBrowserCommand({ url }: { url: string }): BrowserCommand {
+	switch (platform()) {
+		case "win32":
+			return {
+				executable: "rundll32.exe",
+				args: ["url.dll,FileProtocolHandler", url],
+			};
+		case "darwin":
+			return { executable: "open", args: [url] };
+		default:
+			return { executable: "xdg-open", args: [url] };
+	}
 }
 
 export default function aspireLifecycleExtension(pi: ExtensionAPI): void {
@@ -61,10 +86,46 @@ export default function aspireLifecycleExtension(pi: ExtensionAPI): void {
 						return;
 					}
 
+					let successDetails = output;
+					let browserFailure: string | undefined;
+
+					if (command === "start") {
+						successDetails = "";
+						const dashboardUrl = extractDashboardUrl({ output });
+
+						if (!dashboardUrl) {
+							browserFailure = "dashboard URL was not returned by Aspire";
+						} else {
+							const browserCommand = createBrowserCommand({ url: dashboardUrl });
+
+							try {
+								const browserResult = await pi.exec(
+									browserCommand.executable,
+									[...browserCommand.args],
+									{ cwd: ctx.cwd },
+								);
+
+								if (browserResult.code === 0) {
+									successDetails = "Dashboard opened in default browser";
+								} else {
+									browserFailure = `exit code ${browserResult.code}`;
+								}
+							} catch (cause: unknown) {
+								browserFailure = cause instanceof Error ? cause.message : String(cause);
+							}
+						}
+					}
+
 					ctx.ui.notify(
-						output ? `${configuration.successMessage}\n${output}` : configuration.successMessage,
+						successDetails
+							? `${configuration.successMessage}\n${successDetails}`
+							: configuration.successMessage,
 						"info",
 					);
+
+					if (browserFailure) {
+						ctx.ui.notify(`Failed to open Aspire dashboard: ${browserFailure}`, "warning");
+					}
 				} catch (cause: unknown) {
 					const details = cause instanceof Error ? cause.message : String(cause);
 					ctx.ui.notify(`Failed to ${command} Aspire: ${details}`, "error");
