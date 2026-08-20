@@ -3,6 +3,21 @@ import test from "node:test";
 
 import aspireLifecycleExtension from "./index.ts";
 
+function expectedBrowserExecution(url) {
+	switch (process.platform) {
+		case "win32":
+			return {
+				executable: "rundll32.exe",
+				args: ["url.dll,FileProtocolHandler", url],
+				options: { cwd: "/repo" },
+			};
+		case "darwin":
+			return { executable: "open", args: [url], options: { cwd: "/repo" } };
+		default:
+			return { executable: "xdg-open", args: [url], options: { cwd: "/repo" } };
+	}
+}
+
 function createHarness(execute) {
 	const commands = new Map();
 	const notifications = [];
@@ -39,9 +54,68 @@ test("registers start and stop commands", () => {
 	assert.equal(commands.get("stop").description, "Stop the Aspire application");
 });
 
-test("start runs Aspire in isolated mode from the project directory", async () => {
+test("start opens the Aspire dashboard in the default browser", async () => {
+	const dashboardUrl = "https://localhost:1234/login?t=token";
+	const harness = createHarness(async (executable) => {
+		if (executable === "aspire") {
+			return {
+				stdout: `Starting Aspire AppHost in the background...\n{\n  "dashboardUrl": "${dashboardUrl}"\n}\n`,
+				stderr: "",
+				code: 0,
+				killed: false,
+			};
+		}
+
+		return { stdout: "", stderr: "", code: 0, killed: false };
+	});
+
+	await harness.commands.get("start").handler("", harness.context);
+
+	assert.deepEqual(harness.executions, [
+		{
+			executable: "aspire",
+			args: ["start", "--isolated", "--format", "Json", "--non-interactive", "--nologo"],
+			options: { cwd: "/repo" },
+		},
+		expectedBrowserExecution(dashboardUrl),
+	]);
+	assert.deepEqual(harness.notifications, [
+		{
+			message: "Aspire application started\nDashboard opened in default browser",
+			level: "info",
+		},
+	]);
+	assert.deepEqual(harness.statuses, [
+		{ key: "aspire-lifecycle", value: "Starting Aspire..." },
+		{ key: "aspire-lifecycle", value: undefined },
+	]);
+});
+
+test("reports a browser launch failure without reporting Aspire start as failed", async () => {
+	const harness = createHarness(async (executable) => {
+		if (executable === "aspire") {
+			return {
+				stdout: '{ "dashboardUrl": "https://localhost:1234" }\n',
+				stderr: "",
+				code: 0,
+				killed: false,
+			};
+		}
+
+		return { stdout: "", stderr: "Could not open browser", code: 1, killed: false };
+	});
+
+	await harness.commands.get("start").handler("", harness.context);
+
+	assert.deepEqual(harness.notifications, [
+		{ message: "Aspire application started", level: "info" },
+		{ message: "Failed to open Aspire dashboard: exit code 1", level: "warning" },
+	]);
+});
+
+test("reports when Aspire does not return a dashboard URL", async () => {
 	const harness = createHarness(async () => ({
-		stdout: "Dashboard: https://localhost:1234\n",
+		stdout: '{ "status": "running" }\n',
 		stderr: "",
 		code: 0,
 		killed: false,
@@ -49,22 +123,13 @@ test("start runs Aspire in isolated mode from the project directory", async () =
 
 	await harness.commands.get("start").handler("", harness.context);
 
-	assert.deepEqual(harness.executions, [
-		{
-			executable: "aspire",
-			args: ["start", "--isolated"],
-			options: { cwd: "/repo" },
-		},
-	]);
+	assert.equal(harness.executions.length, 1);
 	assert.deepEqual(harness.notifications, [
+		{ message: "Aspire application started", level: "info" },
 		{
-			message: "Aspire application started\nDashboard: https://localhost:1234",
-			level: "info",
+			message: "Failed to open Aspire dashboard: dashboard URL was not returned by Aspire",
+			level: "warning",
 		},
-	]);
-	assert.deepEqual(harness.statuses, [
-		{ key: "aspire-lifecycle", value: "Starting Aspire..." },
-		{ key: "aspire-lifecycle", value: undefined },
 	]);
 });
 
@@ -76,7 +141,7 @@ test("stop runs Aspire stop from the project directory", async () => {
 	assert.deepEqual(harness.executions, [
 		{
 			executable: "aspire",
-			args: ["stop"],
+			args: ["stop", "--non-interactive", "--nologo"],
 			options: { cwd: "/repo" },
 		},
 	]);
