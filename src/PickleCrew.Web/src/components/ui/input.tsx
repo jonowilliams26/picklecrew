@@ -12,6 +12,8 @@ const inputVariants = cva(
         default: null,
         crew:
           "h-14 rounded-xl border-2 border-ink bg-cream px-4 font-heading text-lg shadow-[3px_4px_0_var(--ink)] placeholder:font-mono placeholder:text-sm focus-visible:border-ink focus-visible:ring-lime/70 md:text-lg",
+        score:
+          "h-20 appearance-none rounded-xl border-2 border-ink bg-cream px-3 text-center font-heading text-4xl font-black tabular-nums shadow-[2px_3px_0_var(--ink)] placeholder:text-ink/25 focus-visible:border-ink focus-visible:ring-lime/70 md:text-4xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
       },
     },
     defaultVariants: {

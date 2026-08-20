@@ -1,10 +1,13 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import {
-  Check,
   CircleAlertIcon,
+  Crown,
   RotateCcw,
   Save,
+  Sparkles,
+  Swords,
+  Trophy,
   UserRound,
   UserRoundCheck,
   UserRoundPlus,
@@ -39,6 +42,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
+import { Separator } from '~/components/ui/separator'
+import { Spinner } from '~/components/ui/spinner'
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -54,6 +59,7 @@ import {
   getGameRecordingOptions,
   recordGame,
 } from '~/lib/games/games.functions'
+import { cn } from '~/lib/utils'
 import {
   changeGameFormat,
   changeParticipantKind,
@@ -284,34 +290,49 @@ function GameRecordingForm({
     )
   }
 
+  const firstSide = values.sides[0]
+  const secondSide = values.sides[1]
+
+  if (!firstSide || !secondSide) {
+    throw new Error('A Game form must contain exactly two Sides.')
+  }
+
   return (
-    <main className="flex flex-1 items-start justify-center p-4 pb-24 md:p-10">
-      <Card className="w-full max-w-3xl border-2 border-border shadow-[6px_7px_0_var(--ink)]">
+    <main className="relative flex flex-1 items-start justify-center p-4 pb-28 md:p-10">
+      <Card className="w-full max-w-5xl border-2 border-ink bg-cream py-0 shadow-[6px_7px_0_var(--ink)]">
         <form
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-0"
           noValidate
           onSubmit={(event) => {
             event.preventDefault()
             void submit()
           }}
         >
-          <CardHeader>
-            <CardTitle className="text-2xl font-black tracking-[-.04em] md:text-3xl">
+          <CardHeader className="rounded-t-[10px] border-b-2 border-ink bg-ink p-6 text-cream md:p-8">
+            <span className="flex items-center gap-2 text-[10px] font-black tracking-[.14em] text-lime uppercase">
+              <Sparkles aria-hidden="true" />
               Record a Game
+            </span>
+            <CardTitle className="max-w-2xl text-3xl font-black leading-none tracking-[-.05em] md:text-5xl">
+              Who owned the court?
             </CardTitle>
-            <CardDescription>Enter the completed Game result.</CardDescription>
+            <CardDescription className="max-w-xl font-heading text-base text-cream/70">
+              Add the players and final score. We’ll handle the bragging rights.
+            </CardDescription>
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-6">
-            <FieldSet disabled={isSubmitting}>
-              <FieldLegend>Game format</FieldLegend>
+          <CardContent className="flex flex-col gap-7 p-4 md:p-7">
+            <FieldSet className="gap-3" disabled={isSubmitting}>
+              <FieldLegend className="font-heading text-base font-black tracking-[-.025em]">
+                Game format
+              </FieldLegend>
               <Field
                 data-invalid={fieldErrors.participants !== undefined || undefined}
               >
                 <ToggleGroup
-                  className="grid w-full grid-cols-2"
-                  variant="outline"
-                  size="lg"
+                  className="grid w-full grid-cols-2 gap-3"
+                  variant="crew"
+                  size="card"
                   value={[values.format]}
                   disabled={isSubmitting}
                   aria-label="Game format"
@@ -324,33 +345,67 @@ function GameRecordingForm({
                   }}
                 >
                   <ToggleGroupItem className="w-full" value="singles">
-                    <UserRound data-icon="inline-start" />
-                    Singles
+                    <UserRound aria-hidden="true" />
+                    <span className="flex flex-col items-center leading-none">
+                      Singles
+                      <span className="mt-1 text-[10px] font-bold tracking-[.08em] uppercase opacity-65">
+                        One vs one
+                      </span>
+                    </span>
                   </ToggleGroupItem>
                   <ToggleGroupItem className="w-full" value="doubles">
-                    <UsersRound data-icon="inline-start" />
-                    Doubles
+                    <UsersRound aria-hidden="true" />
+                    <span className="flex flex-col items-center leading-none">
+                      Doubles
+                      <span className="mt-1 text-[10px] font-bold tracking-[.08em] uppercase opacity-65">
+                        Two vs two
+                      </span>
+                    </span>
                   </ToggleGroupItem>
                 </ToggleGroup>
                 <FieldError>{fieldErrors.participants}</FieldError>
               </Field>
             </FieldSet>
 
-            <FieldGroup>
-              {values.sides.map((side, sideIndex) => (
-                <GameSideFields
-                  key={sideIndex}
-                  sideIndex={sideIndex}
-                  side={side}
-                  members={options.members}
-                  selectedUserIds={selectedUserIds}
-                  fieldErrors={fieldErrors}
-                  isSubmitting={isSubmitting}
-                  onParticipantKindChange={updateParticipantKind}
-                  onParticipantValueChange={updateParticipantValue}
-                  onScoreChange={updateScore}
-                />
-              ))}
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span className="flex items-center gap-2 text-[10px] font-black tracking-[.12em] text-accent uppercase">
+                <Swords aria-hidden="true" />
+                Build the matchup
+              </span>
+              <p className="font-mono text-[10px] text-muted-foreground uppercase">
+                First to 11 · win by 2
+              </p>
+              <Separator className="mt-2 bg-ink/15" />
+            </div>
+
+            <FieldGroup className="items-stretch gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:gap-8">
+              <GameSideFields
+                sideIndex={0}
+                side={firstSide}
+                members={options.members}
+                selectedUserIds={selectedUserIds}
+                fieldErrors={fieldErrors}
+                isSubmitting={isSubmitting}
+                onParticipantKindChange={updateParticipantKind}
+                onParticipantValueChange={updateParticipantValue}
+                onScoreChange={updateScore}
+              />
+              <Separator className="bg-ink/15 lg:hidden" />
+              <Separator
+                className="hidden bg-ink/15 lg:block"
+                orientation="vertical"
+              />
+              <GameSideFields
+                sideIndex={1}
+                side={secondSide}
+                members={options.members}
+                selectedUserIds={selectedUserIds}
+                fieldErrors={fieldErrors}
+                isSubmitting={isSubmitting}
+                onParticipantKindChange={updateParticipantKind}
+                onParticipantValueChange={updateParticipantValue}
+                onScoreChange={updateScore}
+              />
             </FieldGroup>
 
             {submissionError ? (
@@ -362,16 +417,23 @@ function GameRecordingForm({
             ) : null}
           </CardContent>
 
-          <CardFooter className="flex-col items-stretch gap-3">
+          <CardFooter className="flex-col items-stretch gap-3 border-t border-ink/15 p-4 md:flex-row md:items-center md:justify-between md:p-6">
+            <p className="hidden max-w-sm font-heading text-sm font-semibold text-muted-foreground md:block">
+              Give the Sides one last look, then make it official.
+            </p>
             <Button
-              className="w-full"
+              className="w-full md:w-auto md:min-w-64"
               variant="crew"
               size="xl"
               type="submit"
               disabled={isSubmitting}
             >
-              Save game
-              <Save data-icon="inline-end" />
+              {isSubmitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Save data-icon="inline-start" />
+              )}
+              {isSubmitting ? 'Saving Game…' : 'Lock in the result'}
             </Button>
           </CardFooter>
         </form>
@@ -414,14 +476,48 @@ function GameSideFields({
   const scoreInputId = `side-${sideNumber}-score`
 
   return (
-    <FieldSet
-      className="rounded-xl border-2 border-border p-4 md:p-5"
-      disabled={isSubmitting}
-    >
-      <FieldLegend className="font-heading text-lg font-extrabold">
-        Side {sideNumber}
-      </FieldLegend>
+    <FieldSet className="min-w-0 gap-5 px-1 py-2 md:px-3" disabled={isSubmitting}>
+      <FieldLegend className="sr-only">Side {sideNumber}</FieldLegend>
       <FieldGroup className="gap-5">
+        <Field
+          className="mx-auto max-w-36 items-center"
+          data-invalid={fieldErrors[scoreKey] !== undefined || undefined}
+          data-disabled={isSubmitting || undefined}
+        >
+          <FieldLabel
+            className="justify-center gap-2 text-center font-heading text-xl font-black tracking-[-.04em]"
+            htmlFor={scoreInputId}
+          >
+            <span
+              className={cn(
+                'size-2 rounded-full',
+                sideIndex === 0 ? 'bg-orange' : 'bg-aqua',
+              )}
+              aria-hidden="true"
+            />
+            Side {sideNumber}
+          </FieldLabel>
+          <Input
+            id={scoreInputId}
+            name={scoreKey}
+            type="number"
+            variant="score"
+            min={0}
+            step={1}
+            inputMode="numeric"
+            value={side.score}
+            placeholder="0"
+            onChange={(event) =>
+              onScoreChange({ sideIndex, score: event.target.value })
+            }
+            aria-invalid={fieldErrors[scoreKey] !== undefined || undefined}
+            disabled={isSubmitting}
+          />
+          <FieldError className="text-center">
+            {fieldErrors[scoreKey]}
+          </FieldError>
+        </Field>
+
         {side.participants.map((participant, participantIndex) => (
           <ParticipantFields
             key={participantIndex}
@@ -436,29 +532,6 @@ function GameSideFields({
             onValueChange={onParticipantValueChange}
           />
         ))}
-
-        <Field
-          data-invalid={fieldErrors[scoreKey] !== undefined || undefined}
-          data-disabled={isSubmitting || undefined}
-        >
-          <FieldLabel htmlFor={scoreInputId}>Final score</FieldLabel>
-          <Input
-            id={scoreInputId}
-            name={scoreKey}
-            type="number"
-            min={0}
-            step={1}
-            inputMode="numeric"
-            value={side.score}
-            placeholder="0"
-            onChange={(event) =>
-              onScoreChange({ sideIndex, score: event.target.value })
-            }
-            aria-invalid={fieldErrors[scoreKey] !== undefined || undefined}
-            disabled={isSubmitting}
-          />
-          <FieldError>{fieldErrors[scoreKey]}</FieldError>
-        </Field>
       </FieldGroup>
     </FieldSet>
   )
@@ -503,11 +576,16 @@ function ParticipantFields({
   }))
 
   return (
-    <FieldSet>
-      <FieldLegend variant="label">Participant {participantNumber}</FieldLegend>
-      <FieldGroup className="gap-3">
+    <FieldSet className="gap-3 border-t border-ink/15 pt-4">
+      <FieldLegend
+        className="px-1 font-semibold tracking-[.08em] text-muted-foreground uppercase data-[variant=label]:text-[9px]"
+        variant="label"
+      >
+        Player {participantNumber}
+      </FieldLegend>
+      <FieldGroup className="gap-4">
         <ToggleGroup
-          className="grid w-full grid-cols-2"
+          className="grid w-full grid-cols-2 gap-2"
           variant="outline"
           value={[participant.kind]}
           disabled={isSubmitting}
@@ -550,7 +628,7 @@ function ParticipantFields({
                 }
               >
                 <SelectTrigger
-                  className="h-12 w-full"
+                  className="w-full data-[size=default]:h-12"
                   id={controlId}
                   aria-invalid={fieldErrors[fieldKey] !== undefined || undefined}
                 >
@@ -578,6 +656,7 @@ function ParticipantFields({
             <>
               <FieldLabel htmlFor={controlId}>Guest name</FieldLabel>
               <Input
+                className="h-12"
                 id={controlId}
                 name={fieldKey}
                 value={participant.guestName}
@@ -636,39 +715,56 @@ function GameSavedConfirmation({
     throw new Error('A saved Game must contain exactly two Sides.')
   }
 
-  const firstNames = firstSide.participants
-    .map((participant) => getParticipantName({ participant, memberByUserId }))
-    .join(' + ')
-  const secondNames = secondSide.participants
-    .map((participant) => getParticipantName({ participant, memberByUserId }))
-    .join(' + ')
   const formatName = game.format === 'singles' ? 'Singles' : 'Doubles'
+  const playedAt = new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(game.playedAtUtc))
 
   return (
-    <main className="flex flex-1 items-start justify-center p-4 pb-24 md:p-10">
-      <Card className="w-full max-w-2xl border-2 border-border shadow-[6px_7px_0_var(--ink)]">
-        <CardHeader>
-          <span className="text-sm font-bold text-accent">Game recorded</span>
-          <CardTitle className="text-2xl font-black tracking-[-.04em] md:text-3xl">
-            Result saved
+    <main className="relative flex flex-1 items-start justify-center p-4 pb-28 md:p-10">
+      <Card className="w-full max-w-3xl gap-0 border-2 border-ink bg-cream py-0 shadow-[6px_7px_0_var(--ink)]">
+        <CardHeader className="items-center justify-items-center gap-3 rounded-t-[10px] border-b-2 border-ink bg-ink p-7 text-center text-cream md:p-9">
+          <span className="grid size-14 place-items-center justify-self-center rounded-full bg-lime text-ink">
+            <Trophy className="-rotate-6" aria-hidden="true" />
+          </span>
+          <span className="text-[10px] font-black tracking-[.14em] text-lime uppercase">
+            Game recorded
+          </span>
+          <CardTitle className="max-w-xl text-3xl font-black leading-none tracking-[-.05em] md:text-5xl">
+            Bragging rights secured.
           </CardTitle>
-          <CardDescription>
-            {new Intl.DateTimeFormat(undefined, {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            }).format(new Date(game.playedAtUtc))}
+          <CardDescription className="font-mono text-[11px] text-cream/65 uppercase">
+            {formatName} · {playedAt}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Alert role="status" aria-live="polite">
-            <Check />
-            <AlertTitle>{formatName} Game complete</AlertTitle>
-            <AlertDescription>
-              {firstNames} {firstSide.score}–{secondSide.score} {secondNames}
-            </AlertDescription>
-          </Alert>
+        <CardContent className="gap-6 p-5 md:p-8">
+          <div
+            className="grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-stretch gap-3 md:gap-8"
+            role="status"
+            aria-live="polite"
+          >
+            <SavedResultSide
+              participants={firstSide.participants}
+              memberByUserId={memberByUserId}
+              score={firstSide.score}
+              isWinner={firstSide.score > secondSide.score}
+              sideIndex={0}
+            />
+            <Separator className="h-full bg-ink/15" orientation="vertical" />
+            <SavedResultSide
+              participants={secondSide.participants}
+              memberByUserId={memberByUserId}
+              score={secondSide.score}
+              isWinner={secondSide.score > firstSide.score}
+              sideIndex={1}
+            />
+          </div>
+          <p className="text-center font-heading text-sm font-semibold text-muted-foreground">
+            The result is saved and ready for the next rally.
+          </p>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="border-t border-ink/15 p-5 md:p-6">
           <Button
             className="w-full"
             variant="crew"
@@ -682,6 +778,66 @@ function GameSavedConfirmation({
         </CardFooter>
       </Card>
     </main>
+  )
+}
+
+function SavedResultSide({
+  participants,
+  memberByUserId,
+  score,
+  isWinner,
+  sideIndex,
+}: {
+  participants: ReadonlyArray<RecordedGameParticipantHttpResponse>
+  memberByUserId: ReadonlyMap<string, GameRecordingMemberHttpResponse>
+  score: number
+  isWinner: boolean
+  sideIndex: number
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center justify-center gap-2 p-3 text-center md:p-5">
+      <span className="flex min-h-4 items-center justify-center gap-1.5 font-mono text-[9px] font-black tracking-[.12em] text-muted-foreground uppercase">
+        {isWinner ? (
+          <>
+            <Crown className="size-4" aria-hidden="true" />
+            Winner
+          </>
+        ) : (
+          `Side ${sideIndex + 1}`
+        )}
+      </span>
+      <strong className="font-heading text-6xl font-black leading-none tracking-[-.06em] tabular-nums md:text-8xl">
+        {score}
+      </strong>
+      <ul className="mt-2 flex w-full min-w-0 max-w-56 flex-col divide-y divide-ink/10 border-y border-ink/15">
+        {participants.map((participant, index) => {
+          const name = getParticipantName({ participant, memberByUserId })
+          const member = participant.userId
+            ? memberByUserId.get(participant.userId)
+            : undefined
+
+          return (
+            <li
+              className="flex min-w-0 items-center justify-start gap-2 px-1 py-2.5 text-left"
+              key={`${index}-${name}`}
+            >
+              <Avatar size="sm">
+                {member?.profilePictureUrl ? (
+                  <AvatarImage src={member.profilePictureUrl} alt="" />
+                ) : null}
+                <AvatarFallback>{getInitials(name)}</AvatarFallback>
+              </Avatar>
+              <span
+                className="min-w-0 truncate font-heading text-sm font-medium leading-tight"
+                title={name}
+              >
+                {name}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
 

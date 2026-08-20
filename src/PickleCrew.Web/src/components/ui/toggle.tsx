@@ -10,12 +10,15 @@ const toggleVariants = cva(
       variant: {
         default: "bg-transparent",
         outline: "border border-input bg-transparent shadow-xs hover:bg-muted",
+        crew:
+          "rounded-xl border-2 border-ink bg-cream text-ink shadow-[2px_3px_0_var(--ink)] hover:bg-paper aria-pressed:bg-lime aria-pressed:shadow-[1px_2px_0_var(--ink)]",
       },
       size: {
         default:
           "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         sm: "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
         lg: "h-10 min-w-10 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        card: "min-h-16 min-w-20 flex-col gap-1 px-4 py-3 text-base font-extrabold",
       },
     },
     defaultVariants: {
