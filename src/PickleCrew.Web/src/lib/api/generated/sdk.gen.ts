@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -35,6 +35,23 @@ export const createCrew = <ThrowOnError extends boolean = false>(options: Option
  */
 export const sendCrewInvitation = <ThrowOnError extends boolean = false>(options: Options<SendCrewInvitationData, ThrowOnError>): RequestResult<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError> => (options.client ?? client).post<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError>({
     url: '/crews/invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Gets active crew members available for game recording.
+ */
+export const getGameRecordingOptions = <ThrowOnError extends boolean = false>(options?: Options<GetGameRecordingOptionsData, ThrowOnError>): RequestResult<GetGameRecordingOptionsResponses, GetGameRecordingOptionsErrors, ThrowOnError> => (options?.client ?? client).get<GetGameRecordingOptionsResponses, GetGameRecordingOptionsErrors, ThrowOnError>({ url: '/games/recording-options', ...options });
+
+/**
+ * Records a completed game for the active Crew.
+ */
+export const recordGame = <ThrowOnError extends boolean = false>(options: Options<RecordGameData, ThrowOnError>): RequestResult<RecordGameResponses, RecordGameErrors, ThrowOnError> => (options.client ?? client).post<RecordGameResponses, RecordGameErrors, ThrowOnError>({
+    url: '/games',
     ...options,
     headers: {
         'Content-Type': 'application/json',

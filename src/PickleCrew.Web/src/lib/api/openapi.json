@@ -146,6 +146,148 @@
           }
         }
       }
+    },
+    "/games/recording-options": {
+      "get": {
+        "tags": [
+          "GetGameRecordingOptionsEndpoint"
+        ],
+        "summary": "Gets active crew members available for game recording.",
+        "operationId": "GetGameRecordingOptions",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGameRecordingOptionsHttpResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games": {
+      "post": {
+        "tags": [
+          "RecordGameEndpoint"
+        ],
+        "summary": "Records a completed game for the active Crew.",
+        "operationId": "RecordGame",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordGameHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordGameHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -188,6 +330,47 @@
           "already-pending",
           "failed"
         ]
+      },
+      "GameFormat": {
+        "enum": [
+          "singles",
+          "doubles"
+        ]
+      },
+      "GameRecordingMemberHttpResponse": {
+        "required": [
+          "userId",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "GetGameRecordingOptionsHttpResponse": {
+        "required": [
+          "members"
+        ],
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameRecordingMemberHttpResponse"
+            }
+          }
+        }
       },
       "HttpValidationProblemDetails": {
         "required": [
@@ -284,6 +467,145 @@
           }
         }
       },
+      "RecordedGameParticipantHttpResponse": {
+        "required": [
+          "slotNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "slotNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "guestName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RecordedGameSideHttpResponse": {
+        "required": [
+          "sideNumber",
+          "score",
+          "participants"
+        ],
+        "type": "object",
+        "properties": {
+          "sideNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordedGameParticipantHttpResponse"
+            }
+          }
+        }
+      },
+      "RecordGameHttpRequest": {
+        "required": [
+          "format",
+          "sides"
+        ],
+        "type": "object",
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/GameFormat"
+          },
+          "sides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordGameSideHttpRequest"
+            }
+          }
+        }
+      },
+      "RecordGameHttpResponse": {
+        "required": [
+          "gameId",
+          "crewId",
+          "format",
+          "recorderUserId",
+          "playedAtUtc",
+          "sides"
+        ],
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "crewId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "format": {
+            "$ref": "#/components/schemas/GameFormat"
+          },
+          "recorderUserId": {
+            "type": "string"
+          },
+          "playedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordedGameSideHttpResponse"
+            }
+          }
+        }
+      },
+      "RecordGameParticipantHttpRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "guestName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RecordGameSideHttpRequest": {
+        "required": [
+          "score",
+          "participants"
+        ],
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordGameParticipantHttpRequest"
+            }
+          }
+        }
+      },
       "SendCrewInvitationHttpRequest": {
         "required": [
           "emailAddress"
@@ -324,6 +646,12 @@
     },
     {
       "name": "SendCrewInvitationEndpoint"
+    },
+    {
+      "name": "GetGameRecordingOptionsEndpoint"
+    },
+    {
+      "name": "RecordGameEndpoint"
     }
   ]
 }

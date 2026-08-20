@@ -1,4 +1,10 @@
-import { createFileRoute, getRouteApi, Outlet } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  getRouteApi,
+  Link,
+  Outlet,
+  useRouterState,
+} from '@tanstack/react-router'
 import type { User } from '@workos/authkit-tanstack-react-start'
 import {
   ChartNoAxesColumnIncreasing,
@@ -72,6 +78,8 @@ function getInitials({ user }: { user: User }): string {
 
 function ActiveCrewLayout() {
   const { activeCrew, user } = authenticatedRoute.useLoaderData()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isRecordingGame = pathname === '/record-game'
 
   if (!activeCrew || !user) {
     throw new Error('Active crew layout rendered without an active crew or user.')
@@ -101,17 +109,19 @@ function ActiveCrewLayout() {
 
         <Outlet />
 
-        <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 md:hidden">
-          <Button
-            className="min-h-14 w-full text-base shadow-[5px_6px_0_var(--orange)]"
-            size="xl"
-            variant="crew"
-            type="button"
-          >
-            <Plus data-icon="inline-start" />
-            Record a new game
-          </Button>
-        </div>
+        {!isRecordingGame ? (
+          <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 md:hidden">
+            <Button
+              className="min-h-14 w-full text-base shadow-[5px_6px_0_var(--orange)]"
+              size="xl"
+              variant="crew"
+              render={<Link to="/record-game" />}
+            >
+              <Plus data-icon="inline-start" />
+              Record a new game
+            </Button>
+          </div>
+        ) : null}
       </SidebarInset>
     </SidebarProvider>
   )
@@ -153,7 +163,12 @@ function ActiveCrewSidebar({
           </div>
         </div>
 
-        <Button className="w-full" size="lg" variant="crew" type="button">
+        <Button
+          className="w-full"
+          size="lg"
+          variant="crew"
+          render={<Link to="/record-game" />}
+        >
           <Plus data-icon="inline-start" />
           Record game
         </Button>

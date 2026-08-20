@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedActiveCrewRouteRouteImport } from './routes/_authenticated/_active-crew/route'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated/_active-crew/dashboard'
+import { Route as AuthenticatedActiveCrewRecordGameRouteImport } from './routes/_authenticated/_active-crew/record-game'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
@@ -44,6 +45,12 @@ const AuthenticatedActiveCrewDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
   } as any)
+const AuthenticatedActiveCrewRecordGameRoute =
+  AuthenticatedActiveCrewRecordGameRouteImport.update({
+    id: '/record-game',
+    path: '/record-game',
+    getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
+  } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
   path: '/api/auth/callback',
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
+  '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
+  '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -90,6 +99,7 @@ export interface FileRoutesById {
   '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
+  '/_authenticated/_active-crew/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -101,6 +111,7 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/dashboard'
+    | '/record-game'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -110,6 +121,7 @@ export interface FileRouteTypes {
     | '/'
     | '/onboarding'
     | '/dashboard'
+    | '/record-game'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -121,6 +133,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-crew'
     | '/_authenticated/onboarding'
     | '/_authenticated/_active-crew/dashboard'
+    | '/_authenticated/_active-crew/record-game'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -173,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActiveCrewDashboardRouteImport
       parentRoute: typeof AuthenticatedActiveCrewRouteRoute
     }
+    '/_authenticated/_active-crew/record-game': {
+      id: '/_authenticated/_active-crew/record-game'
+      path: '/record-game'
+      fullPath: '/record-game'
+      preLoaderRoute: typeof AuthenticatedActiveCrewRecordGameRouteImport
+      parentRoute: typeof AuthenticatedActiveCrewRouteRoute
+    }
     '/api/auth/callback': {
       id: '/api/auth/callback'
       path: '/api/auth/callback'
@@ -206,12 +226,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedActiveCrewRouteRouteChildren {
   AuthenticatedActiveCrewDashboardRoute: typeof AuthenticatedActiveCrewDashboardRoute
+  AuthenticatedActiveCrewRecordGameRoute: typeof AuthenticatedActiveCrewRecordGameRoute
 }
 
 const AuthenticatedActiveCrewRouteRouteChildren: AuthenticatedActiveCrewRouteRouteChildren =
   {
     AuthenticatedActiveCrewDashboardRoute:
       AuthenticatedActiveCrewDashboardRoute,
+    AuthenticatedActiveCrewRecordGameRoute:
+      AuthenticatedActiveCrewRecordGameRoute,
   }
 
 const AuthenticatedActiveCrewRouteRouteWithChildren =
