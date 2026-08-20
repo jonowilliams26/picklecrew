@@ -108,6 +108,127 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task ListActiveMembers_WhenUsersAndCrewsDiffer_ShouldReturnCrewScopedIdsAndDisplayNames()
+    {
+        var organizationId = $"org_test_{Guid.NewGuid():N}";
+        var otherOrganizationId = $"org_test_{Guid.NewGuid():N}";
+        using var client = fixture.CreateFakeWorkOsClient();
+
+        await client.CreateOrganizationAsync(
+            organizationId,
+            "Kitchen Legends",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+        await client.CreateOrganizationAsync(
+            otherOrganizationId,
+            "Baseline Bandits",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+
+        var preferredNameUserId = $"user_test_{Guid.NewGuid():N}";
+        await client.CreateUserAsync(
+            preferredNameUserId,
+            "preferred@example.test",
+            "Pat",
+            "Lee",
+            "Paddle Pat",
+            "https://images.example.test/pat.png"
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            preferredNameUserId,
+            organizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        var fullNameUserId = $"user_test_{Guid.NewGuid():N}";
+        await client.CreateUserAsync(
+            fullNameUserId,
+            "full-name@example.test",
+            "Morgan",
+            "Reed"
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            fullNameUserId,
+            organizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        var emailFallbackUserId = $"user_test_{Guid.NewGuid():N}";
+        await client.CreateUserAsync(
+            emailFallbackUserId,
+            "fallback@example.test"
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            emailFallbackUserId,
+            organizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        var inactiveUserId = $"user_test_{Guid.NewGuid():N}";
+        await client.CreateUserAsync(
+            inactiveUserId,
+            "inactive@example.test",
+            displayName: "Inactive Player"
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            inactiveUserId,
+            organizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Inactive
+        );
+
+        var otherCrewUserId = $"user_test_{Guid.NewGuid():N}";
+        await client.CreateUserAsync(
+            otherCrewUserId,
+            "other-crew@example.test",
+            displayName: "Other Crew Player"
+        );
+        await client.CreateMembershipAsync(
+            $"om_test_{Guid.NewGuid():N}",
+            otherCrewUserId,
+            otherOrganizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        var members = await client.ListActiveMembersAsync(organizationId);
+
+        Assert.Equal(3, members.Length);
+        Assert.Contains(
+            members,
+            member => member.WorkOsUserId == preferredNameUserId
+                && member.DisplayName == "Paddle Pat"
+                && member.EmailAddress == "preferred@example.test"
+                && member.ProfilePictureUrl == "https://images.example.test/pat.png"
+        );
+        Assert.Contains(
+            members,
+            member => member.WorkOsUserId == fullNameUserId
+                && member.DisplayName == "Morgan Reed"
+                && member.EmailAddress == "full-name@example.test"
+        );
+        Assert.Contains(
+            members,
+            member => member.WorkOsUserId == emailFallbackUserId
+                && member.DisplayName == "fallback@example.test"
+                && member.EmailAddress == "fallback@example.test"
+                && member.ProfilePictureUrl is null
+        );
+        Assert.DoesNotContain(
+            members,
+            member => member.WorkOsUserId == inactiveUserId
+                || member.WorkOsUserId == otherCrewUserId
+        );
+    }
+
+    [Fact]
     public async Task InvitationEndpoints_WhenInvitationStatesDiffer_ShouldExposeEligibilityAndInvitationDetails()
     {
         var creator = TestIdentity.Create(FakeMembershipRole.Admin.ToString());
@@ -160,7 +281,7 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
             FakeInvitationState.Accepted
         );
 
-        var activeEmailAddresses = await client.ListActiveMemberEmailAddressesAsync(
+        var activeMembers = await client.ListActiveMembersAsync(
             creator.OrganizationId!
         );
         var pendingInvitations = await client.ListPendingInvitationsAsync(
@@ -170,7 +291,10 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
             creator.OrganizationId!
         );
 
-        Assert.Equal([activeMember.EmailAddress], activeEmailAddresses);
+        var foundActiveMember = Assert.Single(activeMembers);
+        Assert.Equal(activeMember.UserId, foundActiveMember.WorkOsUserId);
+        Assert.Equal(activeMember.EmailAddress, foundActiveMember.DisplayName);
+        Assert.Equal(activeMember.EmailAddress, foundActiveMember.EmailAddress);
         var foundPendingInvitation = Assert.Single(pendingInvitations);
         Assert.Equal(pendingInvitation, foundPendingInvitation);
         Assert.Equal(FakeInvitationState.Pending, foundPendingInvitation.State);

@@ -16,6 +16,18 @@ export type CreateCrewHttpResponse = {
 
 export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
 
+export type GameFormat = 'singles' | 'doubles';
+
+export type GameRecordingMemberHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+};
+
+export type GetGameRecordingOptionsHttpResponse = {
+    members: Array<GameRecordingMemberHttpResponse>;
+};
+
 export type HttpValidationProblemDetails = {
     type?: null | string;
     title?: null | string;
@@ -41,6 +53,42 @@ export type ProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type RecordedGameParticipantHttpResponse = {
+    slotNumber: number;
+    userId?: null | string;
+    guestName?: null | string;
+};
+
+export type RecordedGameSideHttpResponse = {
+    sideNumber: number;
+    score: number;
+    participants: Array<RecordedGameParticipantHttpResponse>;
+};
+
+export type RecordGameHttpRequest = {
+    format: GameFormat;
+    sides: Array<RecordGameSideHttpRequest>;
+};
+
+export type RecordGameHttpResponse = {
+    gameId: string;
+    crewId: string;
+    format: GameFormat;
+    recorderUserId: string;
+    playedAtUtc: string;
+    sides: Array<RecordedGameSideHttpResponse>;
+};
+
+export type RecordGameParticipantHttpRequest = {
+    userId?: null | string;
+    guestName?: null | string;
+};
+
+export type RecordGameSideHttpRequest = {
+    score: number;
+    participants: Array<RecordGameParticipantHttpRequest>;
 };
 
 export type SendCrewInvitationHttpRequest = {
@@ -126,3 +174,73 @@ export type SendCrewInvitationResponses = {
 };
 
 export type SendCrewInvitationResponse = SendCrewInvitationResponses[keyof SendCrewInvitationResponses];
+
+export type GetGameRecordingOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/games/recording-options';
+};
+
+export type GetGameRecordingOptionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetGameRecordingOptionsError = GetGameRecordingOptionsErrors[keyof GetGameRecordingOptionsErrors];
+
+export type GetGameRecordingOptionsResponses = {
+    /**
+     * OK
+     */
+    200: GetGameRecordingOptionsHttpResponse;
+};
+
+export type GetGameRecordingOptionsResponse = GetGameRecordingOptionsResponses[keyof GetGameRecordingOptionsResponses];
+
+export type RecordGameData = {
+    body: RecordGameHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/games';
+};
+
+export type RecordGameErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type RecordGameError = RecordGameErrors[keyof RecordGameErrors];
+
+export type RecordGameResponses = {
+    /**
+     * OK
+     */
+    200: RecordGameHttpResponse;
+};
+
+export type RecordGameResponse = RecordGameResponses[keyof RecordGameResponses];

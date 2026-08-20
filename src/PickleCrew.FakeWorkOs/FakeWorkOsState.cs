@@ -8,7 +8,13 @@ internal sealed class FakeWorkOsState
     private readonly ConcurrentDictionary<string, FakeOrganization> organizations = new();
     private readonly ConcurrentDictionary<FakeOperationFaultKey, byte> faults = new();
 
-    public FakeUser CreateUser(string id, string? emailAddress = null)
+    public FakeUser CreateUser(
+        string id,
+        string? emailAddress = null,
+        string? firstName = null,
+        string? lastName = null,
+        string? displayName = null,
+        string? profilePictureUrl = null)
     {
         return users.GetOrAdd(
             id,
@@ -16,6 +22,10 @@ internal sealed class FakeWorkOsState
             {
                 Id = userId,
                 EmailAddress = emailAddress ?? $"{userId}@picklecrew.test",
+                FirstName = firstName,
+                LastName = lastName,
+                DisplayName = displayName,
+                ProfilePictureUrl = profilePictureUrl,
             }
         );
     }
@@ -56,15 +66,21 @@ internal sealed class FakeWorkOsState
         return membership?.Status == MembershipStatus.Active ? membership : null;
     }
 
-    public string[] ListActiveMemberEmailAddresses(string organizationId)
+    public FakeActiveCrewMember[] ListActiveMembers(string organizationId)
     {
         var organization = GetOrganizationById(organizationId);
 
         return organization.Memberships.Values
             .Where(membership => membership.Status == MembershipStatus.Active)
-            .Select(membership => users[membership.UserId].EmailAddress)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Order(StringComparer.OrdinalIgnoreCase)
+            .Select(membership => users[membership.UserId])
+            .Select(user => new FakeActiveCrewMember
+            {
+                WorkOsUserId = user.Id,
+                DisplayName = ResolveDisplayName(user),
+                EmailAddress = user.EmailAddress,
+                ProfilePictureUrl = user.ProfilePictureUrl,
+            })
+            .OrderBy(member => member.WorkOsUserId, StringComparer.Ordinal)
             .ToArray();
     }
 
@@ -175,9 +191,20 @@ internal sealed class FakeWorkOsState
         string userEmailAddress,
         string organizationName,
         string organizationExternalId,
-        MembershipRole role)
+        MembershipRole role,
+        string? firstName = null,
+        string? lastName = null,
+        string? displayName = null,
+        string? profilePictureUrl = null)
     {
-        var user = CreateUser(userId, userEmailAddress);
+        var user = CreateUser(
+            userId,
+            userEmailAddress,
+            firstName,
+            lastName,
+            displayName,
+            profilePictureUrl
+        );
         var organization = CreateOrganization(organizationName, organizationExternalId);
         var membership = CreateMembership(user.Id, organization.Id, role);
 
@@ -187,6 +214,23 @@ internal sealed class FakeWorkOsState
             Organization = organization,
             Membership = membership,
         };
+    }
+
+    private static string ResolveDisplayName(FakeUser user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.DisplayName))
+        {
+            return user.DisplayName.Trim();
+        }
+
+        var nameParts = new[] { user.FirstName, user.LastName }
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .Select(part => part!.Trim());
+        var name = string.Join(' ', nameParts);
+
+        return string.IsNullOrWhiteSpace(name)
+            ? user.EmailAddress
+            : name;
     }
 
     private FakeOrganization GetOrganizationById(string organizationId)
@@ -226,6 +270,25 @@ internal sealed record FakeUser
     public required string Id { get; init; }
 
     public required string EmailAddress { get; init; }
+
+    public string? FirstName { get; init; }
+
+    public string? LastName { get; init; }
+
+    public string? DisplayName { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
+}
+
+internal sealed record FakeActiveCrewMember
+{
+    public required string WorkOsUserId { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string EmailAddress { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
 }
 
 internal sealed record FakeOrganization

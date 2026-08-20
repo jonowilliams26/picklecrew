@@ -92,24 +92,33 @@ internal sealed class TestWorkOsService : IWorkOsService
         );
     }
 
-    public async Task<string[]> ListActiveCrewMemberEmailAddressesAsync(
+    public async Task<ActiveCrewMember[]> ListActiveCrewMembersAsync(
         string organizationId,
         CancellationToken cancellationToken)
     {
         var encodedOrganizationId = Uri.EscapeDataString(organizationId);
         using var response = await client.GetAsync(
-            $"/organizations/{encodedOrganizationId}/active-member-email-addresses",
+            $"/organizations/{encodedOrganizationId}/active-members",
             cancellationToken
         );
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<EmailAddressListHttpResponse>(
+        var result = await response.Content.ReadFromJsonAsync<ActiveCrewMemberListHttpResponse>(
             cancellationToken
         );
 
-        return result?.EmailAddresses ?? throw new InvalidOperationException(
-            "The fake WorkOS service returned an empty email address list response."
-        );
+        return result?.Members
+            .Select(member => new ActiveCrewMember
+            {
+                WorkOsUserId = member.WorkOsUserId,
+                DisplayName = member.DisplayName,
+                EmailAddress = member.EmailAddress,
+                ProfilePictureUrl = member.ProfilePictureUrl,
+            })
+            .ToArray()
+            ?? throw new InvalidOperationException(
+                "The fake WorkOS service returned an empty active member list response."
+            );
     }
 
     public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
@@ -227,9 +236,20 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string Id { get; init; }
     }
 
-    private sealed record EmailAddressListHttpResponse
+    private sealed record ActiveCrewMemberListHttpResponse
     {
-        public required string[] EmailAddresses { get; init; }
+        public required ActiveCrewMemberHttpResponse[] Members { get; init; }
+    }
+
+    private sealed record ActiveCrewMemberHttpResponse
+    {
+        public required string WorkOsUserId { get; init; }
+
+        public required string DisplayName { get; init; }
+
+        public required string EmailAddress { get; init; }
+
+        public string? ProfilePictureUrl { get; init; }
     }
 
     private sealed record InvitationListHttpResponse
