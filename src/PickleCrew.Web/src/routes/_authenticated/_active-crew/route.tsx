@@ -102,26 +102,19 @@ function ActiveCrewLayout() {
               <span>PickleCrew</span>
             </a>
           </div>
-          <span className="max-w-40 truncate rounded-full border border-border bg-background px-3 py-1.5 text-[9px] font-extrabold tracking-[.08em] uppercase">
-            {activeCrew.name}
-          </span>
-        </header>
-
-        <Outlet />
-
-        {!isRecordingGame ? (
-          <div className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 md:hidden">
+          {!isRecordingGame ? (
             <Button
-              className="min-h-14 w-full text-base shadow-[5px_6px_0_var(--orange)]"
-              size="xl"
+              size="sm"
               variant="crew"
               render={<Link to="/record-game" />}
             >
               <Plus data-icon="inline-start" />
-              Record a new game
+              New Game
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </header>
+
+        <Outlet />
       </SidebarInset>
     </SidebarProvider>
   )
