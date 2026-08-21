@@ -51,24 +51,8 @@ export type GameRecordingMemberHttpResponse = {
     profilePictureUrl?: null | string;
 };
 
-export type GetCrewMembersHttpResponse = {
-    members: Array<CrewMemberHttpResponse>;
-    page: number;
-    pageSize: number;
-    totalCount: number;
-    totalPages: number;
-};
-
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
-};
-
-export type GetGamesHttpResponse = {
-    games: Array<GameHistoryItemHttpResponse>;
-    page: number;
-    pageSize: number;
-    totalCount: number;
-    totalPages: number;
 };
 
 export type HttpValidationProblemDetails = {
@@ -84,6 +68,22 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type PaginatedHttpResponseOfCrewMemberHttpResponse = {
+    items: Array<CrewMemberHttpResponse>;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+};
+
+export type PaginatedHttpResponseOfGameHistoryItemHttpResponse = {
+    items: Array<GameHistoryItemHttpResponse>;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
 };
 
 export type ProblemDetails = {
@@ -216,7 +216,7 @@ export type GetCrewMembersResponses = {
     /**
      * OK
      */
-    200: GetCrewMembersHttpResponse;
+    200: PaginatedHttpResponseOfCrewMemberHttpResponse;
 };
 
 export type GetCrewMembersResponse = GetCrewMembersResponses[keyof GetCrewMembersResponses];
@@ -326,7 +326,7 @@ export type GetGamesResponses = {
     /**
      * OK
      */
-    200: GetGamesHttpResponse;
+    200: PaginatedHttpResponseOfGameHistoryItemHttpResponse;
 };
 
 export type GetGamesResponse = GetGamesResponses[keyof GetGamesResponses];

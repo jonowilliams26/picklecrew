@@ -1,13 +1,13 @@
 namespace PickleCrew.Api.Shared;
 
-public record PaginationOptions
+public record PaginatedHttpRequest
 {
     public int? Page { get; init; }
 
     public int? PageSize { get; init; }
 }
 
-internal sealed record PaginatedResult<T>
+public sealed record PaginatedHttpResponse<T>
 {
     public required T[] Items { get; init; }
 
@@ -26,7 +26,7 @@ internal static class Pagination
     private const int DefaultPageSize = 10;
     private const int MaximumPageSize = 100;
 
-    public static Dictionary<string, string[]> Validate(PaginationOptions parameters)
+    public static Dictionary<string, string[]> Validate(PaginatedHttpRequest parameters)
     {
         var errors = new Dictionary<string, string[]>();
 
@@ -45,9 +45,9 @@ internal static class Pagination
         return errors;
     }
 
-    public static PaginatedResult<T> Paginate<T>(
+    public static PaginatedHttpResponse<T> Paginate<T>(
         this IEnumerable<T> source,
-        PaginationOptions parameters)
+        PaginatedHttpRequest parameters)
     {
         var items = source.ToArray();
         var requestedPage = parameters.Page ?? DefaultPage;
@@ -62,7 +62,7 @@ internal static class Pagination
             .Take(pageSize)
             .ToArray();
 
-        return new PaginatedResult<T>
+        return new PaginatedHttpResponse<T>
         {
             Items = paginatedItems,
             Page = page,

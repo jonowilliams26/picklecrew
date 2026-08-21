@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Games;
+using PickleCrew.Api.Shared;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -37,7 +38,9 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         using var response = await apiClient.GetAsync("/games?page=3&pageSize=5");
 
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<GetGamesHttpResponse>(
+        var result = await response.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
@@ -45,7 +48,7 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         Assert.Equal(5, result.PageSize);
         Assert.Equal(11, result.TotalCount);
         Assert.Equal(3, result.TotalPages);
-        var game = Assert.Single(result.Games);
+        var game = Assert.Single(result.Items);
         Assert.Equal(playedAt, game.PlayedAtUtc);
         Assert.Equal(
             $"{context.Administrator.UserId}@picklecrew.test",
@@ -115,11 +118,13 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         using var response = await apiClient.GetAsync("/games");
 
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<GetGamesHttpResponse>(
+        var result = await response.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        var returnedGame = Assert.Single(result.Games);
+        var returnedGame = Assert.Single(result.Items);
         Assert.Equal(GameFormat.Doubles, returnedGame.Format);
         Assert.Equal(13, returnedGame.Sides[0].Score);
         Assert.Equal(11, returnedGame.Sides[1].Score);
@@ -183,11 +188,13 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         using var response = await apiClient.GetAsync("/games");
 
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<GetGamesHttpResponse>(
+        var result = await response.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        var game = Assert.Single(result.Games);
+        var game = Assert.Single(result.Items);
         var participant = Assert.Single(game.Sides[0].Participants);
         Assert.Equal("Morgan Dink", participant.DisplayName);
         Assert.Equal(profilePictureUrl, participant.ProfilePictureUrl);

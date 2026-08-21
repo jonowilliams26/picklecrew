@@ -147,7 +147,7 @@ function GamesPage() {
           </Button>
         </header>
 
-        {history.games.length === 0 ? (
+        {history.items.length === 0 ? (
           <Card className="border-2 border-dashed border-ink/30 bg-cream">
             <CardContent>
               <Empty>
@@ -171,7 +171,7 @@ function GamesPage() {
           </Card>
         ) : (
           <section className="flex flex-col gap-4" aria-label="Completed Games">
-            {history.games.map((game) => (
+            {history.items.map((game) => (
               <GameResultCard game={game} key={game.gameId} />
             ))}
           </section>

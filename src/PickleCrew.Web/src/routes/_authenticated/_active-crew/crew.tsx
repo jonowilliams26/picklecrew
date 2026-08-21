@@ -181,7 +181,7 @@ function CrewPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {roster.members.map((member) => (
+                {roster.items.map((member) => (
                   <TableRow
                     className="border-line even:bg-muted/40"
                     key={member.userId}

@@ -6,20 +6,7 @@ using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Crews;
 
-public sealed record GetCrewMembersHttpRequest : PaginationOptions;
-
-public sealed record GetCrewMembersHttpResponse
-{
-    public required CrewMemberHttpResponse[] Members { get; init; }
-
-    public required int Page { get; init; }
-
-    public required int PageSize { get; init; }
-
-    public required int TotalCount { get; init; }
-
-    public required int TotalPages { get; init; }
-}
+public sealed record GetCrewMembersHttpRequest : PaginatedHttpRequest;
 
 public sealed record CrewMemberHttpResponse
 {
@@ -44,7 +31,7 @@ internal sealed class GetCrewMembersEndpoint : IEndpoint
             .WithRequestValidation<GetCrewMembersHttpRequest>(Pagination.Validate);
     }
 
-    private static async Task<Ok<GetCrewMembersHttpResponse>> HandleAsync(
+    private static async Task<Ok<PaginatedHttpResponse<CrewMemberHttpResponse>>> HandleAsync(
         [AsParameters] GetCrewMembersHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
@@ -67,13 +54,6 @@ internal sealed class GetCrewMembersEndpoint : IEndpoint
             })
             .Paginate(request);
 
-        return TypedResults.Ok(new GetCrewMembersHttpResponse
-        {
-            Members = paginatedMembers.Items,
-            Page = paginatedMembers.Page,
-            PageSize = paginatedMembers.PageSize,
-            TotalCount = paginatedMembers.TotalCount,
-            TotalPages = paginatedMembers.TotalPages,
-        });
+        return TypedResults.Ok(paginatedMembers);
     }
 }

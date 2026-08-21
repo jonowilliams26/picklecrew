@@ -10,20 +10,7 @@ using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Games;
 
-public sealed record GetGamesHttpRequest : PaginationOptions;
-
-public sealed record GetGamesHttpResponse
-{
-    public required GameHistoryItemHttpResponse[] Games { get; init; }
-
-    public required int Page { get; init; }
-
-    public required int PageSize { get; init; }
-
-    public required int TotalCount { get; init; }
-
-    public required int TotalPages { get; init; }
-}
+public sealed record GetGamesHttpRequest : PaginatedHttpRequest;
 
 public sealed record GameHistoryItemHttpResponse
 {
@@ -64,7 +51,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
             .WithRequestValidation<GetGamesHttpRequest>(Pagination.Validate);
     }
 
-    private static async Task<Ok<GetGamesHttpResponse>> HandleAsync(
+    private static async Task<Ok<PaginatedHttpResponse<GameHistoryItemHttpResponse>>> HandleAsync(
         [AsParameters] GetGamesHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
@@ -92,14 +79,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
             .Select(game => ToHttpResponse(game, activeMemberByUserId))
             .Paginate(request);
 
-        return TypedResults.Ok(new GetGamesHttpResponse
-        {
-            Games = paginatedGames.Items,
-            Page = paginatedGames.Page,
-            PageSize = paginatedGames.PageSize,
-            TotalCount = paginatedGames.TotalCount,
-            TotalPages = paginatedGames.TotalPages,
-        });
+        return TypedResults.Ok(paginatedGames);
     }
 
     private static GameHistoryItemHttpResponse ToHttpResponse(
