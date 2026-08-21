@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { LogoMark } from '~/components/picklecrew-brand'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
-import { Button } from '~/components/ui/button'
+import { buttonVariants } from '~/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,14 +108,13 @@ function ActiveCrewLayout() {
             </Link>
           </div>
           {!isRecordingGame ? (
-            <Button
-              size="sm"
-              variant="crew"
-              render={<Link to="/record-game" />}
+            <Link
+              className={buttonVariants({ size: 'sm', variant: 'crew' })}
+              to="/record-game"
             >
               <Plus data-icon="inline-start" />
               New Game
-            </Button>
+            </Link>
           ) : null}
         </header>
 
@@ -166,17 +165,18 @@ function ActiveCrewSidebar({
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          size="lg"
-          variant="crew"
-          render={
-            <Link to="/record-game" onClick={closeMobileNavigation} />
-          }
+        <Link
+          className={buttonVariants({
+            className: 'w-full',
+            size: 'lg',
+            variant: 'crew',
+          })}
+          to="/record-game"
+          onClick={closeMobileNavigation}
         >
           <Plus data-icon="inline-start" />
           Record game
-        </Button>
+        </Link>
       </SidebarHeader>
 
       <SidebarSeparator />
