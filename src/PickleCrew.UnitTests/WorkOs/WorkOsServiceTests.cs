@@ -73,7 +73,8 @@ public sealed class WorkOsServiceTests
                     "Lovelace",
                     "Ada L.",
                     "membership_cursor_one",
-                    "https://images.example.test/ada.png"
+                    "https://images.example.test/ada.png",
+                    "admin"
                 )
             ),
             (
@@ -109,6 +110,7 @@ public sealed class WorkOsServiceTests
                 "user_one",
                 "Ada L.",
                 "member-one@example.com",
+                "admin",
                 "https://images.example.test/ada.png"
             ),
             member => AssertActiveMember(
@@ -202,11 +204,13 @@ public sealed class WorkOsServiceTests
         string workOsUserId,
         string displayName,
         string emailAddress,
+        string roleSlug = "member",
         string? profilePictureUrl = null)
     {
         Assert.Equal(workOsUserId, member.WorkOsUserId);
         Assert.Equal(displayName, member.DisplayName);
         Assert.Equal(emailAddress, member.EmailAddress);
+        Assert.Equal(roleSlug, member.RoleSlug);
         Assert.Equal(profilePictureUrl, member.ProfilePictureUrl);
     }
 
@@ -217,7 +221,8 @@ public sealed class WorkOsServiceTests
         string? lastName = null,
         string? name = null,
         string? after = null,
-        string? profilePictureUrl = null)
+        string? profilePictureUrl = null,
+        string roleSlug = "member")
     {
         return JsonSerializer.Serialize(new
         {
@@ -234,6 +239,10 @@ public sealed class WorkOsServiceTests
                     user_id = userId,
                     organization_id = "org_123",
                     status = "active",
+                    role = new
+                    {
+                        slug = roleSlug,
+                    },
                     user = new
                     {
                         id = userId,

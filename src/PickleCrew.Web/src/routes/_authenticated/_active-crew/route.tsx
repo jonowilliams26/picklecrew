@@ -53,14 +53,14 @@ export const Route = createFileRoute('/_authenticated/_active-crew')({
 const authenticatedRoute = getRouteApi('/_authenticated')
 
 const navigationItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, isActive: true },
-  { label: 'Games', icon: ClipboardList, isActive: false },
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
+  { label: 'Games', icon: ClipboardList, to: undefined },
   {
     label: 'Leaderboard',
     icon: ChartNoAxesColumnIncreasing,
-    isActive: false,
+    to: undefined,
   },
-  { label: 'Crew', icon: UsersRound, isActive: false },
+  { label: 'Crew', icon: UsersRound, to: '/crew' },
 ] as const
 
 function getDisplayName({ user }: { user: User }): string {
@@ -88,7 +88,11 @@ function ActiveCrewLayout() {
 
   return (
     <SidebarProvider>
-      <ActiveCrewSidebar crewName={activeCrew.name} user={user} />
+      <ActiveCrewSidebar
+        crewName={activeCrew.name}
+        pathname={pathname}
+        user={user}
+      />
 
       <SidebarInset className="dashboard-shell min-h-svh overflow-hidden font-heading">
         <header className="flex h-[calc(4.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b-2 border-border bg-background/90 px-5 pt-[env(safe-area-inset-top)] backdrop-blur-sm md:hidden">
@@ -123,9 +127,11 @@ function ActiveCrewLayout() {
 
 function ActiveCrewSidebar({
   crewName,
+  pathname,
   user,
 }: {
   crewName: string
+  pathname: string
   user: User
 }) {
   const displayName = getDisplayName({ user })
@@ -182,25 +188,26 @@ function ActiveCrewSidebar({
             <SidebarMenu className="gap-0.5">
               {navigationItems.map((item) => {
                 const Icon = item.icon
+                const isActive = item.to === pathname
 
                 return (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
                       className="dashboard-nav-link h-9 rounded-lg px-3 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground data-active:bg-transparent data-active:font-bold data-active:text-foreground"
                       render={
-                        item.isActive ? (
+                        item.to ? (
                           <Link
-                            to="/dashboard"
+                            to={item.to}
                             onClick={closeMobileNavigation}
                           />
                         ) : undefined
                       }
-                      isActive={item.isActive}
+                      isActive={isActive}
                     >
                       <Icon aria-hidden="true" />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
-                    {!item.isActive ? (
+                    {!item.to ? (
                       <SidebarMenuBadge>Soon</SidebarMenuBadge>
                     ) : null}
                   </SidebarMenuItem>

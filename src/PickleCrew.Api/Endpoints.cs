@@ -28,6 +28,7 @@ internal static class Endpoints
 
         crews.MapGroup(string.Empty)
             .WithCrewUserContext()
+            .MapEndpoint<GetCrewMembersEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>();
 
         return app;

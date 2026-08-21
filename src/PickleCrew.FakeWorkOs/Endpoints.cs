@@ -251,6 +251,7 @@ internal static class Endpoints
                 WorkOsUserId = member.WorkOsUserId,
                 DisplayName = member.DisplayName,
                 EmailAddress = member.EmailAddress,
+                Role = member.Role,
                 ProfilePictureUrl = member.ProfilePictureUrl,
             })
             .ToArray();
@@ -443,6 +444,8 @@ public sealed record ActiveCrewMemberHttpResponse
     public required string DisplayName { get; init; }
 
     public required string EmailAddress { get; init; }
+
+    public required MembershipRole Role { get; init; }
 
     public string? ProfilePictureUrl { get; init; }
 }

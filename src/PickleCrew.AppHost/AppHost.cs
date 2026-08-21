@@ -11,6 +11,12 @@ var workosApiKey = builder.AddParameter("workos-api-key", secret: true);
 var workosCookiePassword = builder.AddParameter("workos-cookie-password", secret: true);
 
 var postgres = builder.AddPostgres("postgres");
+
+if (!isTesting)
+{
+    postgres.WithDataVolume();
+}
+
 var database = postgres.AddDatabase("picklecrew");
 
 var api = builder.AddProject<Projects.PickleCrew_Api>("api")
