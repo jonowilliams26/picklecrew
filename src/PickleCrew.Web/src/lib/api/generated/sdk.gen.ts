@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -51,6 +51,11 @@ export const sendCrewInvitation = <ThrowOnError extends boolean = false>(options
  * Gets active crew members available for game recording.
  */
 export const getGameRecordingOptions = <ThrowOnError extends boolean = false>(options?: Options<GetGameRecordingOptionsData, ThrowOnError>): RequestResult<GetGameRecordingOptionsResponses, GetGameRecordingOptionsErrors, ThrowOnError> => (options?.client ?? client).get<GetGameRecordingOptionsResponses, GetGameRecordingOptionsErrors, ThrowOnError>({ url: '/games/recording-options', ...options });
+
+/**
+ * Gets a page of completed Games for the active Crew.
+ */
+export const getGames = <ThrowOnError extends boolean = false>(options?: Options<GetGamesData, ThrowOnError>): RequestResult<GetGamesResponses, GetGamesErrors, ThrowOnError> => (options?.client ?? client).get<GetGamesResponses, GetGamesErrors, ThrowOnError>({ url: '/games', ...options });
 
 /**
  * Records a completed game for the active Crew.

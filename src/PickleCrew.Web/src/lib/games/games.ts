@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type {
   GameFormat,
   GetGameRecordingOptionsHttpResponse,
+  GetGamesHttpResponse,
   RecordGameHttpRequest,
   RecordGameHttpResponse,
 } from '~/lib/api/generated/types.gen'
@@ -73,6 +74,21 @@ export type GameRecordingSubmissionResult = Result<
   | GameRecordingForbiddenError
   | GameRecordingNetworkError
   | GameRecordingUnavailableError
+>
+
+export type GameHistoryForbiddenError = Readonly<{
+  type: 'game-history-forbidden-error'
+  message: string
+}>
+
+export type GameHistoryUnavailableError = Readonly<{
+  type: 'game-history-unavailable-error'
+  message: string
+}>
+
+export type GameHistoryResult = Result<
+  GetGamesHttpResponse,
+  GameHistoryForbiddenError | GameHistoryUnavailableError
 >
 
 export function createInitialGameFormValues(): GameFormValues {

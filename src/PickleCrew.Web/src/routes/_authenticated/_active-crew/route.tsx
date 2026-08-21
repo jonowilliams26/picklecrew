@@ -54,7 +54,7 @@ const authenticatedRoute = getRouteApi('/_authenticated')
 
 const navigationItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
-  { label: 'Games', icon: ClipboardList, to: undefined },
+  { label: 'Games', icon: ClipboardList, to: '/games' },
   {
     label: 'Leaderboard',
     icon: ChartNoAxesColumnIncreasing,

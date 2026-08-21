@@ -278,6 +278,83 @@
       }
     },
     "/games": {
+      "get": {
+        "tags": [
+          "GetGamesEndpoint"
+        ],
+        "summary": "Gets a page of completed Games for the active Crew.",
+        "operationId": "GetGames",
+        "parameters": [
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGamesHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "RecordGameEndpoint"
@@ -425,6 +502,79 @@
           "doubles"
         ]
       },
+      "GameHistoryItemHttpResponse": {
+        "required": [
+          "gameId",
+          "format",
+          "playedAtUtc",
+          "sides"
+        ],
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "format": {
+            "$ref": "#/components/schemas/GameFormat"
+          },
+          "playedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameHistorySideHttpResponse"
+            }
+          }
+        }
+      },
+      "GameHistoryParticipantHttpResponse": {
+        "required": [
+          "displayName",
+          "isGuest"
+        ],
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isGuest": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GameHistorySideHttpResponse": {
+        "required": [
+          "sideNumber",
+          "score",
+          "participants"
+        ],
+        "type": "object",
+        "properties": {
+          "sideNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameHistoryParticipantHttpResponse"
+            }
+          }
+        }
+      },
       "GameRecordingMemberHttpResponse": {
         "required": [
           "userId",
@@ -491,6 +641,40 @@
             "items": {
               "$ref": "#/components/schemas/GameRecordingMemberHttpResponse"
             }
+          }
+        }
+      },
+      "GetGamesHttpResponse": {
+        "required": [
+          "games",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameHistoryItemHttpResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -774,6 +958,9 @@
     },
     {
       "name": "GetGameRecordingOptionsEndpoint"
+    },
+    {
+      "name": "GetGamesEndpoint"
     },
     {
       "name": "RecordGameEndpoint"
