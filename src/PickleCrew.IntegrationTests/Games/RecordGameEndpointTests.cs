@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.Services;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -158,7 +159,100 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             pointsScored: 19,
             pointsConceded: 21
         );
+        Assert.Equal(
+            2,
+            statistics[context.Administrator.UserId].Wins
+                + statistics[context.Administrator.UserId].Losses
+        );
+        Assert.Equal(
+            2,
+            statistics[context.Administrator.UserId].PointsScored
+                - statistics[context.Administrator.UserId].PointsConceded
+        );
         Assert.Equal(2, await CountGamesAsync(context.Crew.CrewId));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenDoublesHasFourMembers_ShouldGiveEachMemberTheFullScoreContribution()
+    {
+        var context = await fixture.CreateCrewWithAdministratorAsync();
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        var winningTeammate = await CreateMemberAsync(
+            fakeWorkOs,
+            context.Crew.OrganizationId
+        );
+        var firstOpponent = await CreateMemberAsync(
+            fakeWorkOs,
+            context.Crew.OrganizationId
+        );
+        var secondOpponent = await CreateMemberAsync(
+            fakeWorkOs,
+            context.Crew.OrganizationId
+        );
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var request = new RecordGameHttpRequest
+        {
+            Format = GameFormat.Doubles,
+            Sides = [
+                CreateSide(
+                    11,
+                    CreateMemberParticipant(context.Administrator.UserId),
+                    CreateMemberParticipant(winningTeammate.UserId)
+                ),
+                CreateSide(
+                    7,
+                    CreateMemberParticipant(firstOpponent.UserId),
+                    CreateMemberParticipant(secondOpponent.UserId)
+                ),
+            ],
+        };
+
+        using var response = await apiClient.PostAsJsonAsync(
+            "/games",
+            request,
+            TestJsonSerializerOptions.Default
+        );
+
+        response.EnsureSuccessStatusCode();
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(4, statistics.Count);
+        AssertStatistics(
+            statistics[context.Administrator.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 7
+        );
+        AssertStatistics(
+            statistics[winningTeammate.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 7
+        );
+        AssertStatistics(
+            statistics[firstOpponent.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 7,
+            pointsConceded: 11
+        );
+        AssertStatistics(
+            statistics[secondOpponent.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 7,
+            pointsConceded: 11
+        );
     }
 
     [Fact]
@@ -224,6 +318,28 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 participant => AssertGuestParticipant(participant, 2, "Taylor Dink")
             )
         );
+
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(2, statistics.Count);
+        AssertStatistics(
+            statistics[context.Administrator.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 13,
+            pointsConceded: 11
+        );
+        AssertStatistics(
+            statistics[teammate.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 11,
+            pointsConceded: 13
+        );
     }
 
     [Fact]
@@ -253,10 +369,23 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.NotNull(result);
         Assert.Equal("Jamie Kitchen", result.Sides[1].Participants[0].GuestName);
         Assert.Null(result.Sides[1].Participants[0].UserId);
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.CrewUuid == context.Crew.CrewId);
+        AssertStatistics(
+            statistics,
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 9
+        );
     }
 
     [Fact]
-    public async Task RecordGame_WhenEveryParticipantIsGuest_ShouldRejectWithoutWritingGame()
+    public async Task RecordGame_WhenEveryParticipantIsGuest_ShouldRejectWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
@@ -278,11 +407,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("active member", content, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenGuestNamesDifferOnlyByCaseAndWhitespace_ShouldRejectWithoutWritingGame()
+    public async Task RecordGame_WhenGuestNamesDifferOnlyByCaseAndWhitespace_ShouldRejectWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
@@ -312,11 +441,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("distinct", content, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenMemberBelongsToAnotherCrew_ShouldRejectWithoutWritingGame()
+    public async Task RecordGame_WhenMemberBelongsToAnotherCrew_ShouldRejectWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
@@ -353,7 +482,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("current Crew", content, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
@@ -387,10 +516,33 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         firstResponse.EnsureSuccessStatusCode();
         secondResponse.EnsureSuccessStatusCode();
         Assert.Equal(2, await CountGamesAsync(context.Crew.CrewId));
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(2, statistics.Count);
+        AssertStatistics(
+            statistics[context.Administrator.UserId],
+            context.Crew.CrewId,
+            wins: 2,
+            losses: 0,
+            pointsScored: 22,
+            pointsConceded: 14
+        );
+        AssertStatistics(
+            statistics[opponent.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 2,
+            pointsScored: 14,
+            pointsConceded: 22
+        );
     }
 
     [Fact]
-    public async Task RecordGame_WhenActiveRecorderDidNotPlay_ShouldPersistRecorder()
+    public async Task RecordGame_WhenActiveRecorderDidNotPlay_ShouldNotGenerateRecorderStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
@@ -420,6 +572,239 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             result.Sides.SelectMany(side => side.Participants),
             participant => participant.UserId == context.Administrator.UserId
         );
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(2, statistics.Count);
+        Assert.DoesNotContain(context.Administrator.UserId, statistics.Keys);
+        AssertStatistics(
+            statistics[firstParticipant.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 12,
+            pointsConceded: 10
+        );
+        AssertStatistics(
+            statistics[secondParticipant.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 10,
+            pointsConceded: 12
+        );
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenMemberParticipatesInTwoCrews_ShouldKeepStatisticsSeparate()
+    {
+        var firstContext = await fixture.CreateCrewWithAdministratorAsync("First Crew");
+        var secondContext = await fixture.CreateCrewWithAdministratorAsync("Second Crew");
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        var sharedMember = TestIdentity.CreateSubjectOnly();
+        await fakeWorkOs.CreateUserAsync(
+            sharedMember.UserId,
+            sharedMember.EmailAddress
+        );
+        await fakeWorkOs.CreateMembershipAsync(
+            $"membership_test_{Guid.NewGuid():N}",
+            sharedMember.UserId,
+            firstContext.Crew.OrganizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+        await fakeWorkOs.CreateMembershipAsync(
+            $"membership_test_{Guid.NewGuid():N}",
+            sharedMember.UserId,
+            secondContext.Crew.OrganizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+        using var firstApiClient = fixture.CreateApiClient(firstContext.Administrator);
+        using var secondApiClient = fixture.CreateApiClient(secondContext.Administrator);
+
+        using var firstResponse = await firstApiClient.PostAsJsonAsync(
+            "/games",
+            CreateRequest(
+                sharedMember.UserId,
+                firstContext.Administrator.UserId,
+                11,
+                5
+            ),
+            TestJsonSerializerOptions.Default
+        );
+        using var secondResponse = await secondApiClient.PostAsJsonAsync(
+            "/games",
+            CreateRequest(
+                sharedMember.UserId,
+                secondContext.Administrator.UserId,
+                7,
+                11
+            ),
+            TestJsonSerializerOptions.Default
+        );
+
+        firstResponse.EnsureSuccessStatusCode();
+        secondResponse.EnsureSuccessStatusCode();
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statisticsByCrew = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.UserId == sharedMember.UserId)
+            .ToDictionaryAsync(statistics => statistics.CrewUuid);
+        Assert.Equal(2, statisticsByCrew.Count);
+        AssertStatistics(
+            statisticsByCrew[firstContext.Crew.CrewId],
+            firstContext.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 5
+        );
+        AssertStatistics(
+            statisticsByCrew[secondContext.Crew.CrewId],
+            secondContext.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 7,
+            pointsConceded: 11
+        );
+    }
+
+    [Fact]
+    public async Task SaveChanges_WhenStatisticsHaveConcurrencyConflict_ShouldRollBackGameAndStatistics()
+    {
+        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var winnerUserId = context.Administrator.UserId;
+        var loserUserId = $"user_test_{Guid.NewGuid():N}";
+        long crewId;
+
+        await using (var seedDbContext = fixture.CreateDbContext())
+        {
+            crewId = await seedDbContext.Crews
+                .Where(crew => crew.Uuid == context.Crew.CrewId)
+                .Select(crew => crew.Id)
+                .SingleAsync();
+            seedDbContext.CrewMemberStatistics.AddRange(
+                new CrewMemberStatistics
+                {
+                    CrewId = crewId,
+                    CrewUuid = context.Crew.CrewId,
+                    UserId = winnerUserId,
+                    Wins = 2,
+                    Losses = 1,
+                    PointsScored = 31,
+                    PointsConceded = 20,
+                },
+                new CrewMemberStatistics
+                {
+                    CrewId = crewId,
+                    CrewUuid = context.Crew.CrewId,
+                    UserId = loserUserId,
+                    Wins = 1,
+                    Losses = 2,
+                    PointsScored = 20,
+                    PointsConceded = 31,
+                }
+            );
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        await using var staleDbContext = fixture.CreateDbContext();
+        var game = new Game
+        {
+            CrewId = crewId,
+            CrewUuid = context.Crew.CrewId,
+            Format = GameFormat.Singles,
+            RecorderUserId = winnerUserId,
+            PlayedAtUtc = DateTimeOffset.UtcNow,
+            Sides =
+            [
+                new GameSide
+                {
+                    SideNumber = 1,
+                    Score = 11,
+                    Participants =
+                    [
+                        new GameParticipant
+                        {
+                            SlotNumber = 1,
+                            UserId = winnerUserId,
+                        },
+                    ],
+                },
+                new GameSide
+                {
+                    SideNumber = 2,
+                    Score = 7,
+                    Participants =
+                    [
+                        new GameParticipant
+                        {
+                            SlotNumber = 1,
+                            UserId = loserUserId,
+                        },
+                    ],
+                },
+            ],
+        };
+        var statisticsService = new GameStatisticsService(staleDbContext);
+        var generatedStatistics = await statisticsService.GenerateStatistics(
+            game,
+            CancellationToken.None
+        );
+        Assert.Empty(generatedStatistics);
+        staleDbContext.CrewMemberStatistics.AddRange(generatedStatistics);
+        staleDbContext.Games.Add(game);
+
+        await using (var competingDbContext = fixture.CreateDbContext())
+        {
+            var competingStatistics = await competingDbContext.CrewMemberStatistics
+                .SingleAsync(statistics =>
+                    statistics.CrewId == crewId
+                    && statistics.UserId == winnerUserId
+                );
+            competingStatistics.Losses += 1;
+            competingStatistics.PointsScored += 7;
+            competingStatistics.PointsConceded += 11;
+            await competingDbContext.SaveChangesAsync();
+        }
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+            async () => await staleDbContext.SaveChangesAsync()
+        );
+
+        await using var verificationDbContext = fixture.CreateDbContext();
+        Assert.Equal(
+            0,
+            await verificationDbContext.Games.CountAsync(candidate =>
+                candidate.CrewId == crewId
+            )
+        );
+        var persistedStatistics = await verificationDbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.CrewId == crewId)
+            .ToDictionaryAsync(statistics => statistics.UserId);
+        Assert.Equal(2, persistedStatistics.Count);
+        AssertStatistics(
+            persistedStatistics[winnerUserId],
+            context.Crew.CrewId,
+            wins: 2,
+            losses: 2,
+            pointsScored: 38,
+            pointsConceded: 31
+        );
+        AssertStatistics(
+            persistedStatistics[loserUserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 2,
+            pointsScored: 20,
+            pointsConceded: 31
+        );
     }
 
     [Theory]
@@ -427,7 +812,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [InlineData(InvalidGameRequest.RepeatedMember)]
     [InlineData(InvalidGameRequest.BlankGuestName)]
     [InlineData(InvalidGameRequest.MemberAndGuestIdentity)]
-    public async Task RecordGame_WhenRequestIsStructurallyInvalid_ShouldRejectWithoutWritingGame(
+    public async Task RecordGame_WhenRequestIsStructurallyInvalid_ShouldRejectWithoutWritingGameOrStatistics(
         InvalidGameRequest invalidRequest)
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
@@ -487,11 +872,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenParticipantIsInactive_ShouldRejectWithoutWritingGame()
+    public async Task RecordGame_WhenParticipantIsInactive_ShouldRejectWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
@@ -516,11 +901,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("not an active member", content, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenRecorderIsInactive_ShouldReturnForbiddenWithoutWritingGame()
+    public async Task RecordGame_WhenRecorderIsInactive_ShouldReturnForbiddenWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
@@ -547,11 +932,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenScoreIsInvalid_ShouldRejectWithoutWritingGame()
+    public async Task RecordGame_WhenScoreIsInvalid_ShouldRejectWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
@@ -568,11 +953,11 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     [Fact]
-    public async Task RecordGame_WhenMembershipProviderFails_ShouldReturnProblemDetailsWithoutWritingGame()
+    public async Task RecordGame_WhenMembershipProviderFails_ShouldReturnProblemDetailsWithoutWritingGameOrStatistics()
     {
         var context = await fixture.CreateCrewWithAdministratorAsync();
         var scenarioId = Guid.NewGuid().ToString("N");
@@ -601,7 +986,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType
         );
-        Assert.Equal(0, await CountGamesAsync(context.Crew.CrewId));
+        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
     }
 
     private async Task<int> CountGamesAsync(Guid crewUuid)
@@ -609,6 +994,23 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
 
         return await dbContext.Games.CountAsync(game => game.Crew.Uuid == crewUuid);
+    }
+
+    private async Task AssertNoGameOrStatisticsAsync(Guid crewUuid)
+    {
+        await using var dbContext = fixture.CreateDbContext();
+        var crewId = await dbContext.Crews
+            .Where(crew => crew.Uuid == crewUuid)
+            .Select(crew => crew.Id)
+            .SingleAsync();
+
+        Assert.Equal(0, await dbContext.Games.CountAsync(game => game.CrewId == crewId));
+        Assert.Equal(
+            0,
+            await dbContext.CrewMemberStatistics.CountAsync(statistics =>
+                statistics.CrewId == crewId
+            )
+        );
     }
 
     private static async Task<TestIdentity> CreateMemberAsync(
