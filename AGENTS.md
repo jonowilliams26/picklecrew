@@ -32,6 +32,10 @@ Local Development Orchestration:
 - Aspire
 - Aspire is used for local development only and is not used for deployments to cloud environments.
 
+## Naming Conventions
+
+- Name injected `PickleCrewDbContext` instances `database`.
+
 ## Generated Files
 
 - Never resolve merge conflicts in generated artifacts manually. Resolve conflicts in their source files and regenerate.

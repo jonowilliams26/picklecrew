@@ -190,7 +190,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         RecordGameHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
-        PickleCrewDbContext dbContext,
+        PickleCrewDbContext database,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
@@ -239,8 +239,8 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 .ToList(),
         };
 
-        dbContext.Games.Add(game);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        database.Games.Add(game);
+        await database.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok(new RecordGameHttpResponse
         {

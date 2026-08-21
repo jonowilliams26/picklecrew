@@ -31,7 +31,7 @@ internal static class CrewUserContextEndpointFilterExtensions
 internal sealed class CrewUserContextEndpointFilter(
     UserContext userContext,
     CrewUserContext crewUserContext,
-    PickleCrewDbContext dbContext)
+    PickleCrewDbContext database)
     : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
@@ -52,7 +52,7 @@ internal sealed class CrewUserContextEndpointFilter(
             return TypedResults.Unauthorized();
         }
 
-        var crew = await dbContext.Crews
+        var crew = await database.Crews
             .IgnoreQueryFilters()
             .Where(candidate => candidate.WorkOsOrganizationId == organizationId)
             .Select(candidate => new
