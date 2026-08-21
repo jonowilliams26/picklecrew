@@ -38,6 +38,26 @@ A person who uses Picklecrew.
 - A user's statistics are calculated separately for each crew.
 - A user's historical games and statistics remain in a crew after their membership becomes inactive.
 
+## Crew member statistics
+
+A crew member's all-time cumulative game results within one crew.
+
+### Business rules
+
+- Crew member statistics are calculated separately for each crew.
+- A crew member on the winning side of a recorded game gains one win; a crew member on the losing side gains one loss.
+- Each participating crew member gains their side's full score as points scored and the opposing side's full score as points conceded.
+- In doubles, each participating crew member receives the full contribution; scores are not divided between partners.
+- Guests do not receive crew member statistics.
+- Games played equals wins plus losses.
+- Point differential equals points scored minus points conceded.
+- Win percentage equals wins divided by games played.
+- Recorded games are the source for date-range, streak, and doubles-pairing statistics.
+
+### Relationships
+
+- Each crew member's statistics belong to exactly one crew and one user.
+
 ## Crew invitation
 
 A request sent through WorkOS for a person identified by email address to join a crew.
@@ -85,7 +105,7 @@ A completed pickleball game with a final score between two sides.
 - An administrator may edit a game's format, participants, guest names, and scores, but not its played date and time.
 - An edited game must satisfy the same validation rules as a newly recorded game.
 - Deleting a game removes all of its contributions from crew member statistics.
-- A recorded game contributes games played, wins, losses, win percentage, points scored, points conceded, and point differential to each participating crew member's statistics, including when they play with or against guests.
+- A recorded game contributes to each participating crew member's statistics, including when they play with or against guests.
 - Game statistics are calculated within the owning crew only.
 - Only active members of the owning crew may view its games.
 

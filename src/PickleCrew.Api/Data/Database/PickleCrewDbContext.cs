@@ -9,6 +9,8 @@ public sealed class PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> op
 
     public DbSet<CrewProvisioningAttempt> CrewProvisioningAttempts => Set<CrewProvisioningAttempt>();
 
+    public DbSet<CrewMemberStatistics> CrewMemberStatistics => Set<CrewMemberStatistics>();
+
     public DbSet<Game> Games => Set<Game>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,6 +30,20 @@ public sealed class PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> op
                 .HasPrincipalKey<CrewProvisioningAttempt>(candidate => candidate.CrewUuid)
                 .HasForeignKey<Crew>(crew => crew.Uuid)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CrewMemberStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.CrewId,
+                entity.UserId,
+            });
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+            statistics.Property(entity => entity.Version)
+                .IsRowVersion();
         });
 
         modelBuilder.Entity<Game>(game =>
