@@ -7,9 +7,9 @@ internal static class DatabaseInitialization
     public static async Task<WebApplication> InitializeDatabaseAsync(this WebApplication app)
     {
         await using var scope = app.Services.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PickleCrewDbContext>();
+        var database = scope.ServiceProvider.GetRequiredService<PickleCrewDbContext>();
 
-        await dbContext.Database.MigrateAsync();
+        await database.Database.MigrateAsync();
 
         return app;
     }
