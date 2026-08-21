@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -29,6 +29,11 @@ export const createCrew = <ThrowOnError extends boolean = false>(options: Option
         ...options.headers
     }
 });
+
+/**
+ * Gets a paginated roster of active crew members.
+ */
+export const getCrewMembers = <ThrowOnError extends boolean = false>(options?: Options<GetCrewMembersData, ThrowOnError>): RequestResult<GetCrewMembersResponses, GetCrewMembersErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewMembersResponses, GetCrewMembersErrors, ThrowOnError>({ url: '/crews/members', ...options });
 
 /**
  * Sends a crew invitation during onboarding.

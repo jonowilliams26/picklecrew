@@ -232,6 +232,7 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<ActiveCrewMemberListHttpResponse>(
+            TestJsonSerializerOptions.Default,
             cancellationToken
         );
 
@@ -553,6 +554,8 @@ internal sealed record FakeActiveCrewMember
     public required string DisplayName { get; init; }
 
     public required string EmailAddress { get; init; }
+
+    public required FakeMembershipRole Role { get; init; }
 
     public string? ProfilePictureUrl { get; init; }
 }

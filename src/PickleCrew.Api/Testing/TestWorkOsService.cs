@@ -113,6 +113,7 @@ internal sealed class TestWorkOsService : IWorkOsService
                 WorkOsUserId = member.WorkOsUserId,
                 DisplayName = member.DisplayName,
                 EmailAddress = member.EmailAddress,
+                RoleSlug = member.Role,
                 ProfilePictureUrl = member.ProfilePictureUrl,
             })
             .ToArray()
@@ -248,6 +249,8 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string DisplayName { get; init; }
 
         public required string EmailAddress { get; init; }
+
+        public required string Role { get; init; }
 
         public string? ProfilePictureUrl { get; init; }
     }

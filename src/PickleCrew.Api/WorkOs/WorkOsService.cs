@@ -11,6 +11,8 @@ internal sealed record ActiveCrewMember
 
     public required string EmailAddress { get; init; }
 
+    public required string RoleSlug { get; init; }
+
     public string? ProfilePictureUrl { get; init; }
 }
 
@@ -145,6 +147,7 @@ internal sealed class WorkOsService(WorkOSClient client)
                 WorkOsUserId = membership.User.Id,
                 DisplayName = GetDisplayName(membership.User),
                 EmailAddress = membership.User.Email,
+                RoleSlug = membership.Role.Slug,
                 ProfilePictureUrl = membership.User.ProfilePictureUrl,
             });
         }

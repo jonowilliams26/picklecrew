@@ -72,13 +72,18 @@ internal sealed class FakeWorkOsState
 
         return organization.Memberships.Values
             .Where(membership => membership.Status == MembershipStatus.Active)
-            .Select(membership => users[membership.UserId])
-            .Select(user => new FakeActiveCrewMember
+            .Select(membership => new
             {
-                WorkOsUserId = user.Id,
-                DisplayName = ResolveDisplayName(user),
-                EmailAddress = user.EmailAddress,
-                ProfilePictureUrl = user.ProfilePictureUrl,
+                User = users[membership.UserId],
+                membership.Role,
+            })
+            .Select(member => new FakeActiveCrewMember
+            {
+                WorkOsUserId = member.User.Id,
+                DisplayName = ResolveDisplayName(member.User),
+                EmailAddress = member.User.EmailAddress,
+                Role = member.Role,
+                ProfilePictureUrl = member.User.ProfilePictureUrl,
             })
             .OrderBy(member => member.WorkOsUserId, StringComparer.Ordinal)
             .ToArray();
@@ -287,6 +292,8 @@ internal sealed record FakeActiveCrewMember
     public required string DisplayName { get; init; }
 
     public required string EmailAddress { get; init; }
+
+    public required MembershipRole Role { get; init; }
 
     public string? ProfilePictureUrl { get; init; }
 }
