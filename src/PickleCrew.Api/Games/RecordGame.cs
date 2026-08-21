@@ -191,6 +191,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
         PickleCrewDbContext database,
+        GameStatisticsService gameStatisticsService,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
@@ -239,6 +240,12 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 .ToList(),
         };
 
+        var generatedStatistics = await gameStatisticsService.GenerateStatistics(
+            game,
+            cancellationToken
+        );
+
+        database.CrewMemberStatistics.AddRange(generatedStatistics);
         database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
 

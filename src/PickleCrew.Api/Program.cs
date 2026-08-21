@@ -9,6 +9,7 @@ builder.AddDatabase();
 builder.AddWorkOs();
 builder.Services.AddTimeProvider();
 builder.Services.AddUserContexts();
+builder.Services.AddGameServices();
 builder.Services.AddRequestLogging(builder.Environment);
 builder.Services.AddApiDocumentation();
 builder.Services.AddErrorHandling();

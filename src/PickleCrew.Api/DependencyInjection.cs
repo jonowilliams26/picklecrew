@@ -13,6 +13,7 @@ using Microsoft.OpenApi;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
+using PickleCrew.Api.Games.Services;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Testing;
 using PickleCrew.Api.WorkOs;
@@ -40,6 +41,13 @@ internal static class DependencyInjection
     {
         services.AddScoped<UserContext>();
         services.AddScoped<CrewUserContext>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddGameServices(this IServiceCollection services)
+    {
+        services.AddScoped<GameStatisticsService>();
 
         return services;
     }

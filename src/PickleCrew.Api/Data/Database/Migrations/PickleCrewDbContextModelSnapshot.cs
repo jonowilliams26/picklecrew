@@ -18,7 +18,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -54,6 +54,40 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Crews");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
+                {
+                    b.Property<long>("CrewId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Losses")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointsConceded")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointsScored")
+                        .HasColumnType("bigint");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<long>("Wins")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CrewId", "UserId");
+
+                    b.ToTable("CrewMemberStatistics");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.CrewProvisioningAttempt", b =>
@@ -159,6 +193,17 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .HasForeignKey("PickleCrew.Api.Data.Crew", "Uuid")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
+                        .WithMany()
+                        .HasForeignKey("CrewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Crew");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.Game", b =>
