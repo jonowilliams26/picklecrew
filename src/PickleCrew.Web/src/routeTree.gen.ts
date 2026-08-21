@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedActiveCrewRouteRouteImport } from './routes/_authenticated/_active-crew/route'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedActiveCrewCrewRouteImport } from './routes/_authenticated/_active-crew/crew'
 import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated/_active-crew/dashboard'
 import { Route as AuthenticatedActiveCrewRecordGameRouteImport } from './routes/_authenticated/_active-crew/record-game'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
@@ -39,6 +40,12 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedActiveCrewCrewRoute =
+  AuthenticatedActiveCrewCrewRouteImport.update({
+    id: '/crew',
+    path: '/crew',
+    getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
+  } as any)
 const AuthenticatedActiveCrewDashboardRoute =
   AuthenticatedActiveCrewDashboardRouteImport.update({
     id: '/dashboard',
@@ -75,6 +82,7 @@ const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -85,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -98,6 +107,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/_active-crew/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/_authenticated/_active-crew/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/crew'
     | '/dashboard'
     | '/record-game'
     | '/api/auth/callback'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/crew'
     | '/dashboard'
     | '/record-game'
     | '/api/auth/callback'
@@ -132,6 +144,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/_active-crew'
     | '/_authenticated/onboarding'
+    | '/_authenticated/_active-crew/crew'
     | '/_authenticated/_active-crew/dashboard'
     | '/_authenticated/_active-crew/record-game'
     | '/api/auth/callback'
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/_active-crew/crew': {
+      id: '/_authenticated/_active-crew/crew'
+      path: '/crew'
+      fullPath: '/crew'
+      preLoaderRoute: typeof AuthenticatedActiveCrewCrewRouteImport
+      parentRoute: typeof AuthenticatedActiveCrewRouteRoute
+    }
     '/_authenticated/_active-crew/dashboard': {
       id: '/_authenticated/_active-crew/dashboard'
       path: '/dashboard'
@@ -225,12 +245,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedActiveCrewRouteRouteChildren {
+  AuthenticatedActiveCrewCrewRoute: typeof AuthenticatedActiveCrewCrewRoute
   AuthenticatedActiveCrewDashboardRoute: typeof AuthenticatedActiveCrewDashboardRoute
   AuthenticatedActiveCrewRecordGameRoute: typeof AuthenticatedActiveCrewRecordGameRoute
 }
 
 const AuthenticatedActiveCrewRouteRouteChildren: AuthenticatedActiveCrewRouteRouteChildren =
   {
+    AuthenticatedActiveCrewCrewRoute: AuthenticatedActiveCrewCrewRoute,
     AuthenticatedActiveCrewDashboardRoute:
       AuthenticatedActiveCrewDashboardRoute,
     AuthenticatedActiveCrewRecordGameRoute:

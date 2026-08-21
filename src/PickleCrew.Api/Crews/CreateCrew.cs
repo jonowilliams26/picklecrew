@@ -60,14 +60,14 @@ internal sealed class CreateCrewEndpoint : IEndpoint
     internal static async Task<Created<CreateCrewHttpResponse>> HandleAsync(
         CreateCrewHttpRequest request,
         UserContext userContext,
-        PickleCrewDbContext dbContext,
+        PickleCrewDbContext database,
         IWorkOsService workOs,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var normalizedName = request.Name.Trim();
         var workOsUserId = userContext.UserId;
-        var attempt = await dbContext.CrewProvisioningAttempts
+        var attempt = await database.CrewProvisioningAttempts
             .SingleOrDefaultAsync(
                 candidate => candidate.WorkOsUserId == workOsUserId,
                 cancellationToken
@@ -75,7 +75,7 @@ internal sealed class CreateCrewEndpoint : IEndpoint
 
         if (attempt?.CompletedAtUtc is not null)
         {
-            var existingCrew = await dbContext.Crews
+            var existingCrew = await database.Crews
                 .AsNoTracking()
                 .SingleAsync(
                     crew => crew.Uuid == attempt.CrewUuid,
@@ -103,8 +103,8 @@ internal sealed class CreateCrewEndpoint : IEndpoint
                 StartedAtUtc = timeProvider.GetUtcNow(),
             };
 
-            dbContext.CrewProvisioningAttempts.Add(attempt);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            database.CrewProvisioningAttempts.Add(attempt);
+            await database.SaveChangesAsync(cancellationToken);
         }
 
         var externalId = attempt.CrewUuid.ToString();
@@ -119,7 +119,7 @@ internal sealed class CreateCrewEndpoint : IEndpoint
         if (attempt.WorkOsOrganizationId is null)
         {
             attempt.WorkOsOrganizationId = organizationId;
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await database.SaveChangesAsync(cancellationToken);
         }
 
         var membershipId = attempt.WorkOsMembershipId
@@ -144,9 +144,9 @@ internal sealed class CreateCrewEndpoint : IEndpoint
             CreatedAtUtc = timeProvider.GetUtcNow(),
         };
 
-        dbContext.Crews.Add(crew);
+        database.Crews.Add(crew);
         attempt.CompletedAtUtc = timeProvider.GetUtcNow();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await database.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
             $"/crews/{crew.Uuid}",

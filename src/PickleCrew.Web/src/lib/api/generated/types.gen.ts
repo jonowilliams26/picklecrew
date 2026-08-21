@@ -16,12 +16,28 @@ export type CreateCrewHttpResponse = {
 
 export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
 
+export type CrewMemberHttpResponse = {
+    userId: string;
+    displayName: string;
+    emailAddress: string;
+    role: string;
+    profilePictureUrl?: null | string;
+};
+
 export type GameFormat = 'singles' | 'doubles';
 
 export type GameRecordingMemberHttpResponse = {
     userId: string;
     displayName: string;
     profilePictureUrl?: null | string;
+};
+
+export type GetCrewMembersHttpResponse = {
+    members: Array<CrewMemberHttpResponse>;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
 };
 
 export type GetGameRecordingOptionsHttpResponse = {
@@ -137,6 +153,46 @@ export type CreateCrewResponses = {
 };
 
 export type CreateCrewResponse = CreateCrewResponses[keyof CreateCrewResponses];
+
+export type GetCrewMembersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        Page?: number;
+        PageSize?: number;
+    };
+    url: '/crews/members';
+};
+
+export type GetCrewMembersErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewMembersError = GetCrewMembersErrors[keyof GetCrewMembersErrors];
+
+export type GetCrewMembersResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewMembersHttpResponse;
+};
+
+export type GetCrewMembersResponse = GetCrewMembersResponses[keyof GetCrewMembersResponses];
 
 export type SendCrewInvitationData = {
     body: SendCrewInvitationHttpRequest;
