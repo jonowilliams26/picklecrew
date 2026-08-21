@@ -172,10 +172,10 @@ function CrewPage() {
               </TableCaption>
               <TableHeader>
                 <TableRow className="border-line hover:bg-transparent">
-                  <TableHead className="h-12 px-6 text-[10px] font-black tracking-[.12em] uppercase">
+                  <TableHead className="h-12 px-4 text-[10px] font-black tracking-[.12em] uppercase md:px-6">
                     Person
                   </TableHead>
-                  <TableHead className="h-12 px-6 text-right text-[10px] font-black tracking-[.12em] uppercase">
+                  <TableHead className="hidden h-12 px-6 text-right text-[10px] font-black tracking-[.12em] uppercase md:table-cell">
                     Role
                   </TableHead>
                 </TableRow>
@@ -186,7 +186,7 @@ function CrewPage() {
                     className="border-line even:bg-muted/40"
                     key={member.userId}
                   >
-                    <TableCell className="min-w-72 px-6 py-4 whitespace-normal">
+                    <TableCell className="px-4 py-4 whitespace-normal md:min-w-72 md:px-6">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-11 after:border-0" size="lg">
                           {member.profilePictureUrl ? (
@@ -204,17 +204,25 @@ function CrewPage() {
                             {getInitials({ member })}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="flex min-w-0 flex-col gap-0.5">
-                          <strong className="truncate font-heading text-sm sm:text-base">
-                            {member.displayName}
-                          </strong>
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <strong className="min-w-0 truncate font-heading text-sm sm:text-base">
+                              {member.displayName}
+                            </strong>
+                            {member.role === 'admin' ? (
+                              <Badge className="md:hidden">
+                                <Crown data-icon="inline-start" />
+                                Admin
+                              </Badge>
+                            ) : null}
+                          </span>
                           <span className="truncate text-xs text-muted-foreground">
                             {member.emailAddress}
                           </span>
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-right">
+                    <TableCell className="hidden px-6 py-4 text-right md:table-cell">
                       {member.role === 'member' ? (
                         <span className="sr-only">Member</span>
                       ) : (
