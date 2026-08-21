@@ -43,6 +43,7 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from '~/components/ui/sidebar'
 
 export const Route = createFileRoute('/_authenticated/_active-crew')({
@@ -128,6 +129,8 @@ function ActiveCrewSidebar({
   user: User
 }) {
   const displayName = getDisplayName({ user })
+  const { setOpenMobile } = useSidebar()
+  const closeMobileNavigation = () => setOpenMobile(false)
 
   return (
     <Sidebar className="border-r-2" collapsible="offcanvas">
@@ -136,6 +139,7 @@ function ActiveCrewSidebar({
           className="inline-flex items-center gap-2.5 font-heading text-xl font-black tracking-[-.045em]"
           to="/dashboard"
           aria-label="PickleCrew dashboard"
+          onClick={closeMobileNavigation}
         >
           <LogoMark />
           <span>PickleCrew</span>
@@ -160,7 +164,9 @@ function ActiveCrewSidebar({
           className="w-full"
           size="lg"
           variant="crew"
-          render={<Link to="/record-game" />}
+          render={
+            <Link to="/record-game" onClick={closeMobileNavigation} />
+          }
         >
           <Plus data-icon="inline-start" />
           Record game
@@ -182,7 +188,12 @@ function ActiveCrewSidebar({
                     <SidebarMenuButton
                       className="dashboard-nav-link h-9 rounded-lg px-3 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground data-active:bg-transparent data-active:font-bold data-active:text-foreground"
                       render={
-                        item.isActive ? <Link to="/dashboard" /> : undefined
+                        item.isActive ? (
+                          <Link
+                            to="/dashboard"
+                            onClick={closeMobileNavigation}
+                          />
+                        ) : undefined
                       }
                       isActive={item.isActive}
                     >
