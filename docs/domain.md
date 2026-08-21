@@ -37,6 +37,9 @@ A person who uses Picklecrew.
 - Users with multiple crew memberships may switch their active crew.
 - A user's statistics are calculated separately for each crew.
 - A user's historical games and statistics remain in a crew after their membership becomes inactive.
+- A participating crew member's display name is captured when a game is recorded as a historical fallback.
+- Game history uses a member's current WorkOS display name when available; otherwise, it uses the display name captured with the game.
+- Captured display names are not synchronized when a member's WorkOS display name changes.
 - A crew's roster contains its active WorkOS organization members and displays each member's assigned role.
 - Users in a crew's roster are ordered alphabetically by display name.
 

@@ -1104,6 +1104,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     {
         Assert.Equal(slotNumber, participant.SlotNumber);
         Assert.Equal(userId, participant.UserId);
+        Assert.False(string.IsNullOrWhiteSpace(participant.MemberDisplayName));
         Assert.Null(participant.GuestName);
     }
 
@@ -1114,6 +1115,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     {
         Assert.Equal(slotNumber, participant.SlotNumber);
         Assert.Null(participant.UserId);
+        Assert.Null(participant.MemberDisplayName);
         Assert.Equal(guestName, participant.GuestName);
     }
 
@@ -1128,6 +1130,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         var participant = Assert.Single(side.Participants);
         Assert.Equal(1, participant.SlotNumber);
         Assert.Equal(userId, participant.UserId);
+        Assert.False(string.IsNullOrWhiteSpace(participant.MemberDisplayName));
         Assert.Null(participant.GuestName);
     }
 

@@ -2,16 +2,55 @@ import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
 import {
   getGameRecordingOptions as getGameRecordingOptionsRequest,
+  getGames as getGamesRequest,
   recordGame as recordGameRequest,
 } from '~/lib/api/generated/sdk.gen'
 import type { RecordGameHttpRequest } from '~/lib/api/generated/types.gen'
 import { getProblemDetailsMessage } from '~/lib/api/problem-details'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
 import type {
+  GameHistoryResult,
   GameRecordingOptionsResult,
   GameRecordingSubmissionResult,
 } from '~/lib/games/games'
 import { failure, success } from '~/lib/results'
+
+export const getGames = createServerFn({ method: 'GET' })
+  .middleware([authenticatedMiddleware])
+  .validator((data: { page: number }) => data)
+  .handler(async ({ context, data }): Promise<GameHistoryResult> => {
+    try {
+      const client = createApiClient({
+        accessToken: context.auth.accessToken,
+      })
+      const result = await getGamesRequest({
+        client,
+        query: { Page: data.page },
+      })
+
+      if (!result.error) {
+        return success(result.data)
+      }
+
+      if (result.response?.status === 401 || result.response?.status === 403) {
+        return failure({
+          type: 'game-history-forbidden-error',
+          message:
+            'Your active Crew membership could not be verified. Refresh your Crew and try again.',
+        })
+      }
+
+      return failure({
+        type: 'game-history-unavailable-error',
+        message: 'Game history could not be loaded. Try again.',
+      })
+    } catch {
+      return failure({
+        type: 'game-history-unavailable-error',
+        message: 'Game history could not be loaded. Try again.',
+      })
+    }
+  })
 
 export const getGameRecordingOptions = createServerFn({ method: 'GET' })
   .middleware([authenticatedMiddleware])

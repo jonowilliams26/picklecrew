@@ -796,10 +796,15 @@ function SavedResultSide({
 }) {
   return (
     <div className="flex min-w-0 flex-col items-center justify-center gap-2 p-3 text-center md:p-5">
-      <span className="flex min-h-4 items-center justify-center gap-1.5 font-mono text-[9px] font-black tracking-[.12em] text-muted-foreground uppercase">
+      <span
+        className={cn(
+          'flex min-h-5 items-center justify-center gap-1.5 text-[9px] font-black tracking-[.1em] uppercase',
+          isWinner ? 'text-orange' : 'text-muted-foreground',
+        )}
+      >
         {isWinner ? (
           <>
-            <Crown className="size-4" aria-hidden="true" />
+            <Crown className="size-3.5 -rotate-12" aria-hidden="true" />
             Winner
           </>
         ) : (

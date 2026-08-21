@@ -26,6 +26,25 @@ export type CrewMemberHttpResponse = {
 
 export type GameFormat = 'singles' | 'doubles';
 
+export type GameHistoryItemHttpResponse = {
+    gameId: string;
+    format: GameFormat;
+    playedAtUtc: string;
+    sides: Array<GameHistorySideHttpResponse>;
+};
+
+export type GameHistoryParticipantHttpResponse = {
+    displayName: string;
+    profilePictureUrl?: null | string;
+    isGuest: boolean;
+};
+
+export type GameHistorySideHttpResponse = {
+    sideNumber: number;
+    score: number;
+    participants: Array<GameHistoryParticipantHttpResponse>;
+};
+
 export type GameRecordingMemberHttpResponse = {
     userId: string;
     displayName: string;
@@ -42,6 +61,14 @@ export type GetCrewMembersHttpResponse = {
 
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
+};
+
+export type GetGamesHttpResponse = {
+    games: Array<GameHistoryItemHttpResponse>;
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
 };
 
 export type HttpValidationProblemDetails = {
@@ -263,6 +290,46 @@ export type GetGameRecordingOptionsResponses = {
 };
 
 export type GetGameRecordingOptionsResponse = GetGameRecordingOptionsResponses[keyof GetGameRecordingOptionsResponses];
+
+export type GetGamesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        Page?: number;
+        PageSize?: number;
+    };
+    url: '/games';
+};
+
+export type GetGamesErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetGamesError = GetGamesErrors[keyof GetGamesErrors];
+
+export type GetGamesResponses = {
+    /**
+     * OK
+     */
+    200: GetGamesHttpResponse;
+};
+
+export type GetGamesResponse = GetGamesResponses[keyof GetGamesResponses];
 
 export type RecordGameData = {
     body: RecordGameHttpRequest;

@@ -36,6 +36,8 @@ public sealed class GameParticipant
 
     public string? UserId { get; init; }
 
+    public string? MemberDisplayName { get; init; }
+
     public string? GuestName { get; init; }
 }
 

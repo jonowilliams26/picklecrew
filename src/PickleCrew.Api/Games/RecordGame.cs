@@ -200,8 +200,11 @@ internal sealed class RecordGameEndpoint : IEndpoint
             cancellationToken
         );
 
-        var activeUserIds = activeMembers
-            .Select(member => member.WorkOsUserId)
+        var activeMemberByUserId = activeMembers.ToDictionary(
+            member => member.WorkOsUserId,
+            StringComparer.Ordinal
+        );
+        var activeUserIds = activeMemberByUserId.Keys
             .ToHashSet(StringComparer.Ordinal);
 
         if (!activeUserIds.Contains(crewUserContext.UserId))
@@ -233,6 +236,9 @@ internal sealed class RecordGameEndpoint : IEndpoint
                         {
                             SlotNumber = participantIndex + 1,
                             UserId = participant.UserId,
+                            MemberDisplayName = participant.UserId is { } userId
+                                ? activeMemberByUserId[userId].DisplayName
+                                : null,
                             GuestName = participant.GuestName?.Trim(),
                         })
                         .ToList(),

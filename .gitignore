@@ -3,6 +3,7 @@
 **/node_modules/
 **/obj/
 **/.wrangler/
+**/.tanstack/
 **/.dev.vars
 **/.dev.vars.*
 **/.env
