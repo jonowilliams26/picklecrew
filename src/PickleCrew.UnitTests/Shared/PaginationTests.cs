@@ -8,7 +8,7 @@ public sealed class PaginationTests
     [Fact]
     public void Validate_WhenPageAndPageSizeAreInvalid_ShouldReturnBothErrors()
     {
-        var parameters = new PaginationOptions
+        var parameters = new PaginatedHttpRequest
         {
             Page = 0,
             PageSize = 101,
@@ -29,7 +29,7 @@ public sealed class PaginationTests
     [Fact]
     public void Paginate_WhenRequestedPageExceedsLastPage_ShouldReturnLastPage()
     {
-        var parameters = new PaginationOptions
+        var parameters = new PaginatedHttpRequest
         {
             Page = 4,
             PageSize = 2,

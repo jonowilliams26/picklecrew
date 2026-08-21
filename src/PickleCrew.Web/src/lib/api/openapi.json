@@ -137,7 +137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCrewMembersHttpResponse"
+                  "$ref": "#/components/schemas/PaginatedHttpResponseOfCrewMemberHttpResponse"
                 }
               }
             }
@@ -338,7 +338,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetGamesHttpResponse"
+                  "$ref": "#/components/schemas/PaginatedHttpResponseOfGameHistoryItemHttpResponse"
                 }
               }
             }
@@ -596,40 +596,6 @@
           }
         }
       },
-      "GetCrewMembersHttpResponse": {
-        "required": [
-          "members",
-          "page",
-          "pageSize",
-          "totalCount",
-          "totalPages"
-        ],
-        "type": "object",
-        "properties": {
-          "members": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CrewMemberHttpResponse"
-            }
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "GetGameRecordingOptionsHttpResponse": {
         "required": [
           "members"
@@ -641,40 +607,6 @@
             "items": {
               "$ref": "#/components/schemas/GameRecordingMemberHttpResponse"
             }
-          }
-        }
-      },
-      "GetGamesHttpResponse": {
-        "required": [
-          "games",
-          "page",
-          "pageSize",
-          "totalCount",
-          "totalPages"
-        ],
-        "type": "object",
-        "properties": {
-          "games": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GameHistoryItemHttpResponse"
-            }
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
           }
         }
       },
@@ -727,6 +659,74 @@
           "traceId": {
             "type": "string",
             "description": "The trace identifier for the request."
+          }
+        }
+      },
+      "PaginatedHttpResponseOfCrewMemberHttpResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrewMemberHttpResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PaginatedHttpResponseOfGameHistoryItemHttpResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameHistoryItemHttpResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

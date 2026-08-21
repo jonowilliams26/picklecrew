@@ -2,7 +2,7 @@ import { z } from 'zod'
 import type {
   GameFormat,
   GetGameRecordingOptionsHttpResponse,
-  GetGamesHttpResponse,
+  PaginatedHttpResponseOfGameHistoryItemHttpResponse,
   RecordGameHttpRequest,
   RecordGameHttpResponse,
 } from '~/lib/api/generated/types.gen'
@@ -87,7 +87,7 @@ export type GameHistoryUnavailableError = Readonly<{
 }>
 
 export type GameHistoryResult = Result<
-  GetGamesHttpResponse,
+  PaginatedHttpResponseOfGameHistoryItemHttpResponse,
   GameHistoryForbiddenError | GameHistoryUnavailableError
 >
 

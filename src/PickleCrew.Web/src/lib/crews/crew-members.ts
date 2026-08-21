@@ -1,4 +1,4 @@
-import type { GetCrewMembersHttpResponse } from '~/lib/api/generated/types.gen'
+import type { PaginatedHttpResponseOfCrewMemberHttpResponse } from '~/lib/api/generated/types.gen'
 import type { Result } from '~/lib/results'
 
 type CrewMembersForbiddenError = Readonly<{
@@ -12,6 +12,6 @@ type CrewMembersUnavailableError = Readonly<{
 }>
 
 export type CrewMembersResult = Result<
-  GetCrewMembersHttpResponse,
+  PaginatedHttpResponseOfCrewMemberHttpResponse,
   CrewMembersForbiddenError | CrewMembersUnavailableError
 >

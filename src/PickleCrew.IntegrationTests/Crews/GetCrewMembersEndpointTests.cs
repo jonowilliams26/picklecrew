@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using PickleCrew.Api.Crews;
+using PickleCrew.Api.Shared;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -52,16 +53,16 @@ public sealed class GetCrewMembersEndpointTests(AppHostFixture fixture)
         firstPageResponse.EnsureSuccessStatusCode();
         secondPageResponse.EnsureSuccessStatusCode();
         var firstPage = await firstPageResponse.Content
-            .ReadFromJsonAsync<GetCrewMembersHttpResponse>();
+            .ReadFromJsonAsync<PaginatedHttpResponse<CrewMemberHttpResponse>>();
         var secondPage = await secondPageResponse.Content
-            .ReadFromJsonAsync<GetCrewMembersHttpResponse>();
+            .ReadFromJsonAsync<PaginatedHttpResponse<CrewMemberHttpResponse>>();
         Assert.NotNull(firstPage);
         Assert.NotNull(secondPage);
         Assert.Equal(4, firstPage.TotalCount);
         Assert.Equal(2, firstPage.TotalPages);
         Assert.Equal(1, firstPage.Page);
         Assert.Collection(
-            firstPage.Members,
+            firstPage.Items,
             member =>
             {
                 Assert.Equal("Amy Dink", member.DisplayName);
@@ -84,10 +85,10 @@ public sealed class GetCrewMembersEndpointTests(AppHostFixture fixture)
         );
         Assert.Equal(2, secondPage.Page);
         Assert.All(
-            secondPage.Members,
+            secondPage.Items,
             member => Assert.Equal("admin", member.Role)
         );
-        Assert.Equal("Zoe Admin", secondPage.Members[1].DisplayName);
+        Assert.Equal("Zoe Admin", secondPage.Items[1].DisplayName);
     }
 
     [Fact]
