@@ -87,6 +87,78 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             side => AssertSide(side, 2, 7, opponent.UserId)
         );
         AssertResponseMatchesGame(result, game);
+
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewId == crewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(2, statistics.Count);
+        AssertStatistics(
+            statistics[context.Administrator.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 7
+        );
+        AssertStatistics(
+            statistics[opponent.UserId],
+            context.Crew.CrewId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 7,
+            pointsConceded: 11
+        );
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenMembersHaveExistingStatistics_ShouldAccumulateContributions()
+    {
+        var context = await fixture.CreateCrewWithAdministratorAsync();
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        var opponent = await CreateMemberAsync(
+            fakeWorkOs,
+            context.Crew.OrganizationId
+        );
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var firstResponse = await apiClient.PostAsJsonAsync(
+            "/games",
+            CreateRequest(context.Administrator.UserId, opponent.UserId, 11, 7),
+            TestJsonSerializerOptions.Default
+        );
+        using var secondResponse = await apiClient.PostAsJsonAsync(
+            "/games",
+            CreateRequest(context.Administrator.UserId, opponent.UserId, 10, 12),
+            TestJsonSerializerOptions.Default
+        );
+
+        firstResponse.EnsureSuccessStatusCode();
+        secondResponse.EnsureSuccessStatusCode();
+
+        await using var dbContext = fixture.CreateDbContext();
+        var statistics = await dbContext.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .ToDictionaryAsync(candidate => candidate.UserId);
+        Assert.Equal(2, statistics.Count);
+        AssertStatistics(
+            statistics[context.Administrator.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 1,
+            pointsScored: 21,
+            pointsConceded: 19
+        );
+        AssertStatistics(
+            statistics[opponent.UserId],
+            context.Crew.CrewId,
+            wins: 1,
+            losses: 1,
+            pointsScored: 19,
+            pointsConceded: 21
+        );
+        Assert.Equal(2, await CountGamesAsync(context.Crew.CrewId));
     }
 
     [Fact]
@@ -606,6 +678,21 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         string guestName)
     {
         return new RecordGameParticipantHttpRequest { GuestName = guestName };
+    }
+
+    private static void AssertStatistics(
+        CrewMemberStatistics statistics,
+        Guid crewUuid,
+        long wins,
+        long losses,
+        long pointsScored,
+        long pointsConceded)
+    {
+        Assert.Equal(crewUuid, statistics.CrewUuid);
+        Assert.Equal(wins, statistics.Wins);
+        Assert.Equal(losses, statistics.Losses);
+        Assert.Equal(pointsScored, statistics.PointsScored);
+        Assert.Equal(pointsConceded, statistics.PointsConceded);
     }
 
     private static void AssertMemberParticipant(
