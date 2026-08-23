@@ -16,6 +16,16 @@ export type CreateCrewHttpResponse = {
 
 export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
 
+export type CrewLeaderboardEntryHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+    rank: number;
+    wins: number;
+    losses: number;
+    crewScore: number;
+};
+
 export type CrewMemberHttpResponse = {
     userId: string;
     displayName: string;
@@ -51,8 +61,32 @@ export type GameRecordingMemberHttpResponse = {
     profilePictureUrl?: null | string;
 };
 
+export type GetCrewLeaderboardHttpResponse = {
+    entries: Array<CrewLeaderboardEntryHttpResponse>;
+};
+
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
+};
+
+export type GetPersonalStatisticsHttpResponse = {
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointsScored: number;
+    pointsConceded: number;
+    pointDifferential: number;
+    crewScore: number;
+    crewRank: number;
+    activeCrewMemberCount: number;
+};
+
+export type GetRecentGamesHttpResponse = {
+    games: Array<RecentGameItemHttpResponse>;
+    wins: number;
+    losses: number;
+    winStreak: number;
 };
 
 export type HttpValidationProblemDetails = {
@@ -97,6 +131,15 @@ export type ProblemDetails = {
      */
     traceId: string;
 };
+
+export type RecentGameItemHttpResponse = {
+    gameId: string;
+    format: GameFormat;
+    playedAtUtc: string;
+    result: RecentGameResult;
+};
+
+export type RecentGameResult = 'win' | 'loss';
 
 export type RecordedGameParticipantHttpResponse = {
     slotNumber: number;
@@ -367,3 +410,102 @@ export type RecordGameResponses = {
 };
 
 export type RecordGameResponse = RecordGameResponses[keyof RecordGameResponses];
+
+export type GetPersonalStatisticsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/personal';
+};
+
+export type GetPersonalStatisticsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetPersonalStatisticsError = GetPersonalStatisticsErrors[keyof GetPersonalStatisticsErrors];
+
+export type GetPersonalStatisticsResponses = {
+    /**
+     * OK
+     */
+    200: GetPersonalStatisticsHttpResponse;
+};
+
+export type GetPersonalStatisticsResponse = GetPersonalStatisticsResponses[keyof GetPersonalStatisticsResponses];
+
+export type GetCrewLeaderboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/leaderboard';
+};
+
+export type GetCrewLeaderboardErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewLeaderboardError = GetCrewLeaderboardErrors[keyof GetCrewLeaderboardErrors];
+
+export type GetCrewLeaderboardResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewLeaderboardHttpResponse;
+};
+
+export type GetCrewLeaderboardResponse = GetCrewLeaderboardResponses[keyof GetCrewLeaderboardResponses];
+
+export type GetRecentGamesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/recent-games';
+};
+
+export type GetRecentGamesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetRecentGamesError = GetRecentGamesErrors[keyof GetRecentGamesErrors];
+
+export type GetRecentGamesResponses = {
+    /**
+     * OK
+     */
+    200: GetRecentGamesHttpResponse;
+};
+
+export type GetRecentGamesResponse = GetRecentGamesResponses[keyof GetRecentGamesResponses];

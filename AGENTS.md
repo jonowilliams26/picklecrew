@@ -36,6 +36,10 @@ Local Development Orchestration:
 
 - Name injected `PickleCrewDbContext` instances `database`.
 
+## Authorization
+
+- Do not re-check whether the caller is active in endpoint handlers or services; the authorization pipeline validates this from the access token.
+
 ## Generated Files
 
 - Never resolve merge conflicts in generated artifacts manually. Resolve conflicts in their source files and regenerate.

@@ -1,6 +1,7 @@
 using PickleCrew.Api.Crews;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Games;
+using PickleCrew.Api.Statistics;
 using PickleCrew.Api.Testing;
 
 namespace PickleCrew.Api;
@@ -15,6 +16,7 @@ internal static class Endpoints
         return endpoints
             .MapCrewsEndpoints()
             .MapGamesEndpoints()
+            .MapStatisticsEndpoints()
             .MapTestingEndpoints();
     }
 
@@ -41,6 +43,17 @@ internal static class Endpoints
             .MapEndpoint<GetGameRecordingOptionsEndpoint>()
             .MapEndpoint<GetGamesEndpoint>()
             .MapEndpoint<RecordGameEndpoint>();
+
+        return app;
+    }
+
+    private static IEndpointRouteBuilder MapStatisticsEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapGroup("/statistics")
+            .WithCrewUserContext()
+            .MapEndpoint<GetPersonalStatisticsEndpoint>()
+            .MapEndpoint<GetCrewLeaderboardEndpoint>()
+            .MapEndpoint<GetRecentGamesEndpoint>();
 
         return app;
     }

@@ -15,14 +15,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetGameRecordingOptions_WhenRecorderIsActive_ShouldReturnCrewRosterWithoutEmails()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var member = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            displayName: "Jamie Kitchen",
-            profilePictureUrl: "https://example.test/jamie.jpg"
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember(
+                displayName: "Jamie Kitchen",
+                profilePictureUrl: "https://example.test/jamie.jpg"
+            )
+            .BuildAsync();
+        var member = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/games/recording-options");
@@ -46,12 +45,10 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenRecorderParticipates_ShouldPersistCompleteResult()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var opponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -65,13 +62,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        Assert.Equal(context.Crew.CrewId, result.CrewId);
+        Assert.Equal(context.Uuid, result.CrewId);
         Assert.Equal(context.Administrator.UserId, result.RecorderUserId);
         Assert.Equal(GameFormat.Singles, result.Format);
 
         await using var dbContext = fixture.CreateDbContext();
         var crewId = await dbContext.Crews
-            .Where(crew => crew.Uuid == context.Crew.CrewId)
+            .Where(crew => crew.Uuid == context.Uuid)
             .Select(crew => crew.Id)
             .SingleAsync();
         var game = await dbContext.Games
@@ -96,7 +93,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, statistics.Count);
         AssertStatistics(
             statistics[context.Administrator.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 11,
@@ -104,7 +101,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[opponent.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 7,
@@ -115,12 +112,10 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenMembersHaveExistingStatistics_ShouldAccumulateContributions()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var opponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var firstResponse = await apiClient.PostAsJsonAsync(
@@ -140,12 +135,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .Where(candidate => candidate.CrewUuid == context.Uuid)
             .ToDictionaryAsync(candidate => candidate.UserId);
         Assert.Equal(2, statistics.Count);
         AssertStatistics(
             statistics[context.Administrator.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 1,
             pointsScored: 21,
@@ -153,7 +148,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[opponent.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 1,
             pointsScored: 19,
@@ -169,26 +164,20 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             statistics[context.Administrator.UserId].PointsScored
                 - statistics[context.Administrator.UserId].PointsConceded
         );
-        Assert.Equal(2, await CountGamesAsync(context.Crew.CrewId));
+        Assert.Equal(2, await CountGamesAsync(context.Uuid));
     }
 
     [Fact]
     public async Task RecordGame_WhenDoublesHasFourMembers_ShouldGiveEachMemberTheFullScoreContribution()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var winningTeammate = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
-        var firstOpponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
-        var secondOpponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var winningTeammate = context.Members[0];
+        var firstOpponent = context.Members[1];
+        var secondOpponent = context.Members[2];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = new RecordGameHttpRequest
         {
@@ -218,12 +207,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .Where(candidate => candidate.CrewUuid == context.Uuid)
             .ToDictionaryAsync(candidate => candidate.UserId);
         Assert.Equal(4, statistics.Count);
         AssertStatistics(
             statistics[context.Administrator.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 11,
@@ -231,7 +220,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[winningTeammate.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 11,
@@ -239,7 +228,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[firstOpponent.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 7,
@@ -247,7 +236,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[secondOpponent.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 7,
@@ -258,12 +247,10 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenDoublesIncludesMembersAndGuests_ShouldPersistCompleteResult()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var teammate = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var teammate = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = new RecordGameHttpRequest
         {
@@ -321,12 +308,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .Where(candidate => candidate.CrewUuid == context.Uuid)
             .ToDictionaryAsync(candidate => candidate.UserId);
         Assert.Equal(2, statistics.Count);
         AssertStatistics(
             statistics[context.Administrator.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 13,
@@ -334,7 +321,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[teammate.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 11,
@@ -345,7 +332,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenSinglesIncludesGuest_ShouldPersistGuest()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = new RecordGameHttpRequest
         {
@@ -373,10 +361,10 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .SingleAsync(candidate => candidate.CrewUuid == context.Crew.CrewId);
+            .SingleAsync(candidate => candidate.CrewUuid == context.Uuid);
         AssertStatistics(
             statistics,
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 11,
@@ -387,7 +375,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenEveryParticipantIsGuest_ShouldRejectWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = new RecordGameHttpRequest
         {
@@ -407,13 +396,14 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("active member", content, StringComparison.OrdinalIgnoreCase);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenGuestNamesDifferOnlyByCaseAndWhitespace_ShouldRejectWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = new RecordGameHttpRequest
         {
@@ -441,31 +431,19 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("distinct", content, StringComparison.OrdinalIgnoreCase);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenMemberBelongsToAnotherCrew_ShouldRejectWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var otherCrewMember = TestIdentity.Create();
-        await fakeWorkOs.CreateUserAsync(
-            otherCrewMember.UserId,
-            otherCrewMember.EmailAddress
-        );
-        await fakeWorkOs.CreateOrganizationAsync(
-            otherCrewMember.OrganizationId!,
-            "Other Crew",
-            $"crew_test_{Guid.NewGuid():N}"
-        );
-        await fakeWorkOs.CreateMembershipAsync(
-            $"membership_test_{Guid.NewGuid():N}",
-            otherCrewMember.UserId,
-            otherCrewMember.OrganizationId!,
-            FakeMembershipRole.Member,
-            FakeMembershipStatus.Active
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
+        var otherCrew = await fixture.CreateCrewBuilder()
+            .WithName("Other Crew")
+            .WithMember()
+            .BuildAsync();
+        var otherCrewMember = otherCrew.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -482,18 +460,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("current Crew", content, StringComparison.OrdinalIgnoreCase);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenIdenticalGameIsRecordedTwice_ShouldPersistBothGames()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var opponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var request = CreateRequest(
             context.Administrator.UserId,
@@ -515,17 +491,17 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         firstResponse.EnsureSuccessStatusCode();
         secondResponse.EnsureSuccessStatusCode();
-        Assert.Equal(2, await CountGamesAsync(context.Crew.CrewId));
+        Assert.Equal(2, await CountGamesAsync(context.Uuid));
 
         await using var dbContext = fixture.CreateDbContext();
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .Where(candidate => candidate.CrewUuid == context.Uuid)
             .ToDictionaryAsync(candidate => candidate.UserId);
         Assert.Equal(2, statistics.Count);
         AssertStatistics(
             statistics[context.Administrator.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 2,
             losses: 0,
             pointsScored: 22,
@@ -533,7 +509,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[opponent.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 2,
             pointsScored: 14,
@@ -544,16 +520,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenActiveRecorderDidNotPlay_ShouldNotGenerateRecorderStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var firstParticipant = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
-        var secondParticipant = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var firstParticipant = context.Members[0];
+        var secondParticipant = context.Members[1];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -576,13 +548,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var statistics = await dbContext.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Crew.CrewId)
+            .Where(candidate => candidate.CrewUuid == context.Uuid)
             .ToDictionaryAsync(candidate => candidate.UserId);
         Assert.Equal(2, statistics.Count);
         Assert.DoesNotContain(context.Administrator.UserId, statistics.Keys);
         AssertStatistics(
             statistics[firstParticipant.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 12,
@@ -590,7 +562,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             statistics[secondParticipant.UserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 10,
@@ -601,28 +573,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task RecordGame_WhenMemberParticipatesInTwoCrews_ShouldKeepStatisticsSeparate()
     {
-        var firstContext = await fixture.CreateCrewWithAdministratorAsync("First Crew");
-        var secondContext = await fixture.CreateCrewWithAdministratorAsync("Second Crew");
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var sharedMember = TestIdentity.CreateSubjectOnly();
-        await fakeWorkOs.CreateUserAsync(
-            sharedMember.UserId,
-            sharedMember.EmailAddress
-        );
-        await fakeWorkOs.CreateMembershipAsync(
-            $"membership_test_{Guid.NewGuid():N}",
-            sharedMember.UserId,
-            firstContext.Crew.OrganizationId,
-            FakeMembershipRole.Member,
-            FakeMembershipStatus.Active
-        );
-        await fakeWorkOs.CreateMembershipAsync(
-            $"membership_test_{Guid.NewGuid():N}",
-            sharedMember.UserId,
-            secondContext.Crew.OrganizationId,
-            FakeMembershipRole.Member,
-            FakeMembershipStatus.Active
-        );
+        var sharedMemberId = $"user_test_{Guid.NewGuid():N}";
+        var firstContext = await fixture.CreateCrewBuilder()
+            .WithName("First Crew")
+            .WithMember(id: sharedMemberId)
+            .BuildAsync();
+        var secondContext = await fixture.CreateCrewBuilder()
+            .WithName("Second Crew")
+            .WithMember(id: sharedMemberId)
+            .BuildAsync();
+        var sharedMember = firstContext.Members[0];
         using var firstApiClient = fixture.CreateApiClient(firstContext.Administrator);
         using var secondApiClient = fixture.CreateApiClient(secondContext.Administrator);
 
@@ -657,16 +617,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             .ToDictionaryAsync(statistics => statistics.CrewUuid);
         Assert.Equal(2, statisticsByCrew.Count);
         AssertStatistics(
-            statisticsByCrew[firstContext.Crew.CrewId],
-            firstContext.Crew.CrewId,
+            statisticsByCrew[firstContext.Uuid],
+            firstContext.Uuid,
             wins: 1,
             losses: 0,
             pointsScored: 11,
             pointsConceded: 5
         );
         AssertStatistics(
-            statisticsByCrew[secondContext.Crew.CrewId],
-            secondContext.Crew.CrewId,
+            statisticsByCrew[secondContext.Uuid],
+            secondContext.Uuid,
             wins: 0,
             losses: 1,
             pointsScored: 7,
@@ -677,7 +637,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task SaveChanges_WhenStatisticsHaveConcurrencyConflict_ShouldRollBackGameAndStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         var winnerUserId = context.Administrator.UserId;
         var loserUserId = $"user_test_{Guid.NewGuid():N}";
         long crewId;
@@ -685,14 +646,14 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await using (var seedDbContext = fixture.CreateDbContext())
         {
             crewId = await seedDbContext.Crews
-                .Where(crew => crew.Uuid == context.Crew.CrewId)
+                .Where(crew => crew.Uuid == context.Uuid)
                 .Select(crew => crew.Id)
                 .SingleAsync();
             seedDbContext.CrewMemberStatistics.AddRange(
                 new CrewMemberStatistics
                 {
                     CrewId = crewId,
-                    CrewUuid = context.Crew.CrewId,
+                    CrewUuid = context.Uuid,
                     UserId = winnerUserId,
                     Wins = 2,
                     Losses = 1,
@@ -702,7 +663,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 new CrewMemberStatistics
                 {
                     CrewId = crewId,
-                    CrewUuid = context.Crew.CrewId,
+                    CrewUuid = context.Uuid,
                     UserId = loserUserId,
                     Wins = 1,
                     Losses = 2,
@@ -717,7 +678,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         var game = new Game
         {
             CrewId = crewId,
-            CrewUuid = context.Crew.CrewId,
+            CrewUuid = context.Uuid,
             Format = GameFormat.Singles,
             RecorderUserId = winnerUserId,
             PlayedAtUtc = DateTimeOffset.UtcNow,
@@ -791,7 +752,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, persistedStatistics.Count);
         AssertStatistics(
             persistedStatistics[winnerUserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 2,
             losses: 2,
             pointsScored: 38,
@@ -799,7 +760,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
         AssertStatistics(
             persistedStatistics[loserUserId],
-            context.Crew.CrewId,
+            context.Uuid,
             wins: 1,
             losses: 2,
             pointsScored: 20,
@@ -815,7 +776,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     public async Task RecordGame_WhenRequestIsStructurallyInvalid_ShouldRejectWithoutWritingGameOrStatistics(
         InvalidGameRequest invalidRequest)
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         var memberParticipant = CreateMemberParticipant(
             context.Administrator.UserId
@@ -872,19 +834,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenParticipantIsInactive_ShouldRejectWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var inactiveParticipant = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            status: FakeMembershipStatus.Inactive
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember(status: FakeMembershipStatus.Inactive)
+            .BuildAsync();
+        var inactiveParticipant = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -901,23 +860,18 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("not an active member", content, StringComparison.OrdinalIgnoreCase);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenRecorderIsInactive_ShouldReturnForbiddenWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var activeParticipant = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
-        var inactiveRecorder = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            status: FakeMembershipStatus.Inactive
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember(status: FakeMembershipStatus.Inactive)
+            .BuildAsync();
+        var activeParticipant = context.Members[0];
+        var inactiveRecorder = context.Members[1];
         using var apiClient = fixture.CreateApiClient(inactiveRecorder);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -932,18 +886,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenScoreIsInvalid_ShouldRejectWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var opponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.PostAsJsonAsync(
@@ -953,19 +905,18 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     [Fact]
     public async Task RecordGame_WhenMembershipProviderFails_ShouldReturnProblemDetailsWithoutWritingGameOrStatistics()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
         var scenarioId = Guid.NewGuid().ToString("N");
         using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        var opponent = await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId
-        );
         await fakeWorkOs.FailOperationAsync(
             scenarioId,
             FakeWorkOsOperation.ListActiveMembers
@@ -986,7 +937,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType
         );
-        await AssertNoGameOrStatisticsAsync(context.Crew.CrewId);
+        await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
     private async Task<int> CountGamesAsync(Guid crewUuid)
@@ -1011,31 +962,6 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 statistics.CrewId == crewId
             )
         );
-    }
-
-    private static async Task<TestIdentity> CreateMemberAsync(
-        FakeWorkOsClient fakeWorkOs,
-        string organizationId,
-        string? displayName = null,
-        string? profilePictureUrl = null,
-        FakeMembershipStatus status = FakeMembershipStatus.Active)
-    {
-        var member = TestIdentity.Create() with { OrganizationId = organizationId };
-        await fakeWorkOs.CreateUserAsync(
-            member.UserId,
-            member.EmailAddress,
-            displayName: displayName,
-            profilePictureUrl: profilePictureUrl
-        );
-        await fakeWorkOs.CreateMembershipAsync(
-            $"membership_test_{Guid.NewGuid():N}",
-            member.UserId,
-            organizationId,
-            FakeMembershipRole.Member,
-            status
-        );
-
-        return member;
     }
 
     private static RecordGameHttpRequest CreateRequest(

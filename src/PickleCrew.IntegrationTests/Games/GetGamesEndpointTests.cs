@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Games;
 using PickleCrew.Api.Shared;
@@ -15,23 +14,22 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetGames_WhenCrewHasMoreThanOnePage_ShouldReturnNewestPageWithinCrew()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        var otherCrew = await fixture.CreateCrewWithAdministratorAsync();
-        var crewId = await GetCrewDatabaseIdAsync(context);
-        var otherCrewId = await GetCrewDatabaseIdAsync(otherCrew);
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
+        var otherCrew = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         var playedAt = new DateTimeOffset(2026, 8, 24, 12, 0, 0, TimeSpan.Zero);
 
         await AddGamesAsync(
             Enumerable.Range(0, 11)
                 .Select(index => CreateGame(
                     context,
-                    crewId,
                     playedAt.AddMinutes(index)
                 ))
                 .ToArray()
         );
         await AddGamesAsync(
-            CreateGame(otherCrew, otherCrewId, playedAt.AddDays(1))
+            CreateGame(otherCrew, playedAt.AddDays(1))
         );
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
@@ -59,11 +57,10 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetGames_WhenGameIncludesMembersAndGuests_ShouldReturnCompleteResult()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        var crewId = await GetCrewDatabaseIdAsync(context);
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         var game = CreateGame(
             context,
-            crewId,
             new DateTimeOffset(2026, 8, 24, 18, 30, 0, TimeSpan.Zero)
         );
         game = new Game
@@ -162,27 +159,14 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetGames_WhenMemberHasProfilePicture_ShouldReturnProfilePicture()
     {
-        var administrator = TestIdentity.CreateSubjectOnly();
         const string profilePictureUrl = "https://example.test/player.jpg";
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        await fakeWorkOs.CreateUserAsync(
-            administrator.UserId,
-            administrator.EmailAddress,
-            displayName: "Morgan Dink",
-            profilePictureUrl: profilePictureUrl
-        );
-        var crew = await fixture.CreateCrewAsync(administrator);
-        var context = new CreatedCrewContext
-        {
-            Crew = crew,
-            Administrator = administrator with
-            {
-                OrganizationId = crew.OrganizationId,
-                Role = "admin",
-            },
-        };
-        var crewId = await GetCrewDatabaseIdAsync(context);
-        await AddGamesAsync(CreateGame(context, crewId, DateTimeOffset.UtcNow));
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(
+                displayName: "Morgan Dink",
+                profilePictureUrl: profilePictureUrl
+            )
+            .BuildAsync();
+        await AddGamesAsync(CreateGame(context, DateTimeOffset.UtcNow));
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/games");
@@ -203,7 +187,8 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetGames_WhenPaginationIsInvalid_ShouldReturnValidationProblem()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/games?page=0&pageSize=101");
@@ -225,25 +210,15 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         await dbContext.SaveChangesAsync();
     }
 
-    private async Task<long> GetCrewDatabaseIdAsync(CreatedCrewContext context)
-    {
-        await using var dbContext = fixture.CreateDbContext();
-
-        return await dbContext.Crews
-            .Where(candidate => candidate.Uuid == context.Crew.CrewId)
-            .Select(candidate => candidate.Id)
-            .SingleAsync();
-    }
-
     private static Game CreateGame(
-        CreatedCrewContext context,
-        long crewId,
-        DateTimeOffset playedAt)
+        BuiltCrewTestData context,
+        DateTimeOffset playedAt
+    )
     {
         return new Game
         {
-            CrewId = crewId,
-            CrewUuid = context.Crew.CrewId,
+            CrewId = context.Id,
+            CrewUuid = context.Uuid,
             RecorderUserId = context.Administrator.UserId,
             Format = GameFormat.Singles,
             PlayedAtUtc = playedAt,
