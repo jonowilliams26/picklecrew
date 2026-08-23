@@ -152,24 +152,6 @@ public sealed class AppHostFixture : IAsyncLifetime
 
 internal static class AppHostFixtureExtensions
 {
-    public static async Task<CreatedCrewContext> CreateCrewWithAdministratorAsync(
-        this AppHostFixture fixture,
-        string crewName = "Kitchen Legends")
-    {
-        var creator = TestIdentity.CreateSubjectOnly();
-        var crew = await fixture.CreateCrewAsync(creator, crewName);
-
-        return new CreatedCrewContext
-        {
-            Crew = crew,
-            Administrator = creator with
-            {
-                OrganizationId = crew.OrganizationId,
-                Role = "admin",
-            },
-        };
-    }
-
     public static async Task<CreateCrewHttpResponse> CreateCrewAsync(
         this AppHostFixture fixture,
         TestIdentity creator,
@@ -188,11 +170,4 @@ internal static class AppHostFixtureExtensions
                 "The API returned an empty crew response."
             );
     }
-}
-
-internal sealed record CreatedCrewContext
-{
-    public required CreateCrewHttpResponse Crew { get; init; }
-
-    public required TestIdentity Administrator { get; init; }
 }

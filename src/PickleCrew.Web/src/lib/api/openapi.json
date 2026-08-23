@@ -424,6 +424,159 @@
           }
         }
       }
+    },
+    "/statistics/personal": {
+      "get": {
+        "tags": [
+          "GetPersonalStatisticsEndpoint"
+        ],
+        "summary": "Gets the signed-in user's all-time statistics for the active Crew.",
+        "operationId": "GetPersonalStatistics",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPersonalStatisticsHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/leaderboard": {
+      "get": {
+        "tags": [
+          "GetCrewLeaderboardEndpoint"
+        ],
+        "summary": "Gets the complete leaderboard for the active Crew.",
+        "operationId": "GetCrewLeaderboard",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCrewLeaderboardHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/recent-games": {
+      "get": {
+        "tags": [
+          "GetRecentGamesEndpoint"
+        ],
+        "summary": "Gets the signed-in user's ten most recent Games for the active Crew.",
+        "operationId": "GetRecentGames",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRecentGamesHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -466,6 +619,47 @@
           "already-pending",
           "failed"
         ]
+      },
+      "CrewLeaderboardEntryHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "rank",
+          "wins",
+          "losses",
+          "crewScore"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "crewScore": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       },
       "CrewMemberHttpResponse": {
         "required": [
@@ -596,6 +790,20 @@
           }
         }
       },
+      "GetCrewLeaderboardHttpResponse": {
+        "required": [
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrewLeaderboardEntryHttpResponse"
+            }
+          }
+        }
+      },
       "GetGameRecordingOptionsHttpResponse": {
         "required": [
           "members"
@@ -607,6 +815,96 @@
             "items": {
               "$ref": "#/components/schemas/GameRecordingMemberHttpResponse"
             }
+          }
+        }
+      },
+      "GetPersonalStatisticsHttpResponse": {
+        "required": [
+          "wins",
+          "losses",
+          "gamesPlayed",
+          "winPercentage",
+          "pointsScored",
+          "pointsConceded",
+          "pointDifferential",
+          "crewScore",
+          "crewRank",
+          "activeCrewMemberCount"
+        ],
+        "type": "object",
+        "properties": {
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "winPercentage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "crewScore": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "crewRank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "activeCrewMemberCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetRecentGamesHttpResponse": {
+        "required": [
+          "games",
+          "wins",
+          "losses",
+          "winStreak"
+        ],
+        "type": "object",
+        "properties": {
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentGameItemHttpResponse"
+            }
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "winStreak": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -772,6 +1070,37 @@
             "description": "The trace identifier for the request."
           }
         }
+      },
+      "RecentGameItemHttpResponse": {
+        "required": [
+          "gameId",
+          "format",
+          "playedAtUtc",
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "format": {
+            "$ref": "#/components/schemas/GameFormat"
+          },
+          "playedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "$ref": "#/components/schemas/RecentGameResult"
+          }
+        }
+      },
+      "RecentGameResult": {
+        "enum": [
+          "win",
+          "loss"
+        ]
       },
       "RecordedGameParticipantHttpResponse": {
         "required": [
@@ -964,6 +1293,15 @@
     },
     {
       "name": "RecordGameEndpoint"
+    },
+    {
+      "name": "GetPersonalStatisticsEndpoint"
+    },
+    {
+      "name": "GetCrewLeaderboardEndpoint"
+    },
+    {
+      "name": "GetRecentGamesEndpoint"
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -68,3 +68,18 @@ export const recordGame = <ThrowOnError extends boolean = false>(options: Option
         ...options.headers
     }
 });
+
+/**
+ * Gets the signed-in user's all-time statistics for the active Crew.
+ */
+export const getPersonalStatistics = <ThrowOnError extends boolean = false>(options?: Options<GetPersonalStatisticsData, ThrowOnError>): RequestResult<GetPersonalStatisticsResponses, GetPersonalStatisticsErrors, ThrowOnError> => (options?.client ?? client).get<GetPersonalStatisticsResponses, GetPersonalStatisticsErrors, ThrowOnError>({ url: '/statistics/personal', ...options });
+
+/**
+ * Gets the complete leaderboard for the active Crew.
+ */
+export const getCrewLeaderboard = <ThrowOnError extends boolean = false>(options?: Options<GetCrewLeaderboardData, ThrowOnError>): RequestResult<GetCrewLeaderboardResponses, GetCrewLeaderboardErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewLeaderboardResponses, GetCrewLeaderboardErrors, ThrowOnError>({ url: '/statistics/leaderboard', ...options });
+
+/**
+ * Gets the signed-in user's ten most recent Games for the active Crew.
+ */
+export const getRecentGames = <ThrowOnError extends boolean = false>(options?: Options<GetRecentGamesData, ThrowOnError>): RequestResult<GetRecentGamesResponses, GetRecentGamesErrors, ThrowOnError> => (options?.client ?? client).get<GetRecentGamesResponses, GetRecentGamesErrors, ThrowOnError>({ url: '/statistics/recent-games', ...options });

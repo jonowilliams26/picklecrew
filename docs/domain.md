@@ -56,7 +56,12 @@ A crew member's all-time cumulative game results within one crew.
 - Guests do not receive crew member statistics.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
-- Win percentage equals wins divided by games played.
+- Win percentage equals wins divided by games played and is zero when no games have been played.
+- Crew score equals all-time wins multiplied by 100.
+- Crew rank is calculated against every active crew member, including members without recorded games.
+- Members with equal Crew scores share the same competition rank, and later ranks skip the tied positions (for example, 1, 1, 3).
+- Members with equal Crew scores are ordered alphabetically by display name.
+- Former crew members are excluded from the current leaderboard while their historical statistics are preserved.
 - Recorded games are the source for date-range, streak, and doubles-pairing statistics.
 
 ### Relationships
@@ -112,6 +117,9 @@ A completed pickleball game with a final score between two sides.
 - Deleting a game removes all of its contributions from crew member statistics.
 - A recorded game contributes to each participating crew member's statistics, including when they play with or against guests.
 - Game statistics are calculated within the owning crew only.
+- A user's last-ten game summary contains at most their ten newest games in the active crew in which they participated.
+- A last-ten win streak counts consecutive wins backward from the newest game, stops at the first loss, and never examines a game outside the ten-game summary.
+- The last-ten win streak is zero when the newest game is a loss or when no games exist.
 - Only active members of the owning crew may view its games.
 
 ### Relationships

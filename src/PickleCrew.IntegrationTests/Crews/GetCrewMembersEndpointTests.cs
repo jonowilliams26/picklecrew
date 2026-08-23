@@ -13,34 +13,18 @@ public sealed class GetCrewMembersEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetCrewMembers_WhenCrewHasMultipleMembers_ShouldReturnAlphabeticalMembersWithPagination()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
-        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
-        await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            "Zoe Admin",
-            FakeMembershipRole.Admin
-        );
-        await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            "Charlie Kitchen",
-            FakeMembershipRole.Member,
-            "https://example.test/charlie.jpg"
-        );
-        await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            "Amy Dink",
-            FakeMembershipRole.Member
-        );
-        await CreateMemberAsync(
-            fakeWorkOs,
-            context.Crew.OrganizationId,
-            "Aaron Inactive",
-            FakeMembershipRole.Member,
-            status: FakeMembershipStatus.Inactive
-        );
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember(displayName: "Zoe Admin", role: FakeMembershipRole.Admin)
+            .WithMember(
+                displayName: "Charlie Kitchen",
+                profilePictureUrl: "https://example.test/charlie.jpg"
+            )
+            .WithMember(displayName: "Amy Dink")
+            .WithMember(
+                displayName: "Aaron Inactive",
+                status: FakeMembershipStatus.Inactive
+            )
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var firstPageResponse = await apiClient.GetAsync(
@@ -94,7 +78,8 @@ public sealed class GetCrewMembersEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetCrewMembers_WhenPaginationIsInvalid_ShouldReturnBadRequest()
     {
-        var context = await fixture.CreateCrewWithAdministratorAsync();
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync(
@@ -102,29 +87,5 @@ public sealed class GetCrewMembersEndpointTests(AppHostFixture fixture)
         );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    private static async Task CreateMemberAsync(
-        FakeWorkOsClient fakeWorkOs,
-        string organizationId,
-        string displayName,
-        FakeMembershipRole role,
-        string? profilePictureUrl = null,
-        FakeMembershipStatus status = FakeMembershipStatus.Active)
-    {
-        var member = TestIdentity.Create();
-        await fakeWorkOs.CreateUserAsync(
-            member.UserId,
-            member.EmailAddress,
-            displayName: displayName,
-            profilePictureUrl: profilePictureUrl
-        );
-        await fakeWorkOs.CreateMembershipAsync(
-            $"membership_test_{Guid.NewGuid():N}",
-            member.UserId,
-            organizationId,
-            role,
-            status
-        );
     }
 }

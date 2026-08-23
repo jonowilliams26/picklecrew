@@ -15,6 +15,7 @@ using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
 using PickleCrew.Api.Games.Services;
 using PickleCrew.Api.Services;
+using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Testing;
 using PickleCrew.Api.WorkOs;
 using WorkOS;
@@ -48,6 +49,13 @@ internal static class DependencyInjection
     public static IServiceCollection AddGameServices(this IServiceCollection services)
     {
         services.AddScoped<GameStatisticsService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddStatisticsServices(this IServiceCollection services)
+    {
+        services.AddScoped<CrewStandingsService>();
 
         return services;
     }
