@@ -11,66 +11,68 @@ public sealed class GetCrewLeaderboardEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetCrewLeaderboard_WhenMembersIncludeTiesAndFormerMembers_ShouldRankOnlyActiveMembers()
     {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var winnerId = $"user_test_{Guid.NewGuid():N}";
+        var tiedId = $"user_test_{Guid.NewGuid():N}";
+        var formerId = $"user_test_{Guid.NewGuid():N}";
         var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
             .WithMember(
+                id: winnerId,
                 displayName: "A Winner",
                 profilePictureUrl: "https://example.test/winner.jpg"
             )
-            .WithMember(displayName: "B Tied")
+            .WithMember(id: tiedId, displayName: "B Tied")
             .WithMember(displayName: "Zero Games")
             .WithMember(
+                id: formerId,
                 displayName: "Former Champion",
                 status: FakeMembershipStatus.Inactive
+            )
+            .WithSinglesGames(
+                side1: winnerId,
+                side2: "Winner Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (7, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: tiedId,
+                side2: "Tied Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (7, 11),
+                    (7, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: "Administrator Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (7, 11),
+                    (7, 11),
+                    (7, 11),
+                    (7, 11),
+                ]
             )
             .BuildAsync();
         var winner = context.Members[0];
         var tied = context.Members[1];
         var zeroGameMember = context.Members[2];
         var former = context.Members[3];
-        var crewId = context.Id;
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    winner.UserId,
-                    5,
-                    1,
-                    60,
-                    40
-                ),
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    tied.UserId,
-                    3,
-                    2,
-                    48,
-                    45
-                ),
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    context.Administrator.UserId,
-                    3,
-                    4,
-                    61,
-                    70
-                ),
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    former.UserId,
-                    100,
-                    0,
-                    1_100,
-                    0
-                )
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/leaderboard");

@@ -1,4 +1,7 @@
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data;
+using PickleCrew.Api.Games;
 
 namespace PickleCrew.IntegrationTests.Testing;
 
@@ -13,6 +16,7 @@ internal static class CrewTestDataBuilderExtensions
 internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
 {
     private readonly List<CrewMemberDefinition> memberDefinitions = [];
+    private readonly List<GameDefinition> gameDefinitions = [];
     private CrewMemberDefinition? administratorDefinition;
     private string crewName = "Kitchen Legends";
 
@@ -65,6 +69,92 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
             Role = role,
             Status = status,
         });
+
+        return this;
+    }
+
+    public CrewTestDataBuilder WithSinglesGame(
+        (string Player, int Score) side1,
+        (string Player, int Score) side2
+    )
+    {
+        gameDefinitions.Add(new GameDefinition
+        {
+            Format = GameFormat.Singles,
+            Sides =
+            [
+                new GameSideDefinition
+                {
+                    Players = [side1.Player],
+                    Score = side1.Score,
+                },
+                new GameSideDefinition
+                {
+                    Players = [side2.Player],
+                    Score = side2.Score,
+                },
+            ],
+        });
+
+        return this;
+    }
+
+    public CrewTestDataBuilder WithSinglesGames(
+        string side1,
+        string side2,
+        params (int Side1, int Side2)[] scores
+    )
+    {
+        foreach (var score in scores)
+        {
+            WithSinglesGame(
+                side1: (side1, score.Side1),
+                side2: (side2, score.Side2)
+            );
+        }
+
+        return this;
+    }
+
+    public CrewTestDataBuilder WithDoublesGame(
+        (string FirstPlayer, string SecondPlayer, int Score) side1,
+        (string FirstPlayer, string SecondPlayer, int Score) side2
+    )
+    {
+        gameDefinitions.Add(new GameDefinition
+        {
+            Format = GameFormat.Doubles,
+            Sides =
+            [
+                new GameSideDefinition
+                {
+                    Players = [side1.FirstPlayer, side1.SecondPlayer],
+                    Score = side1.Score,
+                },
+                new GameSideDefinition
+                {
+                    Players = [side2.FirstPlayer, side2.SecondPlayer],
+                    Score = side2.Score,
+                },
+            ],
+        });
+
+        return this;
+    }
+
+    public CrewTestDataBuilder WithDoublesGames(
+        (string FirstPlayer, string SecondPlayer) side1,
+        (string FirstPlayer, string SecondPlayer) side2,
+        params (int Side1, int Side2)[] scores
+    )
+    {
+        foreach (var score in scores)
+        {
+            WithDoublesGame(
+                side1: (side1.FirstPlayer, side1.SecondPlayer, score.Side1),
+                side2: (side2.FirstPlayer, side2.SecondPlayer, score.Side2)
+            );
+        }
 
         return this;
     }
@@ -127,11 +217,24 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
             });
         }
 
+        var recordedGameIds = await RecordGamesAsync(
+            administrator,
+            cancellationToken
+        );
+
         await using var database = fixture.CreateDbContext();
         var databaseId = await database.Crews
             .Where(candidate => candidate.Uuid == crew.CrewId)
             .Select(candidate => candidate.Id)
             .SingleAsync(cancellationToken);
+        var gamesByUuid = await database.Games
+            .AsNoTracking()
+            .Where(game => recordedGameIds.Contains(game.Uuid))
+            .ToDictionaryAsync(game => game.Uuid, cancellationToken);
+
+        var games = recordedGameIds
+            .Select(gameId => gamesByUuid[gameId])
+            .ToArray();
 
         return new BuiltCrewTestData
         {
@@ -140,7 +243,66 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
             OrganizationId = crew.OrganizationId,
             Administrator = administrator,
             Members = members.ToArray(),
+            Games = games,
         };
+    }
+
+    private async Task<Guid[]> RecordGamesAsync(
+        TestIdentity administrator,
+        CancellationToken cancellationToken
+    )
+    {
+        var memberUserIds = memberDefinitions
+            .Select(definition => definition.Id)
+            .Append(administrator.UserId)
+            .ToHashSet(StringComparer.Ordinal);
+        var gameIds = new List<Guid>(gameDefinitions.Count);
+        using var apiClient = fixture.CreateApiClient(administrator);
+
+        foreach (var definition in gameDefinitions)
+        {
+            var request = new RecordGameHttpRequest
+            {
+                Format = definition.Format,
+                Sides = definition.Sides
+                    .Select(side => new RecordGameSideHttpRequest
+                    {
+                        Score = side.Score,
+                        Participants = side.Players
+                            .Select(player => CreateParticipant(player, memberUserIds))
+                            .ToArray(),
+                    })
+                    .ToArray(),
+            };
+
+            using var response = await apiClient.PostAsJsonAsync(
+                "/games",
+                request,
+                TestJsonSerializerOptions.Default,
+                cancellationToken
+            );
+            response.EnsureSuccessStatusCode();
+            var game = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
+                TestJsonSerializerOptions.Default,
+                cancellationToken
+            ) ?? throw new InvalidOperationException(
+                "The API returned an empty game recording response."
+            );
+
+            gameIds.Add(game.GameId);
+        }
+
+        return gameIds.ToArray();
+    }
+
+    private static RecordGameParticipantHttpRequest CreateParticipant(
+        string player,
+        HashSet<string> memberUserIds
+    )
+    {
+        return memberUserIds.Contains(player)
+            ? new RecordGameParticipantHttpRequest { UserId = player }
+            : new RecordGameParticipantHttpRequest { GuestName = player };
     }
 
     private sealed record CrewMemberDefinition
@@ -157,6 +319,20 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
 
         public required FakeMembershipStatus Status { get; init; }
     }
+
+    private sealed record GameDefinition
+    {
+        public required GameFormat Format { get; init; }
+
+        public required GameSideDefinition[] Sides { get; init; }
+    }
+
+    private sealed record GameSideDefinition
+    {
+        public required string[] Players { get; init; }
+
+        public required int Score { get; init; }
+    }
 }
 
 internal sealed record BuiltCrewTestData
@@ -170,4 +346,6 @@ internal sealed record BuiltCrewTestData
     public required TestIdentity Administrator { get; init; }
 
     public required TestIdentity[] Members { get; init; }
+
+    public required Game[] Games { get; init; }
 }

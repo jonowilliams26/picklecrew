@@ -11,63 +11,54 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetPersonalStatistics_WhenStatisticsExist_ShouldReturnDerivedCrewScopedValues()
     {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember(displayName: "Alex Leader")
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var leaderId = $"user_test_{Guid.NewGuid():N}";
+        var crewBuilder = fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .WithMember(id: leaderId, displayName: "Alex Leader")
             .WithMember(displayName: "Zero Games")
             .WithMember(
                 displayName: "Former Leader",
                 status: FakeMembershipStatus.Inactive
             )
-            .BuildAsync();
-        var otherCrew = await fixture.CreateCrewBuilder()
-            .BuildAsync();
-        var leader = context.Members[0];
-        var former = context.Members[2];
-        var crewId = context.Id;
-        var otherCrewId = otherCrew.Id;
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    context.Administrator.UserId,
-                    4,
-                    2,
-                    62,
-                    49
-                ),
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    leader.UserId,
-                    6,
-                    1,
-                    77,
-                    50
-                ),
-                StatisticsTestData.CreateStatistics(
-                    context,
-                    crewId,
-                    former.UserId,
-                    100,
-                    0,
-                    1_100,
-                    0
-                ),
-                StatisticsTestData.CreateStatistics(
-                    otherCrew,
-                    otherCrewId,
-                    context.Administrator.UserId,
-                    50,
-                    0,
-                    550,
-                    0
-                )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: "Administrator Opponent",
+                scores:
+                [
+                    (11, 6),
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (9, 11),
+                    (9, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: leaderId,
+                side2: "Leader Opponent",
+                scores:
+                [
+                    (11, 6),
+                    (11, 6),
+                    (11, 6),
+                    (11, 6),
+                    (11, 6),
+                    (11, 7),
+                    (11, 13),
+                ]
             );
-            await database.SaveChangesAsync();
-        }
+
+        var context = await crewBuilder.BuildAsync();
+        var otherCrewAdministratorId = $"user_test_{Guid.NewGuid():N}";
+        await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: otherCrewAdministratorId)
+            .WithMember(id: administratorId)
+            .WithSinglesGame(
+                side1: (administratorId, 11),
+                side2: ("Other Crew Opponent", 0)
+            )
+            .BuildAsync();
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/personal");
