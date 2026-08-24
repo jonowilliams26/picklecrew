@@ -23,7 +23,7 @@ import {
   AvatarImage,
 } from '~/components/ui/avatar'
 import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
+import { Button, buttonVariants } from '~/components/ui/button'
 import {
   Card,
   CardContent,
@@ -141,10 +141,13 @@ function GamesPage() {
               Every final score, matchup, and date from this Crew.
             </p>
           </div>
-          <Button variant="crew" size="lg" render={<Link to="/record-game" />}>
+          <Link
+            className={buttonVariants({ variant: 'crew', size: 'lg' })}
+            to="/record-game"
+          >
             <Plus data-icon="inline-start" />
             Record game
-          </Button>
+          </Link>
         </header>
 
         {history.items.length === 0 ? (
@@ -161,10 +164,13 @@ function GamesPage() {
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button variant="crew" render={<Link to="/record-game" />}>
+                  <Link
+                    className={buttonVariants({ variant: 'crew' })}
+                    to="/record-game"
+                  >
                     <Plus data-icon="inline-start" />
                     Record the first game
-                  </Button>
+                  </Link>
                 </EmptyContent>
               </Empty>
             </CardContent>
@@ -323,36 +329,50 @@ function GamePagination({
     <Pagination className="mx-0 w-auto justify-end">
       <PaginationContent>
         <PaginationItem>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            render={
-              page > 1 ? (
-                <Link to="/games" search={{ page: page - 1 }} />
-              ) : undefined
-            }
-            aria-label="Go to previous page"
-          >
-            <ChevronLeft data-icon="inline-start" />
-            <span className="hidden sm:inline">Previous</span>
-          </Button>
+          {page > 1 ? (
+            <Link
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              to="/games"
+              search={{ page: page - 1 }}
+              aria-label="Go to previous page"
+            >
+              <ChevronLeft data-icon="inline-start" />
+              <span className="hidden sm:inline">Previous</span>
+            </Link>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              aria-label="Go to previous page"
+            >
+              <ChevronLeft data-icon="inline-start" />
+              <span className="hidden sm:inline">Previous</span>
+            </Button>
+          )}
         </PaginationItem>
         <PaginationItem>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages}
-            render={
-              page < totalPages ? (
-                <Link to="/games" search={{ page: page + 1 }} />
-              ) : undefined
-            }
-            aria-label="Go to next page"
-          >
-            <span className="hidden sm:inline">Next</span>
-            <ChevronRight data-icon="inline-end" />
-          </Button>
+          {page < totalPages ? (
+            <Link
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              to="/games"
+              search={{ page: page + 1 }}
+              aria-label="Go to next page"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight data-icon="inline-end" />
+            </Link>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              aria-label="Go to next page"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight data-icon="inline-end" />
+            </Button>
+          )}
         </PaginationItem>
       </PaginationContent>
     </Pagination>

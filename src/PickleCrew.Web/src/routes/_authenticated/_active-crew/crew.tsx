@@ -15,7 +15,7 @@ import { z } from 'zod'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
+import { Button, buttonVariants } from '~/components/ui/button'
 import {
   Card,
   CardContent,
@@ -249,19 +249,17 @@ function CrewPage() {
             </p>
             <div className="flex items-center gap-2">
               {roster.page > 1 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <Link
-                      to="/crew"
-                      search={{ page: roster.page - 1 }}
-                    />
-                  }
+                <Link
+                  className={buttonVariants({
+                    variant: 'outline',
+                    size: 'sm',
+                  })}
+                  to="/crew"
+                  search={{ page: roster.page - 1 }}
                 >
                   <ChevronLeft data-icon="inline-start" />
                   Previous
-                </Button>
+                </Link>
               ) : (
                 <Button variant="outline" size="sm" disabled>
                   <ChevronLeft data-icon="inline-start" />
@@ -272,19 +270,17 @@ function CrewPage() {
                 Page {roster.page} of {roster.totalPages}
               </span>
               {roster.page < roster.totalPages ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <Link
-                      to="/crew"
-                      search={{ page: roster.page + 1 }}
-                    />
-                  }
+                <Link
+                  className={buttonVariants({
+                    variant: 'outline',
+                    size: 'sm',
+                  })}
+                  to="/crew"
+                  search={{ page: roster.page + 1 }}
                 >
                   Next
                   <ChevronRight data-icon="inline-end" />
-                </Button>
+                </Link>
               ) : (
                 <Button variant="outline" size="sm" disabled>
                   Next

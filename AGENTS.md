@@ -32,6 +32,10 @@ Local Development Orchestration:
 - Aspire
 - Aspire is used for local development only and is not used for deployments to cloud environments.
 
+## Frontend Conventions
+
+- Style TanStack `Link` elements with `buttonVariants`; do not render links through Base UI `Button`.
+
 ## Naming Conventions
 
 - Name injected `PickleCrewDbContext` instances `database`.
