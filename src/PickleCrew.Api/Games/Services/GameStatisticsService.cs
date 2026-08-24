@@ -6,7 +6,7 @@ namespace PickleCrew.Api.Games.Services;
 
 internal sealed class GameStatisticsService(CrewScopedDbContext database)
 {
-    public async Task<CrewMemberStatistics[]> GenerateStatistics(
+    public async Task<CalculateGameStatisticsResult> CalculateStatistics(
         Game game,
         CancellationToken cancellationToken)
     {
@@ -21,7 +21,8 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 StringComparer.Ordinal,
                 cancellationToken
             );
-        var generatedStatistics = new List<CrewMemberStatistics>();
+        var createdStatistics = new List<CrewMemberStatistics>();
+        var updatedStatistics = new List<CrewMemberStatistics>();
 
         foreach (var contribution in contributions)
         {
@@ -34,16 +35,60 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                     UserId = contribution.UserId,
                 };
                 statisticsByUserId.Add(contribution.UserId, statistics);
-                generatedStatistics.Add(statistics);
+                createdStatistics.Add(statistics);
+            }
+            else
+            {
+                updatedStatistics.Add(statistics);
             }
 
             statistics.Wins += contribution.Wins;
             statistics.Losses += contribution.Losses;
+
+            if (contribution.Wins > 0)
+            {
+                if (statistics.CurrentWinStreak == 0)
+                {
+                    statistics.CurrentWinStreakStartedAtUtc = game.PlayedAtUtc;
+                }
+
+                statistics.CurrentWinStreak += 1;
+
+                if (statistics.CurrentWinStreak > statistics.LongestWinStreak)
+                {
+                    statistics.LongestWinStreak = statistics.CurrentWinStreak;
+                    statistics.LongestWinStreakStartedAtUtc =
+                        statistics.CurrentWinStreakStartedAtUtc;
+                    statistics.LongestWinStreakEndedAtUtc = null;
+                }
+            }
+            else
+            {
+                var endedRecordSettingStreak =
+                    statistics.CurrentWinStreak > 0 &&
+                    statistics.CurrentWinStreak == statistics.LongestWinStreak &&
+                    statistics.CurrentWinStreakStartedAtUtc ==
+                        statistics.LongestWinStreakStartedAtUtc &&
+                    statistics.LongestWinStreakEndedAtUtc is null;
+
+                if (endedRecordSettingStreak)
+                {
+                    statistics.LongestWinStreakEndedAtUtc = game.PlayedAtUtc;
+                }
+
+                statistics.CurrentWinStreak = 0;
+                statistics.CurrentWinStreakStartedAtUtc = null;
+            }
+
             statistics.PointsScored += contribution.PointsScored;
             statistics.PointsConceded += contribution.PointsConceded;
         }
 
-        return generatedStatistics.ToArray();
+        return new CalculateGameStatisticsResult
+        {
+            Created = createdStatistics.ToArray(),
+            Updated = updatedStatistics.ToArray(),
+        };
     }
 
     internal static GameStatisticsContribution[] Calculate(Game game)
@@ -72,6 +117,13 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             })
             .ToArray();
     }
+}
+
+internal sealed record CalculateGameStatisticsResult
+{
+    public required CrewMemberStatistics[] Created { get; init; }
+
+    public required CrewMemberStatistics[] Updated { get; init; }
 }
 
 internal sealed record GameStatisticsContribution

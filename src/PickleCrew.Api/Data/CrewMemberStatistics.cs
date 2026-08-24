@@ -14,6 +14,16 @@ public sealed class CrewMemberStatistics
 
     public long Losses { get; set; }
 
+    public long CurrentWinStreak { get; set; }
+
+    public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; set; }
+
+    public long LongestWinStreak { get; set; }
+
+    public DateTimeOffset? LongestWinStreakStartedAtUtc { get; set; }
+
+    public DateTimeOffset? LongestWinStreakEndedAtUtc { get; set; }
+
     public long PointsScored { get; set; }
 
     public long PointsConceded { get; set; }

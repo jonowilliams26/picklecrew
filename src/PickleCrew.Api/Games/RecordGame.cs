@@ -246,12 +246,12 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 .ToList(),
         };
 
-        var generatedStatistics = await gameStatisticsService.GenerateStatistics(
+        var statisticsChanges = await gameStatisticsService.CalculateStatistics(
             game,
             cancellationToken
         );
 
-        database.CrewMemberStatistics.AddRange(generatedStatistics);
+        database.CrewMemberStatistics.AddRange(statisticsChanges.Created);
         database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
 

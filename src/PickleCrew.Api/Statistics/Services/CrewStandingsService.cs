@@ -37,6 +37,11 @@ internal sealed class CrewStandingsService(
                 UserId = candidate.UserId,
                 Wins = candidate.Wins,
                 Losses = candidate.Losses,
+                CurrentWinStreak = candidate.CurrentWinStreak,
+                CurrentWinStreakStartedAtUtc = candidate.CurrentWinStreakStartedAtUtc,
+                LongestWinStreak = candidate.LongestWinStreak,
+                LongestWinStreakStartedAtUtc = candidate.LongestWinStreakStartedAtUtc,
+                LongestWinStreakEndedAtUtc = candidate.LongestWinStreakEndedAtUtc,
                 PointsScored = candidate.PointsScored,
                 PointsConceded = candidate.PointsConceded,
             })
@@ -102,6 +107,8 @@ internal static class CrewStandingsCalculator
         statisticsByUserId.TryGetValue(member.WorkOsUserId, out var statistics);
         var wins = statistics?.Wins ?? 0;
         var losses = statistics?.Losses ?? 0;
+        var currentWinStreak = statistics?.CurrentWinStreak ?? 0;
+        var longestWinStreak = statistics?.LongestWinStreak ?? 0;
         var pointsScored = statistics?.PointsScored ?? 0;
         var pointsConceded = statistics?.PointsConceded ?? 0;
         var gamesPlayed = wins + losses;
@@ -115,6 +122,11 @@ internal static class CrewStandingsCalculator
             Wins = wins,
             Losses = losses,
             GamesPlayed = gamesPlayed,
+            CurrentWinStreak = currentWinStreak,
+            CurrentWinStreakStartedAtUtc = statistics?.CurrentWinStreakStartedAtUtc,
+            LongestWinStreak = longestWinStreak,
+            LongestWinStreakStartedAtUtc = statistics?.LongestWinStreakStartedAtUtc,
+            LongestWinStreakEndedAtUtc = statistics?.LongestWinStreakEndedAtUtc,
             WinPercentage = gamesPlayed == 0
                 ? 0
                 : (decimal)wins / gamesPlayed,
@@ -143,6 +155,16 @@ internal sealed record CrewStanding
 
     public required long GamesPlayed { get; init; }
 
+    public required long CurrentWinStreak { get; init; }
+
+    public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
+
+    public required long LongestWinStreak { get; init; }
+
+    public DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
+
+    public DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
+
     public required decimal WinPercentage { get; init; }
 
     public required long PointsScored { get; init; }
@@ -163,6 +185,16 @@ internal sealed record CrewMemberStatisticsTotals
     public required long Wins { get; init; }
 
     public required long Losses { get; init; }
+
+    public required long CurrentWinStreak { get; init; }
+
+    public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
+
+    public required long LongestWinStreak { get; init; }
+
+    public DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
+
+    public DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
 
     public required long PointsScored { get; init; }
 

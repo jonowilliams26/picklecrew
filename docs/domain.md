@@ -62,7 +62,10 @@ A crew member's all-time cumulative game results within one crew.
 - Members with equal Crew scores share the same competition rank, and later ranks skip the tied positions (for example, 1, 1, 3).
 - Members with equal Crew scores are ordered alphabetically by display name.
 - Former crew members are excluded from the current leaderboard while their historical statistics are preserved.
-- Recorded games are the source for date-range, streak, and doubles-pairing statistics.
+- A current win streak counts consecutive wins through the crew member's newest recorded game and resets to zero when that member loses.
+- A longest win streak is the greatest current win streak the crew member has achieved.
+- A longest win streak records when its first win was played and when the streak ended; its end is absent while that record-setting streak remains active.
+- Recorded games are the source for date-range and doubles-pairing statistics.
 
 ### Relationships
 

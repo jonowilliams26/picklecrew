@@ -100,6 +100,8 @@ public sealed class CrewStandingsCalculatorTests
             UserId = userId,
             Wins = wins,
             Losses = losses,
+            CurrentWinStreak = 0,
+            LongestWinStreak = 0,
             PointsScored = pointsScored,
             PointsConceded = pointsConceded,
         };
