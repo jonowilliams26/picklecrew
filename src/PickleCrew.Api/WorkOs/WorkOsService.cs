@@ -16,6 +16,20 @@ internal sealed record ActiveCrewMember
     public string? ProfilePictureUrl { get; init; }
 }
 
+internal sealed record PendingCrewInvitation
+{
+    public required string WorkOsInvitationId { get; init; }
+
+    public required string EmailAddress { get; init; }
+}
+
+internal sealed record CrewRoster
+{
+    public required ActiveCrewMember[] ActiveMembers { get; init; }
+
+    public required PendingCrewInvitation[] PendingInvitations { get; init; }
+}
+
 internal interface IWorkOsService
 {
     Task<string?> FindOrganizationByExternalIdAsync(
@@ -41,7 +55,7 @@ internal interface IWorkOsService
         string organizationId,
         CancellationToken cancellationToken);
 
-    Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+    Task<CrewRoster> ListCrewMembersAsync(
         string organizationId,
         CancellationToken cancellationToken);
 
@@ -155,11 +169,33 @@ internal sealed class WorkOsService(WorkOSClient client)
         return activeMembers.ToArray();
     }
 
-    public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+    public async Task<CrewRoster> ListCrewMembersAsync(
         string organizationId,
         CancellationToken cancellationToken)
     {
-        var emailAddresses = new List<string>();
+        var activeMembersTask = ListActiveCrewMembersAsync(
+            organizationId,
+            cancellationToken
+        );
+        var pendingInvitationsTask = ListPendingCrewInvitationsAsync(
+            organizationId,
+            cancellationToken
+        );
+
+        await Task.WhenAll(activeMembersTask, pendingInvitationsTask);
+
+        return new CrewRoster
+        {
+            ActiveMembers = await activeMembersTask,
+            PendingInvitations = await pendingInvitationsTask,
+        };
+    }
+
+    internal async Task<PendingCrewInvitation[]> ListPendingCrewInvitationsAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var pendingInvitations = new List<PendingCrewInvitation>();
         var invitations = client.UserManagement.ListInvitationsAutoPagingAsync(
             new UserManagementListInvitationsOptions
             {
@@ -172,11 +208,15 @@ internal sealed class WorkOsService(WorkOSClient client)
         {
             if (invitation.State == InvitationAcceptedDataState.Pending)
             {
-                emailAddresses.Add(invitation.Email);
+                pendingInvitations.Add(new PendingCrewInvitation
+                {
+                    WorkOsInvitationId = invitation.Id,
+                    EmailAddress = invitation.Email,
+                });
             }
         }
 
-        return emailAddresses.ToArray();
+        return pendingInvitations.ToArray();
     }
 
     private static string GetDisplayName(User user)

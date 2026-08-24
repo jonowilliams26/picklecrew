@@ -31,12 +31,12 @@ export const createCrew = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Gets a paginated roster of active crew members.
+ * Gets a paginated roster of active members and pending invitations.
  */
 export const getCrewMembers = <ThrowOnError extends boolean = false>(options?: Options<GetCrewMembersData, ThrowOnError>): RequestResult<GetCrewMembersResponses, GetCrewMembersErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewMembersResponses, GetCrewMembersErrors, ThrowOnError>({ url: '/crews/members', ...options });
 
 /**
- * Sends a crew invitation during onboarding.
+ * Sends an invitation to join the active crew.
  */
 export const sendCrewInvitation = <ThrowOnError extends boolean = false>(options: Options<SendCrewInvitationData, ThrowOnError>): RequestResult<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError> => (options.client ?? client).post<SendCrewInvitationResponses, SendCrewInvitationErrors, ThrowOnError>({
     url: '/crews/invitations',

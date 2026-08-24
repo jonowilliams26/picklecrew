@@ -122,7 +122,29 @@ internal sealed class TestWorkOsService : IWorkOsService
             );
     }
 
-    public async Task<string[]> ListPendingCrewInvitationEmailAddressesAsync(
+    public async Task<CrewRoster> ListCrewMembersAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        var activeMembersTask = ListActiveCrewMembersAsync(
+            organizationId,
+            cancellationToken
+        );
+        var pendingInvitationsTask = ListPendingCrewInvitationsAsync(
+            organizationId,
+            cancellationToken
+        );
+
+        await Task.WhenAll(activeMembersTask, pendingInvitationsTask);
+
+        return new CrewRoster
+        {
+            ActiveMembers = await activeMembersTask,
+            PendingInvitations = await pendingInvitationsTask,
+        };
+    }
+
+    private async Task<PendingCrewInvitation[]> ListPendingCrewInvitationsAsync(
         string organizationId,
         CancellationToken cancellationToken)
     {
@@ -138,7 +160,11 @@ internal sealed class TestWorkOsService : IWorkOsService
         );
 
         return result?.Invitations
-            .Select(invitation => invitation.EmailAddress)
+            .Select(invitation => new PendingCrewInvitation
+            {
+                WorkOsInvitationId = invitation.Id,
+                EmailAddress = invitation.EmailAddress,
+            })
             .ToArray()
             ?? throw new InvalidOperationException(
                 "The fake WorkOS service returned an empty invitation list response."
@@ -262,6 +288,8 @@ internal sealed class TestWorkOsService : IWorkOsService
 
     private sealed record InvitationHttpResponse
     {
+        public required string Id { get; init; }
+
         public required string EmailAddress { get; init; }
     }
 }

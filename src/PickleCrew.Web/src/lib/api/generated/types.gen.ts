@@ -27,12 +27,15 @@ export type CrewLeaderboardEntryHttpResponse = {
 };
 
 export type CrewMemberHttpResponse = {
-    userId: string;
+    id: string;
     displayName: string;
     emailAddress: string;
-    role: string;
+    status: CrewRosterEntryStatus;
+    role?: null | string;
     profilePictureUrl?: null | string;
 };
+
+export type CrewRosterEntryStatus = 'active' | 'pending';
 
 export type GameFormat = 'singles' | 'doubles';
 
