@@ -2,10 +2,36 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import {
   getAuth,
   switchToOrganization,
+  type NoUserInfo,
+  type UserInfo,
 } from '@workos/authkit-tanstack-react-start'
+import {
+  AuthKitProvider,
+  type AuthKitProviderProps,
+} from '@workos/authkit-tanstack-react-start/client'
 import { LoadingScreen } from '~/components/loading-screen'
 import { getCrewMembership } from '~/lib/crews/membership.functions'
 import { decideCrewMembershipRoute } from '~/lib/crews/membership-routing'
+
+function createInitialAuth(
+  auth: UserInfo | NoUserInfo,
+): NonNullable<AuthKitProviderProps['initialAuth']> {
+  if (!auth.user) {
+    return { user: null }
+  }
+
+  return {
+    user: auth.user,
+    sessionId: auth.sessionId,
+    organizationId: auth.organizationId,
+    role: auth.role,
+    roles: auth.roles,
+    permissions: auth.permissions,
+    entitlements: auth.entitlements,
+    featureFlags: auth.featureFlags,
+    impersonator: auth.impersonator,
+  }
+}
 
 export const Route = createFileRoute('/_authenticated')({
   loader: async ({ location }) => {
@@ -24,11 +50,12 @@ export const Route = createFileRoute('/_authenticated')({
       })
     }
 
-    if (resolution.type === 'switch-required') {
-      await switchToOrganization({
-        data: { organizationId: resolution.crew.organizationId },
-      })
-    }
+    const activeAuth =
+      resolution.type === 'switch-required'
+        ? await switchToOrganization({
+            data: { organizationId: resolution.crew.organizationId },
+          })
+        : auth
 
     if (decision.type === 'redirect') {
       throw redirect({ to: decision.destination, replace: true })
@@ -40,7 +67,10 @@ export const Route = createFileRoute('/_authenticated')({
         ? resolution.crew
         : undefined
 
-    return { activeCrew, user: auth.user ?? undefined }
+    return {
+      activeCrew,
+      initialAuth: createInitialAuth(activeAuth),
+    }
   },
   shouldReload: false,
   pendingComponent: MembershipPending,
@@ -50,7 +80,13 @@ export const Route = createFileRoute('/_authenticated')({
 })
 
 function AuthenticatedLayout() {
-  return <Outlet />
+  const { initialAuth } = Route.useLoaderData()
+
+  return (
+    <AuthKitProvider initialAuth={initialAuth}>
+      <Outlet />
+    </AuthKitProvider>
+  )
 }
 
 function MembershipPending() {

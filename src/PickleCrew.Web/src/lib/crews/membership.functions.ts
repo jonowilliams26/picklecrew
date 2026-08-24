@@ -29,7 +29,6 @@ export const getCrewMembership = createServerFn({ method: 'GET' }).handler(
         organizationId: membership.organizationId,
         organizationName: membership.organizationName,
         status: membership.status,
-        role: membership.role.slug,
       })),
     })
   },

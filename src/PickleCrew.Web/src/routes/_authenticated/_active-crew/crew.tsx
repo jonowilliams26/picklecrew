@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { z } from 'zod'
+import { Authorized } from '~/components/authorized'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Badge } from '~/components/ui/badge'
@@ -177,7 +178,9 @@ function CrewPage() {
               The people you play with, compete with, and brag to.
             </p>
           </div>
-          {activeCrew.role === 'admin' ? <InviteCrewMemberDialog /> : null}
+          <Authorized role="admin">
+            <InviteCrewMemberDialog />
+          </Authorized>
         </header>
 
         <Card className="gap-0 border-2 border-ink bg-cream pb-0 text-ink shadow-[7px_8px_0_var(--ink)]">

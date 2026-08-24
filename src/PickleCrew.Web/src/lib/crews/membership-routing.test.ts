@@ -11,14 +11,12 @@ const firstMembership: CrewMembership = {
   organizationId: 'org_first',
   organizationName: 'First Crew',
   status: 'active',
-  role: 'admin',
 }
 
 const secondMembership: CrewMembership = {
   organizationId: 'org_second',
   organizationName: 'Second Crew',
   status: 'active',
-  role: 'member',
 }
 
 function resolve({
@@ -68,11 +66,7 @@ test('preserves the current organization when its membership is active', () => {
     }),
     {
       type: 'active-crew',
-      crew: {
-        organizationId: 'org_second',
-        name: 'Second Crew',
-        role: 'member',
-      },
+      crew: { organizationId: 'org_second', name: 'Second Crew' },
     },
   )
 })
@@ -82,11 +76,7 @@ test('selects the first active membership when the current organization is missi
     resolve({ memberships: [firstMembership, secondMembership] }),
     {
       type: 'switch-required',
-      crew: {
-        organizationId: 'org_first',
-        name: 'First Crew',
-        role: 'admin',
-      },
+      crew: { organizationId: 'org_first', name: 'First Crew' },
     },
   )
 })
@@ -102,11 +92,7 @@ test('selects the first active membership when the current organization is inact
     }),
     {
       type: 'switch-required',
-      crew: {
-        organizationId: 'org_first',
-        name: 'First Crew',
-        role: 'admin',
-      },
+      crew: { organizationId: 'org_first', name: 'First Crew' },
     },
   )
 })
@@ -115,11 +101,11 @@ const signedOut: MembershipResolution = { type: 'signed-out' }
 const noActiveCrew: MembershipResolution = { type: 'no-active-crew' }
 const activeCrew: MembershipResolution = {
   type: 'active-crew',
-  crew: { organizationId: 'org_first', name: 'First Crew', role: 'admin' },
+  crew: { organizationId: 'org_first', name: 'First Crew' },
 }
 const switchRequired: MembershipResolution = {
   type: 'switch-required',
-  crew: { organizationId: 'org_first', name: 'First Crew', role: 'admin' },
+  crew: { organizationId: 'org_first', name: 'First Crew' },
 }
 
 test('routes signed-out protected requests to sign-in', () => {
