@@ -36,7 +36,7 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
     {
         app.MapPost("/invitations", HandleAsync)
             .WithName("SendCrewInvitation")
-            .WithSummary("Sends a crew invitation during onboarding.")
+            .WithSummary("Sends an invitation to join the active crew.")
             .RequireAuthorization(AuthorizationPolicies.CrewAdministrator)
             .WithRequestValidation<SendCrewInvitationHttpRequest>(Validate);
     }
@@ -63,11 +63,11 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
         CancellationToken cancellationToken)
     {
         var emailAddress = NormalizeEmailAddress(request.EmailAddress);
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
+        var roster = await workOs.ListCrewMembersAsync(
             crewUserContext.OrganizationId,
             cancellationToken
         );
-        var isActiveMember = activeMembers.Any(member => string.Equals(
+        var isActiveMember = roster.ActiveMembers.Any(member => string.Equals(
             member.EmailAddress,
             emailAddress,
             StringComparison.OrdinalIgnoreCase
@@ -84,14 +84,12 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
             return TypedResults.Ok(activeMemberOutcome);
         }
 
-        var pendingInvitationEmailAddresses = await workOs
-            .ListPendingCrewInvitationEmailAddressesAsync(
-                crewUserContext.OrganizationId,
-                cancellationToken
-            );
-        var hasPendingInvitation = pendingInvitationEmailAddresses.Contains(
-            emailAddress,
-            StringComparer.OrdinalIgnoreCase
+        var hasPendingInvitation = roster.PendingInvitations.Any(invitation =>
+            string.Equals(
+                invitation.EmailAddress,
+                emailAddress,
+                StringComparison.OrdinalIgnoreCase
+            )
         );
 
         if (hasPendingInvitation)

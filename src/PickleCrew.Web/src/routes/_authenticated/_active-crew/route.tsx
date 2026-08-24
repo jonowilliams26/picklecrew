@@ -6,6 +6,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import type { User } from '@workos/authkit-tanstack-react-start'
+import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
   ChartNoAxesColumnIncreasing,
   ChevronUp,
@@ -78,7 +79,8 @@ function getInitials({ user }: { user: User }): string {
 }
 
 function ActiveCrewLayout() {
-  const { activeCrew, user } = authenticatedRoute.useLoaderData()
+  const { activeCrew } = authenticatedRoute.useLoaderData()
+  const { user } = useAuth()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isRecordingGame = pathname === '/record-game'
 

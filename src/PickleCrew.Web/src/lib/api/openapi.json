@@ -81,7 +81,7 @@
         "tags": [
           "GetCrewMembersEndpoint"
         ],
-        "summary": "Gets a paginated roster of active crew members.",
+        "summary": "Gets a paginated roster of active members and pending invitations.",
         "operationId": "GetCrewMembers",
         "parameters": [
           {
@@ -160,7 +160,7 @@
         "tags": [
           "SendCrewInvitationEndpoint"
         ],
-        "summary": "Sends a crew invitation during onboarding.",
+        "summary": "Sends an invitation to join the active crew.",
         "operationId": "SendCrewInvitation",
         "requestBody": {
           "content": {
@@ -663,14 +663,14 @@
       },
       "CrewMemberHttpResponse": {
         "required": [
-          "userId",
+          "id",
           "displayName",
           "emailAddress",
-          "role"
+          "status"
         ],
         "type": "object",
         "properties": {
-          "userId": {
+          "id": {
             "type": "string"
           },
           "displayName": {
@@ -679,8 +679,14 @@
           "emailAddress": {
             "type": "string"
           },
+          "status": {
+            "$ref": "#/components/schemas/CrewRosterEntryStatus"
+          },
           "role": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "profilePictureUrl": {
             "type": [
@@ -689,6 +695,12 @@
             ]
           }
         }
+      },
+      "CrewRosterEntryStatus": {
+        "enum": [
+          "active",
+          "pending"
+        ]
       },
       "GameFormat": {
         "enum": [

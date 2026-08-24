@@ -1,4 +1,5 @@
-import { createFileRoute, getRouteApi } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
   Crown,
   Flame,
@@ -27,8 +28,6 @@ export const Route = createFileRoute(
 )({
   component: DashboardPage,
 })
-
-const authenticatedRoute = getRouteApi('/_authenticated')
 
 const recentForm = ['L', 'W', 'L', 'W', 'W', 'L', 'W', 'W', 'W', 'W'] as const
 
@@ -106,10 +105,10 @@ function getInitials({
 }
 
 function DashboardPage() {
-  const { activeCrew, user } = authenticatedRoute.useLoaderData()
+  const { user } = useAuth()
 
-  if (!activeCrew || !user) {
-    throw new Error('Dashboard rendered without an active crew or user.')
+  if (!user) {
+    throw new Error('Dashboard rendered without an authenticated user.')
   }
 
   const firstName = getFirstName({ firstName: user.firstName, email: user.email })

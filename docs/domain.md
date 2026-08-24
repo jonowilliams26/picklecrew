@@ -40,8 +40,11 @@ A person who uses Picklecrew.
 - A participating crew member's display name is captured when a game is recorded as a historical fallback.
 - Game history uses a member's current WorkOS display name when available; otherwise, it uses the display name captured with the game.
 - Captured display names are not synchronized when a member's WorkOS display name changes.
-- A crew's roster contains its active WorkOS organization members and displays each member's assigned role.
-- Users in a crew's roster are ordered alphabetically by display name.
+- A crew's roster contains its active WorkOS organization members and pending crew invitation recipients.
+- Every active crew member may view the crew's pending invitation recipients.
+- Active roster entries display the member's assigned role; pending invitation recipients are identified as pending and are not active crew members.
+- Expired, revoked, accepted, and otherwise non-pending crew invitations do not appear as invitation recipients in the roster.
+- Crew roster entries are ordered alphabetically by display name or invitation email address.
 
 ## Crew member statistics
 
@@ -81,6 +84,7 @@ A request sent through WorkOS for a person identified by email address to join a
 - During the optional onboarding invitation step, a crew administrator sends one crew invitation at a time and may send additional invitations before continuing to the dashboard.
 - The invitation step does not limit how many crew invitations an administrator may send.
 - Any crew administrator may send onboarding invitations.
+- After onboarding, only crew administrators may send crew invitations from the crew roster.
 - A crew invitation grants the standard member role, not the administrator role, if accepted.
 - An active crew member cannot be invited to that crew.
 - A person who uses Picklecrew but is not an active member of the crew may be invited.
