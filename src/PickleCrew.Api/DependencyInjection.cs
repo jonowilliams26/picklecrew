@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -26,7 +27,21 @@ internal static class DependencyInjection
 {
     public static WebApplicationBuilder AddDatabase(this WebApplicationBuilder builder)
     {
-        builder.AddNpgsqlDbContext<PickleCrewDbContext>("picklecrew");
+        const string connectionName = "picklecrew";
+
+        builder.AddNpgsqlDbContext<PickleCrewDbContext>(connectionName);
+
+        builder.Services.AddDbContext<CrewScopedDbContext>((services, options) =>
+        {
+            var configuration = services.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString(connectionName)
+                ?? "Host=localhost;Database=picklecrew";
+
+            options.UseNpgsql(connectionString);
+        });
+        builder.EnrichNpgsqlDbContext<CrewScopedDbContext>(settings =>
+            settings.DisableHealthChecks = true
+        );
 
         return builder;
     }

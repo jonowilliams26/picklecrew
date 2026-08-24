@@ -4,7 +4,7 @@ using PickleCrew.Api.Data.Database;
 
 namespace PickleCrew.Api.Games.Services;
 
-internal sealed class GameStatisticsService(PickleCrewDbContext database)
+internal sealed class GameStatisticsService(CrewScopedDbContext database)
 {
     public async Task<CrewMemberStatistics[]> GenerateStatistics(
         Game game,
@@ -15,10 +15,7 @@ internal sealed class GameStatisticsService(PickleCrewDbContext database)
             .Select(contribution => contribution.UserId)
             .ToArray();
         var statisticsByUserId = await database.CrewMemberStatistics
-            .Where(statistics =>
-                statistics.CrewId == game.CrewId &&
-                participatingUserIds.Contains(statistics.UserId)
-            )
+            .Where(statistics => participatingUserIds.Contains(statistics.UserId))
             .ToDictionaryAsync(
                 statistics => statistics.UserId,
                 StringComparer.Ordinal,

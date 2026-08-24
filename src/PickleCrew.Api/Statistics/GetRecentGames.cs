@@ -48,20 +48,16 @@ internal sealed class GetRecentGamesEndpoint : IEndpoint
 
     private static async Task<Ok<GetRecentGamesHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        PickleCrewDbContext database,
+        CrewScopedDbContext database,
         CancellationToken cancellationToken)
     {
-        var crewId = crewUserContext.CrewId;
         var userId = crewUserContext.UserId;
 
         var games = await database.Games
             .AsNoTracking()
-            .Where(game =>
-                game.CrewId == crewId
-                && game.Sides.Any(side => side.Participants.Any(participant =>
-                    participant.UserId == userId
-                ))
-            )
+            .Where(game => game.Sides.Any(side => side.Participants.Any(participant =>
+                participant.UserId == userId
+            )))
             .OrderByDescending(game => game.PlayedAtUtc)
             .ThenByDescending(game => game.Id)
             .Take(RecentGameLimit)

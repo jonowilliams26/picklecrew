@@ -1,10 +1,20 @@
 using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Services;
 
 namespace PickleCrew.Api.Data.Database;
 
-public sealed class PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> options)
-    : DbContext(options)
+public class PickleCrewDbContext : DbContext
 {
+    public PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> options)
+        : base(options)
+    {
+    }
+
+    protected PickleCrewDbContext(DbContextOptions options)
+        : base(options)
+    {
+    }
+
     public DbSet<Crew> Crews => Set<Crew>();
 
     public DbSet<CrewProvisioningAttempt> CrewProvisioningAttempts => Set<CrewProvisioningAttempt>();
@@ -59,5 +69,23 @@ public sealed class PickleCrewDbContext(DbContextOptions<PickleCrewDbContext> op
                 sides.ComplexCollection(side => side.Participants);
             });
         });
+    }
+}
+
+internal sealed class CrewScopedDbContext(
+    DbContextOptions<CrewScopedDbContext> options,
+    CrewUserContext crewUserContext)
+    : PickleCrewDbContext(options)
+{
+    private long CrewId => crewUserContext.CrewId;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<CrewMemberStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<Game>()
+            .HasQueryFilter(game => game.CrewId == CrewId);
     }
 }

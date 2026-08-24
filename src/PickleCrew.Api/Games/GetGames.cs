@@ -55,7 +55,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
         [AsParameters] GetGamesHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
-        PickleCrewDbContext database,
+        CrewScopedDbContext database,
         CancellationToken cancellationToken)
     {
         var activeMembers = await workOs.ListActiveCrewMembersAsync(
@@ -65,7 +65,6 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
         var games = await database.Games
             .AsNoTracking()
-            .Where(game => game.CrewId == crewUserContext.CrewId)
             .OrderByDescending(game => game.PlayedAtUtc)
             .ThenByDescending(game => game.Id)
             .ToArrayAsync(cancellationToken);

@@ -190,7 +190,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         RecordGameHttpRequest request,
         CrewUserContext crewUserContext,
         IWorkOsService workOs,
-        PickleCrewDbContext database,
+        CrewScopedDbContext database,
         GameStatisticsService gameStatisticsService,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
