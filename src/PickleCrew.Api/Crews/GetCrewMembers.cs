@@ -10,15 +10,23 @@ public sealed record GetCrewMembersHttpRequest : PaginatedHttpRequest;
 
 public sealed record CrewMemberHttpResponse
 {
-    public required string UserId { get; init; }
+    public required string Id { get; init; }
 
     public required string DisplayName { get; init; }
 
     public required string EmailAddress { get; init; }
 
-    public required string Role { get; init; }
+    public required CrewRosterEntryStatus Status { get; init; }
+
+    public string? Role { get; init; }
 
     public string? ProfilePictureUrl { get; init; }
+}
+
+public enum CrewRosterEntryStatus
+{
+    Active,
+    Pending,
 }
 
 internal sealed class GetCrewMembersEndpoint : IEndpoint
@@ -27,7 +35,7 @@ internal sealed class GetCrewMembersEndpoint : IEndpoint
     {
         app.MapGet("/members", HandleAsync)
             .WithName("GetCrewMembers")
-            .WithSummary("Gets a paginated roster of active crew members.")
+            .WithSummary("Gets a paginated roster of active members and pending invitations.")
             .WithRequestValidation<GetCrewMembersHttpRequest>(Pagination.Validate);
     }
 
@@ -37,23 +45,34 @@ internal sealed class GetCrewMembersEndpoint : IEndpoint
         IWorkOsService workOs,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
+        var roster = await workOs.ListCrewMembersAsync(
             crewUserContext.OrganizationId,
             cancellationToken
         );
-        var paginatedMembers = activeMembers
-            .OrderBy(member => member.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(member => member.EmailAddress, StringComparer.OrdinalIgnoreCase)
-            .Select(member => new CrewMemberHttpResponse
+        var activeRosterEntries = roster.ActiveMembers.Select(member => new CrewMemberHttpResponse
+        {
+            Id = member.WorkOsUserId,
+            DisplayName = member.DisplayName,
+            EmailAddress = member.EmailAddress,
+            Status = CrewRosterEntryStatus.Active,
+            Role = member.RoleSlug,
+            ProfilePictureUrl = member.ProfilePictureUrl,
+        });
+        var pendingRosterEntries = roster.PendingInvitations.Select(
+            invitation => new CrewMemberHttpResponse
             {
-                UserId = member.WorkOsUserId,
-                DisplayName = member.DisplayName,
-                EmailAddress = member.EmailAddress,
-                Role = member.RoleSlug,
-                ProfilePictureUrl = member.ProfilePictureUrl,
-            })
+                Id = invitation.WorkOsInvitationId,
+                DisplayName = invitation.EmailAddress,
+                EmailAddress = invitation.EmailAddress,
+                Status = CrewRosterEntryStatus.Pending,
+            }
+        );
+        var paginatedRoster = activeRosterEntries
+            .Concat(pendingRosterEntries)
+            .OrderBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.EmailAddress, StringComparer.OrdinalIgnoreCase)
             .Paginate(request);
 
-        return TypedResults.Ok(paginatedMembers);
+        return TypedResults.Ok(paginatedRoster);
     }
 }

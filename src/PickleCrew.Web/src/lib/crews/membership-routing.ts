@@ -4,11 +4,13 @@ export type CrewMembership = Readonly<{
   organizationId: string
   organizationName: string
   status: MembershipStatus
+  role: string
 }>
 
 export type Crew = Readonly<{
   organizationId: string
   name: string
+  role: string
 }>
 
 export type MembershipResolution =
@@ -67,6 +69,7 @@ export function resolveCrewMembership({
   const crew = {
     organizationId: selectedMembership.organizationId,
     name: selectedMembership.organizationName,
+    role: selectedMembership.role,
   }
 
   return selectedMembership.organizationId === currentOrganizationId
