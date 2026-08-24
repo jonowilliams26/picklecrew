@@ -71,6 +71,11 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(4, result.Wins);
         Assert.Equal(2, result.Losses);
         Assert.Equal(6, result.GamesPlayed);
+        Assert.Equal(0, result.CurrentWinStreak);
+        Assert.Null(result.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(4, result.LongestWinStreak);
+        Assert.Equal(context.Games[0].PlayedAtUtc, result.LongestWinStreakStartedAtUtc);
+        Assert.Equal(context.Games[4].PlayedAtUtc, result.LongestWinStreakEndedAtUtc);
         Assert.Equal(4m / 6m, result.WinPercentage);
         Assert.Equal(62, result.PointsScored);
         Assert.Equal(49, result.PointsConceded);
@@ -97,6 +102,11 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, result.Wins);
         Assert.Equal(0, result.Losses);
         Assert.Equal(0, result.GamesPlayed);
+        Assert.Equal(0, result.CurrentWinStreak);
+        Assert.Null(result.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(0, result.LongestWinStreak);
+        Assert.Null(result.LongestWinStreakStartedAtUtc);
+        Assert.Null(result.LongestWinStreakEndedAtUtc);
         Assert.Equal(0, result.WinPercentage);
         Assert.Equal(0, result.PointsScored);
         Assert.Equal(0, result.PointsConceded);

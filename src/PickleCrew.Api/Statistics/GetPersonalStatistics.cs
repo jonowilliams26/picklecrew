@@ -12,6 +12,16 @@ public sealed record GetPersonalStatisticsHttpResponse
 
     public required long GamesPlayed { get; init; }
 
+    public required long CurrentWinStreak { get; init; }
+
+    public required DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
+
+    public required long LongestWinStreak { get; init; }
+
+    public required DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
+
+    public required DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
+
     public required decimal WinPercentage { get; init; }
 
     public required long PointsScored { get; init; }
@@ -51,6 +61,11 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
             Wins = standing.Wins,
             Losses = standing.Losses,
             GamesPlayed = standing.GamesPlayed,
+            CurrentWinStreak = standing.CurrentWinStreak,
+            CurrentWinStreakStartedAtUtc = standing.CurrentWinStreakStartedAtUtc,
+            LongestWinStreak = standing.LongestWinStreak,
+            LongestWinStreakStartedAtUtc = standing.LongestWinStreakStartedAtUtc,
+            LongestWinStreakEndedAtUtc = standing.LongestWinStreakEndedAtUtc,
             WinPercentage = standing.WinPercentage,
             PointsScored = standing.PointsScored,
             PointsConceded = standing.PointsConceded,

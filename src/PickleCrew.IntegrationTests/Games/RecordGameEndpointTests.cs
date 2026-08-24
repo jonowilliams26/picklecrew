@@ -109,6 +109,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             pointsScored: 7,
             pointsConceded: 11
         );
+        var winnerStatistics = statistics[context.Administrator.UserId];
+        Assert.Equal(1, winnerStatistics.CurrentWinStreak);
+        Assert.Equal(game.PlayedAtUtc, winnerStatistics.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(1, winnerStatistics.LongestWinStreak);
+        Assert.Equal(game.PlayedAtUtc, winnerStatistics.LongestWinStreakStartedAtUtc);
+        Assert.Null(winnerStatistics.LongestWinStreakEndedAtUtc);
     }
 
     [Fact]
@@ -167,6 +173,59 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 - statistics[context.Administrator.UserId].PointsConceded
         );
         Assert.Equal(2, await CountGamesAsync(context.Uuid));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenResultsContainMultipleStreaks_ShouldPersistCurrentAndLongestWinStreakPeriods()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var scores = new[]
+        {
+            (11, 7),
+            (11, 8),
+            (11, 9),
+            (9, 11),
+            (11, 6),
+            (11, 5),
+        };
+
+        foreach (var (administratorScore, opponentScore) in scores)
+        {
+            using var response = await apiClient.PostAsJsonAsync(
+                "/games",
+                CreateRequest(
+                    context.Administrator.UserId,
+                    opponent.UserId,
+                    administratorScore,
+                    opponentScore
+                ),
+                TestJsonSerializerOptions.Default
+            );
+            response.EnsureSuccessStatusCode();
+        }
+
+        await using var database = fixture.CreateDbContext();
+        var games = await database.Games
+            .AsNoTracking()
+            .Where(game => game.CrewUuid == context.Uuid)
+            .OrderBy(game => game.Id)
+            .ToArrayAsync();
+        var statistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .SingleAsync(candidate =>
+                candidate.CrewUuid == context.Uuid &&
+                candidate.UserId == context.Administrator.UserId
+            );
+
+        Assert.Equal(2, statistics.CurrentWinStreak);
+        Assert.Equal(games[4].PlayedAtUtc, statistics.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(3, statistics.LongestWinStreak);
+        Assert.Equal(games[0].PlayedAtUtc, statistics.LongestWinStreakStartedAtUtc);
+        Assert.Equal(games[3].PlayedAtUtc, statistics.LongestWinStreakEndedAtUtc);
     }
 
     [Fact]
@@ -726,12 +785,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             ],
         };
         var statisticsService = new GameStatisticsService(staleDbContext);
-        var generatedStatistics = await statisticsService.GenerateStatistics(
+        var statisticsChanges = await statisticsService.CalculateStatistics(
             game,
             CancellationToken.None
         );
-        Assert.Empty(generatedStatistics);
-        staleDbContext.CrewMemberStatistics.AddRange(generatedStatistics);
+        Assert.Empty(statisticsChanges.Created);
+        Assert.Equal(2, statisticsChanges.Updated.Length);
+        staleDbContext.CrewMemberStatistics.AddRange(statisticsChanges.Created);
         staleDbContext.Games.Add(game);
 
         await using (var competingDbContext = fixture.CreateDbContext())

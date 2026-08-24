@@ -67,6 +67,21 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<Guid>("CrewUuid")
                         .HasColumnType("uuid");
 
+                    b.Property<long>("CurrentWinStreak")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("LongestWinStreak")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("LongestWinStreakEndedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LongestWinStreakStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<long>("Losses")
                         .HasColumnType("bigint");
 
@@ -165,6 +180,8 @@ namespace PickleCrew.Api.Data.Database.Migrations
                                     b2.IsRequired();
 
                                     b2.Property<string>("GuestName");
+
+                                    b2.Property<string>("MemberDisplayName");
 
                                     b2.Property<int>("SlotNumber");
 
