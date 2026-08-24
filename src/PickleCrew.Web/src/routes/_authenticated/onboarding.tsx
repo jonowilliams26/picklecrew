@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
-import { switchToOrganization } from '@workos/authkit-tanstack-react-start'
+import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
   ArrowRight,
   Check,
@@ -168,7 +168,7 @@ function CreateCrewStep({
   onComplete: (crew: CreateCrewHttpResponse) => void
 }) {
   const createCrewServerFn = useServerFn(createCrew)
-  const switchToOrganizationServerFn = useServerFn(switchToOrganization)
+  const { switchToOrganization } = useAuth()
   const [submissionError, setSubmissionError] = useState<string>()
   const form = useForm({
     defaultValues: {
@@ -181,9 +181,13 @@ function CreateCrewStep({
         const crew = await createCrewServerFn({
           data: { name: value.name.trim() },
         })
-        await switchToOrganizationServerFn({
-          data: { organizationId: crew.organizationId },
-        })
+        const switchResult = await switchToOrganization(crew.organizationId)
+
+        if (switchResult) {
+          setSubmissionError(switchResult.error)
+          return
+        }
+
         onComplete(crew)
       } catch (caughtError) {
         setSubmissionError(

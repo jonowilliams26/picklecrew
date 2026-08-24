@@ -141,7 +141,7 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
-    public async Task ListPendingCrewInvitationEmailAddressesAsync_WhenResultsSpanPages_ShouldReturnOnlyPendingInvitationEmailAddresses()
+    public async Task ListPendingCrewInvitationsAsync_WhenResultsSpanPages_ShouldReturnOnlyPendingInvitations()
     {
         var handler = new RecordingHttpMessageHandler(
             (
@@ -167,14 +167,23 @@ public sealed class WorkOsServiceTests
         using var client = CreateClient(handler);
         var service = new WorkOsService(client);
 
-        var emailAddresses = await service.ListPendingCrewInvitationEmailAddressesAsync(
+        var invitations = await service.ListPendingCrewInvitationsAsync(
             "org_123",
             CancellationToken.None
         );
 
-        Assert.Equal(
-            ["pending-one@example.com", "pending-two@example.com"],
-            emailAddresses
+        Assert.Collection(
+            invitations,
+            invitation =>
+            {
+                Assert.StartsWith("invitation_", invitation.WorkOsInvitationId);
+                Assert.Equal("pending-one@example.com", invitation.EmailAddress);
+            },
+            invitation =>
+            {
+                Assert.StartsWith("invitation_", invitation.WorkOsInvitationId);
+                Assert.Equal("pending-two@example.com", invitation.EmailAddress);
+            }
         );
         Assert.Equal(2, handler.Requests.Count);
         Assert.All(
