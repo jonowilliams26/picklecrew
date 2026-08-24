@@ -289,12 +289,6 @@ function CrewRosterRow({ entry }: { entry: CrewMemberHttpResponse }) {
               <strong className="min-w-0 truncate font-heading text-sm sm:text-base">
                 {entry.displayName}
               </strong>
-              {isPending ? (
-                <Badge variant="secondary" className="md:hidden">
-                  <Clock3 data-icon="inline-start" />
-                  Pending
-                </Badge>
-              ) : null}
               {entry.role === 'admin' ? (
                 <Badge className="md:hidden">
                   <Crown data-icon="inline-start" />
@@ -309,12 +303,7 @@ function CrewRosterRow({ entry }: { entry: CrewMemberHttpResponse }) {
         </div>
       </TableCell>
       <TableCell className="hidden px-6 py-4 text-right md:table-cell">
-        {isPending ? (
-          <Badge variant="secondary">
-            <Clock3 data-icon="inline-start" />
-            Pending
-          </Badge>
-        ) : entry.role === 'member' ? (
+        {isPending ? null : entry.role === 'member' ? (
           <span className="sr-only">Member</span>
         ) : entry.role ? (
           <Badge variant={entry.role === 'admin' ? 'default' : 'secondary'}>
