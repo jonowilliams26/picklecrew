@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -78,6 +78,11 @@ export const getPersonalStatistics = <ThrowOnError extends boolean = false>(opti
  * Gets the complete leaderboard for the active Crew.
  */
 export const getCrewLeaderboard = <ThrowOnError extends boolean = false>(options?: Options<GetCrewLeaderboardData, ThrowOnError>): RequestResult<GetCrewLeaderboardResponses, GetCrewLeaderboardErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewLeaderboardResponses, GetCrewLeaderboardErrors, ThrowOnError>({ url: '/statistics/leaderboard', ...options });
+
+/**
+ * Gets the longest win streak for the active Crew.
+ */
+export const getCrewLongestWinStreak = <ThrowOnError extends boolean = false>(options?: Options<GetCrewLongestWinStreakData, ThrowOnError>): RequestResult<GetCrewLongestWinStreakResponses, GetCrewLongestWinStreakErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewLongestWinStreakResponses, GetCrewLongestWinStreakErrors, ThrowOnError>({ url: '/statistics/longest-win-streak', ...options });
 
 /**
  * Gets the signed-in user's ten most recent Games for the active Crew.

@@ -53,6 +53,7 @@ internal static class Endpoints
             .WithCrewUserContext()
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()
+            .MapEndpoint<GetCrewLongestWinStreakEndpoint>()
             .MapEndpoint<GetRecentGamesEndpoint>();
 
         return app;

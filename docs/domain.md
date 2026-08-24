@@ -65,6 +65,7 @@ A crew member's all-time cumulative game results within one crew.
 - A current win streak counts consecutive wins through the crew member's newest recorded game and resets to zero when that member loses.
 - A longest win streak is the greatest current win streak the crew member has achieved.
 - A longest win streak records when its first win was played and when the streak ended; its end is absent while that record-setting streak remains active.
+- A crew's longest win streak is the greatest longest win streak held by one of its crew members.
 - Recorded games are the source for date-range and doubles-pairing statistics.
 
 ### Relationships
