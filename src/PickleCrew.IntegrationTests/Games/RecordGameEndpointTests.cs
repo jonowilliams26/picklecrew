@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
+using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games;
 using PickleCrew.Api.Games.Services;
+using PickleCrew.Api.Services;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -674,7 +676,18 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             await seedDbContext.SaveChangesAsync();
         }
 
-        await using var staleDbContext = fixture.CreateDbContext();
+        var crewUserContext = new CrewUserContext
+        {
+            CrewId = crewId,
+            CrewUuid = context.Uuid,
+        };
+        var options = new DbContextOptionsBuilder<CrewScopedDbContext>()
+            .UseNpgsql(fixture.DatabaseConnectionString)
+            .Options;
+        await using var staleDbContext = new CrewScopedDbContext(
+            options,
+            crewUserContext
+        );
         var game = new Game
         {
             CrewId = crewId,

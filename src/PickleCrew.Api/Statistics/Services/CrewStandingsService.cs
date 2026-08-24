@@ -7,7 +7,7 @@ using PickleCrew.Api.WorkOs;
 namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class CrewStandingsService(
-    PickleCrewDbContext database,
+    CrewScopedDbContext database,
     IWorkOsService workOs,
     CrewUserContext crewUserContext)
 {
@@ -32,7 +32,6 @@ internal sealed class CrewStandingsService(
 
         var statistics = await database.CrewMemberStatistics
             .AsNoTracking()
-            .Where(candidate => candidate.CrewId == crewUserContext.CrewId)
             .Select(candidate => new CrewMemberStatisticsTotals
             {
                 UserId = candidate.UserId,
