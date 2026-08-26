@@ -22,13 +22,14 @@ internal static class Endpoints
 
     private static IEndpointRouteBuilder MapCrewsEndpoints(this IEndpointRouteBuilder app)
     {
-        var crews = app.MapGroup("/crews");
+        var endpoints = app.MapGroup("/crews")
+            .WithTags("Crews");
 
-        crews.MapGroup(string.Empty)
+        endpoints.MapGroup(string.Empty)
             .WithUserContext()
             .MapEndpoint<CreateCrewEndpoint>();
 
-        crews.MapGroup(string.Empty)
+        endpoints.MapGroup(string.Empty)
             .WithCrewUserContext()
             .MapEndpoint<GetCrewMembersEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>();
@@ -39,6 +40,7 @@ internal static class Endpoints
     private static IEndpointRouteBuilder MapGamesEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/games")
+            .WithTags("Games")
             .WithCrewUserContext()
             .MapEndpoint<GetGameRecordingOptionsEndpoint>()
             .MapEndpoint<GetGamesEndpoint>()
@@ -50,6 +52,7 @@ internal static class Endpoints
     private static IEndpointRouteBuilder MapStatisticsEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGroup("/statistics")
+            .WithTags("Statistics")
             .WithCrewUserContext()
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()

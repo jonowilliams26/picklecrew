@@ -4,17 +4,16 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
 using PickleCrew.Api.Games.Services;
+using PickleCrew.Api.OpenApi;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Testing;
@@ -191,89 +190,11 @@ internal static class DependencyInjection
     {
         services.AddOpenApi(options =>
         {
-            options.AddOperationTransformer(async (operation, context, cancellationToken) =>
-            {
-                if (operation.Responses is null)
-                {
-                    return;
-                }
-
-                var emptyErrorResponses = operation.Responses
-                    .Where(response =>
-                        int.TryParse(response.Key, out var statusCode)
-                        && statusCode is >= StatusCodes.Status400BadRequest and < 600
-                        && response.Value.Content is not { Count: > 0 })
-                    .Select(response => response.Value)
-                    .OfType<OpenApiResponse>()
-                    .ToArray();
-
-                if (emptyErrorResponses.Length == 0)
-                {
-                    return;
-                }
-
-                var problemDetailsSchema = await context.GetOrCreateSchemaAsync(
-                    typeof(ProblemDetails),
-                    cancellationToken: cancellationToken
-                );
-
-                foreach (var response in emptyErrorResponses)
-                {
-                    response.Content = new Dictionary<string, OpenApiMediaType>
-                    {
-                        ["application/problem+json"] = new()
-                        {
-                            Schema = problemDetailsSchema,
-                        },
-                    };
-                }
-            });
-
-            options.AddSchemaTransformer((schema, context, _) =>
-            {
-                var schemaType = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type)
-                    ?? context.JsonTypeInfo.Type;
-
-                if (IsIntegerType(schemaType))
-                {
-                    if (schema.Type is { } jsonSchemaType)
-                    {
-                        schema.Type = jsonSchemaType & ~JsonSchemaType.String;
-                    }
-
-                    schema.Pattern = null;
-                }
-
-                if (context.JsonPropertyInfo is null
-                    && typeof(ProblemDetails).IsAssignableFrom(context.JsonTypeInfo.Type))
-                {
-                    schema.Properties ??= new Dictionary<string, IOpenApiSchema>();
-                    schema.Properties["traceId"] = new OpenApiSchema
-                    {
-                        Type = JsonSchemaType.String,
-                        Description = "The trace identifier for the request.",
-                    };
-                    schema.Required ??= new HashSet<string>();
-                    schema.Required.Add("traceId");
-                }
-
-                return Task.CompletedTask;
-            });
+            options.AddTraceIdProblemDetailsSchemaTransformer();
+            options.AddEmptyResponseProblemDetailsSchemaTransformer();
         });
 
         return services;
-    }
-
-    private static bool IsIntegerType(Type type)
-    {
-        return type == typeof(byte)
-            || type == typeof(sbyte)
-            || type == typeof(short)
-            || type == typeof(ushort)
-            || type == typeof(int)
-            || type == typeof(uint)
-            || type == typeof(long)
-            || type == typeof(ulong);
     }
 
     public static IServiceCollection AddErrorHandling(this IServiceCollection services)

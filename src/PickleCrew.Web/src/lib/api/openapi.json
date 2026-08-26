@@ -8,7 +8,7 @@
     "/crews": {
       "post": {
         "tags": [
-          "CreateCrewEndpoint"
+          "Crews"
         ],
         "summary": "Creates a crew for the signed-in user.",
         "operationId": "CreateCrew",
@@ -79,7 +79,7 @@
     "/crews/members": {
       "get": {
         "tags": [
-          "GetCrewMembersEndpoint"
+          "Crews"
         ],
         "summary": "Gets a paginated roster of active members and pending invitations.",
         "operationId": "GetCrewMembers",
@@ -158,7 +158,7 @@
     "/crews/invitations": {
       "post": {
         "tags": [
-          "SendCrewInvitationEndpoint"
+          "Crews"
         ],
         "summary": "Sends an invitation to join the active crew.",
         "operationId": "SendCrewInvitation",
@@ -229,7 +229,7 @@
     "/games/recording-options": {
       "get": {
         "tags": [
-          "GetGameRecordingOptionsEndpoint"
+          "Games"
         ],
         "summary": "Gets active crew members available for game recording.",
         "operationId": "GetGameRecordingOptions",
@@ -280,7 +280,7 @@
     "/games": {
       "get": {
         "tags": [
-          "GetGamesEndpoint"
+          "Games"
         ],
         "summary": "Gets a page of completed Games for the active Crew.",
         "operationId": "GetGames",
@@ -357,7 +357,7 @@
       },
       "post": {
         "tags": [
-          "RecordGameEndpoint"
+          "Games"
         ],
         "summary": "Records a completed game for the active Crew.",
         "operationId": "RecordGame",
@@ -428,7 +428,7 @@
     "/statistics/personal": {
       "get": {
         "tags": [
-          "GetPersonalStatisticsEndpoint"
+          "Statistics"
         ],
         "summary": "Gets the signed-in user's all-time statistics for the active Crew.",
         "operationId": "GetPersonalStatistics",
@@ -479,7 +479,7 @@
     "/statistics/leaderboard": {
       "get": {
         "tags": [
-          "GetCrewLeaderboardEndpoint"
+          "Statistics"
         ],
         "summary": "Gets the complete leaderboard for the active Crew.",
         "operationId": "GetCrewLeaderboard",
@@ -530,7 +530,7 @@
     "/statistics/longest-win-streak": {
       "get": {
         "tags": [
-          "GetCrewLongestWinStreakEndpoint"
+          "Statistics"
         ],
         "summary": "Gets the longest win streak for the active Crew.",
         "operationId": "GetCrewLongestWinStreak",
@@ -581,7 +581,7 @@
     "/statistics/recent-games": {
       "get": {
         "tags": [
-          "GetRecentGamesEndpoint"
+          "Statistics"
         ],
         "summary": "Gets the signed-in user's ten most recent Games for the active Crew.",
         "operationId": "GetRecentGames",
@@ -1422,34 +1422,13 @@
   },
   "tags": [
     {
-      "name": "CreateCrewEndpoint"
+      "name": "Crews"
     },
     {
-      "name": "GetCrewMembersEndpoint"
+      "name": "Games"
     },
     {
-      "name": "SendCrewInvitationEndpoint"
-    },
-    {
-      "name": "GetGameRecordingOptionsEndpoint"
-    },
-    {
-      "name": "GetGamesEndpoint"
-    },
-    {
-      "name": "RecordGameEndpoint"
-    },
-    {
-      "name": "GetPersonalStatisticsEndpoint"
-    },
-    {
-      "name": "GetCrewLeaderboardEndpoint"
-    },
-    {
-      "name": "GetCrewLongestWinStreakEndpoint"
-    },
-    {
-      "name": "GetRecentGamesEndpoint"
+      "name": "Statistics"
     }
   ]
 }

@@ -10,10 +10,33 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
         Game game,
         CancellationToken cancellationToken)
     {
-        var contributions = Calculate(game);
-        var participatingUserIds = contributions
-            .Select(contribution => contribution.UserId)
+        var gameStatistics = game.Sides
+            .SelectMany(
+                side => side.Participants,
+                (side, participant) => new
+                {
+                    Participant = participant,
+                    Side = side,
+                }
+            )
+            .Where(x => x.Participant.UserId is not null)
+            .Select(x =>
+            {
+                var opposingSide = game.Sides.First(side => side != x.Side);
+                return new UserGameStatistics
+                {
+                    UserId = x.Participant.UserId!,
+                    Won = x.Side.Score > opposingSide.Score,
+                    PointsScored = x.Side.Score,
+                    PointsConceded = opposingSide.Score,
+                };
+            })
             .ToArray();
+
+        var participatingUserIds = gameStatistics
+            .Select(x => x.UserId)
+            .ToArray();
+
         var statisticsByUserId = await database.CrewMemberStatistics
             .Where(statistics => participatingUserIds.Contains(statistics.UserId))
             .ToDictionaryAsync(
@@ -21,20 +44,21 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 StringComparer.Ordinal,
                 cancellationToken
             );
+
         var createdStatistics = new List<CrewMemberStatistics>();
         var updatedStatistics = new List<CrewMemberStatistics>();
 
-        foreach (var contribution in contributions)
+        foreach (var userGameStats in gameStatistics)
         {
-            if (!statisticsByUserId.TryGetValue(contribution.UserId, out var statistics))
+            if (!statisticsByUserId.TryGetValue(userGameStats.UserId, out var statistics))
             {
                 statistics = new CrewMemberStatistics
                 {
                     CrewId = game.CrewId,
                     CrewUuid = game.CrewUuid,
-                    UserId = contribution.UserId,
+                    UserId = userGameStats.UserId,
                 };
-                statisticsByUserId.Add(contribution.UserId, statistics);
+                statisticsByUserId.Add(userGameStats.UserId, statistics);
                 createdStatistics.Add(statistics);
             }
             else
@@ -42,11 +66,14 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 updatedStatistics.Add(statistics);
             }
 
-            statistics.Wins += contribution.Wins;
-            statistics.Losses += contribution.Losses;
+            statistics.PointsScored += userGameStats.PointsScored;
+            statistics.PointsConceded += userGameStats.PointsConceded;
 
-            if (contribution.Wins > 0)
+            if (userGameStats.Won)
             {
+                statistics.Wins += 1;
+
+                // Starting a new win streak
                 if (statistics.CurrentWinStreak == 0)
                 {
                     statistics.CurrentWinStreakStartedAtUtc = game.PlayedAtUtc;
@@ -54,21 +81,22 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
 
                 statistics.CurrentWinStreak += 1;
 
+                // Started a new longest win streak
                 if (statistics.CurrentWinStreak > statistics.LongestWinStreak)
                 {
                     statistics.LongestWinStreak = statistics.CurrentWinStreak;
-                    statistics.LongestWinStreakStartedAtUtc =
-                        statistics.CurrentWinStreakStartedAtUtc;
+                    statistics.LongestWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc;
                     statistics.LongestWinStreakEndedAtUtc = null;
                 }
             }
             else
             {
+                statistics.Losses += 1;
+
                 var endedRecordSettingStreak =
                     statistics.CurrentWinStreak > 0 &&
                     statistics.CurrentWinStreak == statistics.LongestWinStreak &&
-                    statistics.CurrentWinStreakStartedAtUtc ==
-                        statistics.LongestWinStreakStartedAtUtc &&
+                    statistics.CurrentWinStreakStartedAtUtc == statistics.LongestWinStreakStartedAtUtc &&
                     statistics.LongestWinStreakEndedAtUtc is null;
 
                 if (endedRecordSettingStreak)
@@ -79,43 +107,13 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 statistics.CurrentWinStreak = 0;
                 statistics.CurrentWinStreakStartedAtUtc = null;
             }
-
-            statistics.PointsScored += contribution.PointsScored;
-            statistics.PointsConceded += contribution.PointsConceded;
         }
 
         return new CalculateGameStatisticsResult
         {
-            Created = createdStatistics.ToArray(),
-            Updated = updatedStatistics.ToArray(),
+            Created = [.. createdStatistics],
+            Updated = [.. updatedStatistics],
         };
-    }
-
-    internal static GameStatisticsContribution[] Calculate(Game game)
-    {
-        var firstSideContributions = CalculateForSide(game.Sides[0], game.Sides[1]);
-        var secondSideContributions = CalculateForSide(game.Sides[1], game.Sides[0]);
-
-        return [.. firstSideContributions, .. secondSideContributions];
-    }
-
-    private static GameStatisticsContribution[] CalculateForSide(
-        GameSide side,
-        GameSide opposingSide)
-    {
-        var won = side.Score > opposingSide.Score;
-
-        return side.Participants
-            .Where(participant => participant.UserId is not null)
-            .Select(participant => new GameStatisticsContribution
-            {
-                UserId = participant.UserId!,
-                Wins = won ? 1 : 0,
-                Losses = won ? 0 : 1,
-                PointsScored = side.Score,
-                PointsConceded = opposingSide.Score,
-            })
-            .ToArray();
     }
 }
 
@@ -126,13 +124,11 @@ internal sealed record CalculateGameStatisticsResult
     public required CrewMemberStatistics[] Updated { get; init; }
 }
 
-internal sealed record GameStatisticsContribution
+internal sealed record UserGameStatistics
 {
     public required string UserId { get; init; }
 
-    public long Wins { get; init; }
-
-    public long Losses { get; init; }
+    public bool Won { get; init; }
 
     public long PointsScored { get; init; }
 
