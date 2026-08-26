@@ -527,6 +527,57 @@
         }
       }
     },
+    "/statistics/longest-win-streak": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the longest win streak for the active Crew.",
+        "operationId": "GetCrewLongestWinStreak",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCrewLongestWinStreakHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/recent-games": {
       "get": {
         "tags": [
@@ -813,6 +864,54 @@
             "items": {
               "$ref": "#/components/schemas/CrewLeaderboardEntryHttpResponse"
             }
+          }
+        }
+      },
+      "GetCrewLongestWinStreakHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "longestWinStreak",
+          "longestWinStreakStartedAtUtc",
+          "longestWinStreakEndedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "longestWinStreak": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "longestWinStreakStartedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "longestWinStreakEndedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

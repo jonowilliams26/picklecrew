@@ -68,6 +68,15 @@ export type GetCrewLeaderboardHttpResponse = {
     entries: Array<CrewLeaderboardEntryHttpResponse>;
 };
 
+export type GetCrewLongestWinStreakHttpResponse = {
+    userId: null | string;
+    displayName: null | string;
+    profilePictureUrl?: null | string;
+    longestWinStreak: number;
+    longestWinStreakStartedAtUtc: null | string;
+    longestWinStreakEndedAtUtc: null | string;
+};
+
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
 };
@@ -484,6 +493,39 @@ export type GetCrewLeaderboardResponses = {
 };
 
 export type GetCrewLeaderboardResponse = GetCrewLeaderboardResponses[keyof GetCrewLeaderboardResponses];
+
+export type GetCrewLongestWinStreakData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/longest-win-streak';
+};
+
+export type GetCrewLongestWinStreakErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewLongestWinStreakError = GetCrewLongestWinStreakErrors[keyof GetCrewLongestWinStreakErrors];
+
+export type GetCrewLongestWinStreakResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewLongestWinStreakHttpResponse;
+};
+
+export type GetCrewLongestWinStreakResponse = GetCrewLongestWinStreakResponses[keyof GetCrewLongestWinStreakResponses];
 
 export type GetRecentGamesData = {
     body?: never;
