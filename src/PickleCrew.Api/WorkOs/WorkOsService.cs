@@ -216,7 +216,7 @@ internal sealed class WorkOsService(WorkOSClient client)
             }
         }
 
-        return pendingInvitations.ToArray();
+        return [.. pendingInvitations];
     }
 
     private static string GetDisplayName(User user)
@@ -229,6 +229,7 @@ internal sealed class WorkOsService(WorkOSClient client)
         var nameParts = new[] { user.FirstName, user.LastName }
             .Where(part => !string.IsNullOrWhiteSpace(part))
             .Select(part => part!.Trim());
+
         var displayName = string.Join(' ', nameParts);
 
         return string.IsNullOrWhiteSpace(displayName)

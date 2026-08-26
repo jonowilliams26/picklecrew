@@ -91,7 +91,6 @@ internal sealed class RecordGameEndpoint : IEndpoint
         var expectedParticipantCount = request.Format == GameFormat.Doubles ? 2 : 1;
         var memberLocations = new Dictionary<string, string>(StringComparer.Ordinal);
         var guestLocations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var validMemberCount = 0;
 
         for (var sideIndex = 0; sideIndex < request.Sides.Length; sideIndex++)
         {
@@ -141,13 +140,12 @@ internal sealed class RecordGameEndpoint : IEndpoint
                     participantKey,
                     errors,
                     memberLocations,
-                    guestLocations,
-                    ref validMemberCount
+                    guestLocations
                 );
             }
         }
 
-        if (validMemberCount == 0)
+        if (memberLocations.Count == 0)
         {
             errors.AddError(
                 nameof(request.Sides),
@@ -285,8 +283,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         string participantKey,
         Dictionary<string, string[]> errors,
         Dictionary<string, string> memberLocations,
-        Dictionary<string, string> guestLocations,
-        ref int validMemberCount)
+        Dictionary<string, string> guestLocations)
     {
         var userIdKey = $"{participantKey}.{nameof(participant.UserId)}";
         var guestNameKey = $"{participantKey}.{nameof(participant.GuestName)}";
@@ -314,7 +311,6 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         if (hasUserId)
         {
-            validMemberCount++;
             var userId = participant.UserId!;
 
             if (memberLocations.TryGetValue(userId, out var existingMemberKey))

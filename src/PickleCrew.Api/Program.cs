@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
@@ -28,7 +29,9 @@ app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
-    await app.InitializeDatabaseAsync();
+    await using var scope = app.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<PickleCrewDbContext>();
+    await database.Database.MigrateAsync();
 }
 
 if (app.Environment.IsDevelopment() || app.Environment.IsTesting())
