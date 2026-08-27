@@ -92,8 +92,8 @@ A doubles pairing's all-time cumulative results within one crew.
 - No minimum number of games is required for a pairing to qualify as a crew's best doubles pairing.
 - A crew's best doubles pairing must contain two currently active crew members.
 - Historical doubles pairing statistics remain when a player becomes inactive.
-- The best doubles pairing is selected by highest win percentage, then most games played, then highest point differential, then player display names alphabetically.
-- Exactly one deterministic pairing is selected when qualifying pairings exist.
+- The best doubles pairing is selected by highest win percentage, then most games played, then highest point differential.
+- Exactly one pairing is selected when qualifying pairings exist.
 
 ### Relationships
 

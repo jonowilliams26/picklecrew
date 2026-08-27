@@ -6,6 +6,7 @@ using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games;
 using PickleCrew.Api.Games.Services;
 using PickleCrew.Api.Services;
+using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -42,6 +43,125 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         var content = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain(member.EmailAddress, content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenFourMembersPlayDoubles_ShouldPersistPairingsAndReturnBestPairing()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(
+                id: "user_pairing_morgan",
+                displayName: "Morgan Kitchen",
+                profilePictureUrl: "https://example.test/morgan.jpg"
+            )
+            .WithMember(
+                id: "user_pairing_alex",
+                displayName: "Alex Paddle",
+                profilePictureUrl: "https://example.test/alex.jpg"
+            )
+            .WithMember(
+                id: "user_pairing_jordan",
+                displayName: "Jordan Dink"
+            )
+            .WithMember(
+                id: "user_pairing_taylor",
+                displayName: "Taylor Volley"
+            )
+            .BuildAsync();
+        var alex = context.Members[0];
+        var jordan = context.Members[1];
+        var taylor = context.Members[2];
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var request = new RecordGameHttpRequest
+        {
+            Format = GameFormat.Doubles,
+            Sides =
+            [
+                CreateSide(
+                    11,
+                    CreateMemberParticipant(context.Administrator.UserId),
+                    CreateMemberParticipant(alex.UserId)
+                ),
+                CreateSide(
+                    7,
+                    CreateMemberParticipant(taylor.UserId),
+                    CreateMemberParticipant(jordan.UserId)
+                ),
+            ],
+        };
+
+        using var recordResponse = await apiClient.PostAsJsonAsync(
+            "/games",
+            request,
+            TestJsonSerializerOptions.Default
+        );
+
+        recordResponse.EnsureSuccessStatusCode();
+
+        await using (var database = fixture.CreateDbContext())
+        {
+            var pairingStatistics = await database.CrewDoublesPairingStatistics
+                .AsNoTracking()
+                .Where(statistics => statistics.CrewUuid == context.Uuid)
+                .ToArrayAsync();
+
+            Assert.Equal(2, pairingStatistics.Length);
+            AssertPairingStatistics(
+                Assert.Single(pairingStatistics, statistics =>
+                    statistics.Player1Id == alex.UserId
+                    && statistics.Player2Id == context.Administrator.UserId
+                ),
+                context.Uuid,
+                wins: 1,
+                losses: 0,
+                pointsScored: 11,
+                pointsConceded: 7
+            );
+            AssertPairingStatistics(
+                Assert.Single(pairingStatistics, statistics =>
+                    statistics.Player1Id == jordan.UserId
+                    && statistics.Player2Id == taylor.UserId
+                ),
+                context.Uuid,
+                wins: 0,
+                losses: 1,
+                pointsScored: 7,
+                pointsConceded: 11
+            );
+        }
+
+        using var pairingResponse = await apiClient.GetAsync(
+            "/statistics/best-doubles-pairing"
+        );
+
+        pairingResponse.EnsureSuccessStatusCode();
+        var result = await pairingResponse.Content.ReadFromJsonAsync<GetBestDoublesPairingHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(result);
+        var pairing = Assert.IsType<DoublesPairingHttpResponse>(result.Pairing);
+        Assert.Collection(
+            pairing.Players,
+            player =>
+            {
+                Assert.Equal(alex.UserId, player.UserId);
+                Assert.Equal("Alex Paddle", player.DisplayName);
+                Assert.Equal("https://example.test/alex.jpg", player.ProfilePictureUrl);
+            },
+            player =>
+            {
+                Assert.Equal(context.Administrator.UserId, player.UserId);
+                Assert.Equal("Morgan Kitchen", player.DisplayName);
+                Assert.Equal("https://example.test/morgan.jpg", player.ProfilePictureUrl);
+            }
+        );
+        Assert.Equal(1, pairing.Wins);
+        Assert.Equal(0, pairing.Losses);
+        Assert.Equal(1, pairing.GamesPlayed);
+        Assert.Equal(1m, pairing.WinPercentage);
+        Assert.Equal(11, pairing.PointsScored);
+        Assert.Equal(7, pairing.PointsConceded);
+        Assert.Equal(4, pairing.PointDifferential);
     }
 
     [Fact]
@@ -1079,6 +1199,21 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         string guestName)
     {
         return new RecordGameParticipantHttpRequest { GuestName = guestName };
+    }
+
+    private static void AssertPairingStatistics(
+        CrewDoublesPairingStatistics statistics,
+        Guid crewUuid,
+        long wins,
+        long losses,
+        long pointsScored,
+        long pointsConceded)
+    {
+        Assert.Equal(crewUuid, statistics.CrewUuid);
+        Assert.Equal(wins, statistics.Wins);
+        Assert.Equal(losses, statistics.Losses);
+        Assert.Equal(pointsScored, statistics.PointsScored);
+        Assert.Equal(pointsConceded, statistics.PointsConceded);
     }
 
     private static void AssertStatistics(

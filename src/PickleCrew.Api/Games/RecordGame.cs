@@ -246,6 +246,9 @@ internal sealed class RecordGameEndpoint : IEndpoint
         );
 
         database.CrewMemberStatistics.AddRange(statisticsChanges.Created);
+        database.CrewDoublesPairingStatistics.AddRange(
+            statisticsChanges.CreatedPairingStatistics
+        );
         database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
 
