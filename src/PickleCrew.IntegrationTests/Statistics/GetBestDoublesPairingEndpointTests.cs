@@ -30,6 +30,105 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task GetBestDoublesPairing_WhenAllPairingsHavePlayedFewerThanThreeGames_ShouldReturnNullPairing()
+    {
+        const string firstMemberId = "user_pairing_minimum_first";
+        const string secondMemberId = "user_pairing_minimum_second";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: "user_pairing_minimum_admin")
+            .WithMember(id: firstMemberId)
+            .WithMember(id: secondMemberId)
+            .BuildAsync();
+        await SeedPairingsAsync(
+            context,
+            new PairingSeed(
+                context.Administrator.UserId,
+                firstMemberId,
+                Wins: 2,
+                Losses: 0,
+                PointsScored: 22,
+                PointsConceded: 10
+            ),
+            new PairingSeed(
+                context.Administrator.UserId,
+                secondMemberId,
+                Wins: 1,
+                Losses: 1,
+                PointsScored: 18,
+                PointsConceded: 20
+            )
+        );
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var response = await apiClient.GetAsync(
+            "/statistics/best-doubles-pairing"
+        );
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<GetBestDoublesPairingHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(result);
+        Assert.Null(result.Pairing);
+    }
+
+    [Fact]
+    public async Task GetBestDoublesPairing_WhenHighestWinPercentageHasFewerThanThreeGames_ShouldReturnBestQualifiedPairing()
+    {
+        const string unqualifiedMemberId = "user_pairing_eligibility_unqualified";
+        const string qualifiedMemberId = "user_pairing_eligibility_qualified";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(
+                id: "user_pairing_eligibility_admin",
+                displayName: "Eligibility Admin"
+            )
+            .WithMember(
+                id: unqualifiedMemberId,
+                displayName: "Unqualified Member"
+            )
+            .WithMember(
+                id: qualifiedMemberId,
+                displayName: "Qualified Member"
+            )
+            .BuildAsync();
+        await SeedPairingsAsync(
+            context,
+            new PairingSeed(
+                context.Administrator.UserId,
+                unqualifiedMemberId,
+                Wins: 2,
+                Losses: 0,
+                PointsScored: 22,
+                PointsConceded: 10
+            ),
+            new PairingSeed(
+                context.Administrator.UserId,
+                qualifiedMemberId,
+                Wins: 2,
+                Losses: 1,
+                PointsScored: 29,
+                PointsConceded: 24
+            )
+        );
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var response = await apiClient.GetAsync(
+            "/statistics/best-doubles-pairing"
+        );
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<GetBestDoublesPairingHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        var pairing = Assert.IsType<DoublesPairingHttpResponse>(result?.Pairing);
+        Assert.Equal(
+            [context.Administrator.UserId, qualifiedMemberId],
+            pairing.Players.Select(player => player.UserId).ToArray()
+        );
+        Assert.Equal(3, pairing.GamesPlayed);
+    }
+
+    [Fact]
     public async Task GetBestDoublesPairing_WhenHistoryContainsOnlySinglesAndMemberGuestSides_ShouldReturnNullPairing()
     {
         const string administratorId = "user_pairing_history_admin";
@@ -244,14 +343,16 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
             )
             .WithMember(id: firstOpponentId)
             .WithMember(id: secondOpponentId)
-            .WithDoublesGame(
-                side1: (administratorId, teammateId, 11),
-                side2: (firstOpponentId, secondOpponentId, 6)
+            .WithDoublesGames(
+                side1: (administratorId, teammateId),
+                side2: (firstOpponentId, secondOpponentId),
+                (Side1: 11, Side2: 6),
+                (Side1: 11, Side2: 7),
+                (Side1: 11, Side2: 8)
             )
             .BuildAsync();
         var recordedNames = context.Games
-            .Single()
-            .Sides
+            .SelectMany(game => game.Sides)
             .SelectMany(side => side.Participants)
             .Select(participant => participant.MemberDisplayName)
             .ToArray();

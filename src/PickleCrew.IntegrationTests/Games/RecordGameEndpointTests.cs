@@ -46,7 +46,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task RecordGame_WhenFourMembersPlayDoubles_ShouldPersistPairingsAndReturnBestPairing()
+    public async Task RecordGame_WhenFourMembersPlayOneDoublesGame_ShouldPersistPairingsAndReturnNoBestPairing()
     {
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(
@@ -139,29 +139,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        var pairing = Assert.IsType<DoublesPairingHttpResponse>(result.Pairing);
-        Assert.Collection(
-            pairing.Players,
-            player =>
-            {
-                Assert.Equal(alex.UserId, player.UserId);
-                Assert.Equal("Alex Paddle", player.DisplayName);
-                Assert.Equal("https://example.test/alex.jpg", player.ProfilePictureUrl);
-            },
-            player =>
-            {
-                Assert.Equal(context.Administrator.UserId, player.UserId);
-                Assert.Equal("Morgan Kitchen", player.DisplayName);
-                Assert.Equal("https://example.test/morgan.jpg", player.ProfilePictureUrl);
-            }
-        );
-        Assert.Equal(1, pairing.Wins);
-        Assert.Equal(0, pairing.Losses);
-        Assert.Equal(1, pairing.GamesPlayed);
-        Assert.Equal(1m, pairing.WinPercentage);
-        Assert.Equal(11, pairing.PointsScored);
-        Assert.Equal(7, pairing.PointsConceded);
-        Assert.Equal(4, pairing.PointDifferential);
+        Assert.Null(result.Pairing);
     }
 
     [Fact]

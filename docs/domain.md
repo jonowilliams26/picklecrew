@@ -89,7 +89,7 @@ A doubles pairing's all-time cumulative results within one crew.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
 - Win percentage equals wins divided by games played.
-- No minimum number of games is required for a pairing to qualify as a crew's best doubles pairing.
+- A pairing must have played at least three games to qualify as a crew's best doubles pairing.
 - A crew's best doubles pairing must contain two currently active crew members.
 - Historical doubles pairing statistics remain when a player becomes inactive.
 - The best doubles pairing is selected by highest win percentage, then most games played, then highest point differential.

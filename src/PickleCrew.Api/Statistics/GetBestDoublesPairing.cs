@@ -40,6 +40,8 @@ public sealed record DoublesPairingPlayerHttpResponse
 
 internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
 {
+    private const int MinimumGamesPlayed = 3;
+
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/best-doubles-pairing", HandleAsync)
@@ -64,6 +66,7 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)
+                && candidate.Wins + candidate.Losses >= MinimumGamesPlayed
             )
             .Select(candidate => new DoublesPairingStatisticsTotals
             {
