@@ -89,15 +89,15 @@ function ActiveCrewLayout() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="min-h-dvh bg-background">
       <ActiveCrewSidebar
         crewName={activeCrew.name}
         pathname={pathname}
         user={user}
       />
 
-      <SidebarInset className="dashboard-shell min-h-svh overflow-hidden font-heading">
-        <header className="flex h-[calc(4.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b-2 border-border bg-background/90 px-5 pt-[env(safe-area-inset-top)] backdrop-blur-sm md:hidden">
+      <SidebarInset className="dashboard-shell min-h-dvh overflow-hidden font-heading">
+        <header className="flex h-[calc(4.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b-2 border-border bg-background px-5 pt-[env(safe-area-inset-top)] md:hidden">
           <div className="flex items-center gap-2">
             <SidebarTrigger aria-label="Open navigation" />
             <Link

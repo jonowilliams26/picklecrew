@@ -9,7 +9,8 @@
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --background: oklch(0.975 0.023 93);
+  --paper: #f8f3df;
+  --background: var(--paper);
   --foreground: oklch(0.19 0.03 166);
   --card: oklch(0.995 0.009 91);
   --card-foreground: oklch(0.19 0.03 166);
@@ -43,7 +44,6 @@
   --sidebar-ring: oklch(0.68 0.17 126);
   --ink: #15352d;
   --ink-soft: #31544a;
-  --paper: #f8f3df;
   --cream: #fffbed;
   --lime: #c9f43b;
   --orange: #ff7546;
@@ -149,18 +149,16 @@
 }
 
 html {
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-}
-
-html,
-body {
   min-height: 100%;
-  margin: 0;
+  overflow-x: hidden;
+  background: var(--paper);
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
   overflow-x: hidden;
   background: var(--paper);
   color: var(--ink);

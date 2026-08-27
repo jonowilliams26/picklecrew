@@ -12,7 +12,7 @@ import { Spinner } from '~/components/ui/spinner'
 export function LoadingScreen() {
   return (
     <main
-      className="loading-shell relative isolate flex min-h-screen items-center justify-center overflow-hidden px-5 py-28 font-heading"
+      className="loading-shell relative isolate flex min-h-dvh items-center justify-center overflow-hidden px-5 py-28 font-heading"
       aria-busy="true"
       aria-live="polite"
     >

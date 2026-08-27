@@ -165,8 +165,8 @@ function HomePage() {
   useScrollReveals()
 
   return (
-    <div className="landing-shell min-h-screen">
-      <header className="mx-auto flex h-[88px] w-[calc(100%-40px)] max-w-[1240px] items-center justify-between border-b border-line max-[680px]:h-[74px] max-[680px]:w-[calc(100%-28px)]">
+    <div className="landing-shell min-h-dvh">
+      <header className="mx-auto flex h-[calc(88px+env(safe-area-inset-top))] w-[calc(100%-40px)] max-w-[1240px] items-center justify-between border-b border-line pt-[env(safe-area-inset-top)] max-[680px]:h-[calc(74px+env(safe-area-inset-top))] max-[680px]:w-[calc(100%-28px)]">
         <a
           className="inline-flex items-center gap-2.5 font-heading text-[21px] font-[850] tracking-[-.045em]"
           href="#top"
@@ -889,7 +889,7 @@ function HomePage() {
         </section>
       </main>
 
-      <footer className="mx-auto grid w-[calc(100%-40px)] max-w-[1240px] grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t border-line pt-7 pb-10 max-[680px]:w-[calc(100%-28px)] max-[680px]:grid-cols-1 max-[680px]:justify-items-start">
+      <footer className="mx-auto grid w-[calc(100%-40px)] max-w-[1240px] grid-cols-[1fr_auto_1fr] items-center gap-[30px] border-t border-line pt-7 pb-[calc(2.5rem+env(safe-area-inset-bottom))] max-[680px]:w-[calc(100%-28px)] max-[680px]:grid-cols-1 max-[680px]:justify-items-start">
         <a
           className="inline-flex items-center gap-2.5 font-heading text-[21px] font-[850] tracking-[-.045em]"
           href="#top"
