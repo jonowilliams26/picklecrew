@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using PickleCrew.Api.Authorization;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Testing;

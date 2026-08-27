@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Shared;
-using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Crews;
 
@@ -41,14 +40,10 @@ internal sealed class GetCrewMembersEndpoint : IEndpoint
 
     private static async Task<Ok<PaginatedHttpResponse<CrewMemberHttpResponse>>> HandleAsync(
         [AsParameters] GetCrewMembersHttpRequest request,
-        CrewUserContext crewUserContext,
-        IWorkOsService workOs,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var roster = await workOs.ListCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var roster = await crewService.ListCrewMembersAsync(cancellationToken);
         var activeRosterEntries = roster.ActiveMembers.Select(member => new CrewMemberHttpResponse
         {
             Id = member.WorkOsUserId,

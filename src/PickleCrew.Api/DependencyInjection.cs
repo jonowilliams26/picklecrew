@@ -79,6 +79,7 @@ internal static class DependencyInjection
         var isTesting = builder.Environment.IsTesting();
 
         builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
+        builder.Services.AddScoped<ICrewService, WorkOsCrewService>();
 
         if (isTesting)
         {

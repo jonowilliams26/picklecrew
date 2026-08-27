@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 using WorkOS;
 using Xunit;
