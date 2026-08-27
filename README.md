@@ -38,47 +38,6 @@ aspire start
 
 Open the web resource URL shown in the Aspire dashboard.
 
-### Test from another device on the local network
-
-Normal `aspire start` and `aspire start --isolated` runs retain Aspire's dynamic, isolated web
-ports. Local-network exposure is enabled only when the AppHost receives both `--web-host` and
-`--web-port` after Aspire's `--` argument separator.
-
-The Vite server then listens on all local interfaces. The API remains internal to Aspire because
-the TanStack Start server calls it on behalf of the browser; a mobile device only needs access to
-the web endpoint.
-
-Find the computer's LAN IPv4 address using `ipconfig` on Windows or `ip addr` on Linux. Start an
-ad hoc mobile-testing instance with that address and an available fixed port:
-
-```shell
-aspire start --isolated -- --web-host 192.168.1.42 --web-port 3000
-```
-
-The project-local pi extension provides a shortcut that detects this device's LAN IPv4 address and
-always uses isolated mode and port `3000`. If multiple network adapters are available, select the
-address reachable by the mobile device:
-
-```text
-/start-mobile
-```
-
-Use WorkOS staging credentials for local network testing. Add the following exact URLs to the
-application's WorkOS redirect settings, replacing the example address and port when necessary:
-
-| Setting | URL |
-| --- | --- |
-| Redirect URI | `http://192.168.1.42:3000/api/auth/callback` |
-| Sign-in endpoint | `http://192.168.1.42:3000/api/auth/sign-in` |
-| Sign-out URI | `http://192.168.1.42:3000/` |
-
-Open `http://192.168.1.42:3000` on the mobile device. Both devices must be on the same network, and
-the computer's firewall must allow private-network access to the selected TCP port. Guest Wi-Fi or
-router client-isolation settings can prevent devices from connecting.
-
-Each simultaneous mobile-testing instance must use a different explicit port. Normal isolated runs
-continue to use Aspire-assigned ports and require no additional arguments.
-
 Stop the app:
 
 ```shell
