@@ -27,8 +27,10 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         database.AddRange(
             CreateGame(firstCrew),
             CreateGame(secondCrew),
-            CreateStatistics(firstCrew),
-            CreateStatistics(secondCrew)
+            CreateMemberStatistics(firstCrew),
+            CreateMemberStatistics(secondCrew),
+            CreatePairingStatistics(firstCrew),
+            CreatePairingStatistics(secondCrew)
         );
         await database.SaveChangesAsync();
 
@@ -43,13 +45,18 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         CrewScopedDbContext database,
         Crew expectedCrew)
     {
-        var statistics = await database.CrewMemberStatistics
+        var memberStatistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .SingleAsync();
+        var pairingStatistics = await database.CrewDoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync();
         var game = await database.Games.AsNoTracking().SingleAsync();
 
-        Assert.Equal(expectedCrew.Id, statistics.CrewId);
-        Assert.Equal(expectedCrew.Uuid, statistics.CrewUuid);
+        Assert.Equal(expectedCrew.Id, memberStatistics.CrewId);
+        Assert.Equal(expectedCrew.Uuid, memberStatistics.CrewUuid);
+        Assert.Equal(expectedCrew.Id, pairingStatistics.CrewId);
+        Assert.Equal(expectedCrew.Uuid, pairingStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, game.CrewId);
         Assert.Equal(expectedCrew.Uuid, game.CrewUuid);
     }
@@ -90,13 +97,29 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewMemberStatistics CreateStatistics(Crew crew)
+    private static CrewMemberStatistics CreateMemberStatistics(Crew crew)
     {
         return new CrewMemberStatistics
         {
             CrewId = crew.Id,
             CrewUuid = crew.Uuid,
             UserId = $"user_{Guid.NewGuid():N}",
+        };
+    }
+
+    private static CrewDoublesPairingStatistics CreatePairingStatistics(Crew crew)
+    {
+        var key = CrewDoublesPairingKey.Create(
+            $"user_{Guid.NewGuid():N}",
+            $"user_{Guid.NewGuid():N}"
+        );
+
+        return new CrewDoublesPairingStatistics
+        {
+            CrewId = crew.Id,
+            CrewUuid = crew.Uuid,
+            Player1Id = key.Player1Id,
+            Player2Id = key.Player2Id,
         };
     }
 

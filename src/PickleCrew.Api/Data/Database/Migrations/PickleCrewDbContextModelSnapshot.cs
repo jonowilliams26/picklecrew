@@ -56,6 +56,43 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.ToTable("Crews");
                 });
 
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingStatistics", b =>
+                {
+                    b.Property<long>("CrewId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Player1Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Player2Id")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Losses")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointsConceded")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointsScored")
+                        .HasColumnType("bigint");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<long>("Wins")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CrewId", "Player1Id", "Player2Id");
+
+                    b.ToTable("CrewDoublesPairingStatistics");
+                });
+
             modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
                 {
                     b.Property<long>("CrewId")
@@ -210,6 +247,17 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .HasForeignKey("PickleCrew.Api.Data.Crew", "Uuid")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingStatistics", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
+                        .WithMany()
+                        .HasForeignKey("CrewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Crew");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
