@@ -425,6 +425,57 @@
         }
       }
     },
+    "/statistics/best-doubles-pairing": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the best doubles pairing for the active Crew.",
+        "operationId": "GetBestDoublesPairing",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBestDoublesPairingHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/personal": {
       "get": {
         "tags": [
@@ -753,6 +804,80 @@
           "pending"
         ]
       },
+      "DoublesPairingHttpResponse": {
+        "required": [
+          "players",
+          "wins",
+          "losses",
+          "gamesPlayed",
+          "winPercentage",
+          "pointsScored",
+          "pointsConceded",
+          "pointDifferential"
+        ],
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DoublesPairingPlayerHttpResponse"
+            }
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "winPercentage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DoublesPairingPlayerHttpResponse": {
+        "required": [
+          "userId",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "GameFormat": {
         "enum": [
           "singles",
@@ -849,6 +974,24 @@
             "type": [
               "null",
               "string"
+            ]
+          }
+        }
+      },
+      "GetBestDoublesPairingHttpResponse": {
+        "required": [
+          "pairing"
+        ],
+        "type": "object",
+        "properties": {
+          "pairing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DoublesPairingHttpResponse"
+              }
             ]
           }
         }

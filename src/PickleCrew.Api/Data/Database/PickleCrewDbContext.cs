@@ -21,6 +21,8 @@ public class PickleCrewDbContext : DbContext
 
     public DbSet<CrewMemberStatistics> CrewMemberStatistics => Set<CrewMemberStatistics>();
 
+    public DbSet<CrewDoublesPairingStatistics> CrewDoublesPairingStatistics => Set<CrewDoublesPairingStatistics>();
+
     public DbSet<Game> Games => Set<Game>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,6 +50,21 @@ public class PickleCrewDbContext : DbContext
             {
                 entity.CrewId,
                 entity.UserId,
+            });
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+            statistics.Property(entity => entity.Version)
+                .IsRowVersion();
+        });
+
+        modelBuilder.Entity<CrewDoublesPairingStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.CrewId,
+                entity.Player1Id,
+                entity.Player2Id,
             });
             statistics.HasOne(entity => entity.Crew)
                 .WithMany()
@@ -84,6 +101,8 @@ internal sealed class CrewScopedDbContext(
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<CrewMemberStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewDoublesPairingStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
         modelBuilder.Entity<Game>()
             .HasQueryFilter(game => game.CrewId == CrewId);

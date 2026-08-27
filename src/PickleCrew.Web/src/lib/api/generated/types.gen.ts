@@ -37,6 +37,23 @@ export type CrewMemberHttpResponse = {
 
 export type CrewRosterEntryStatus = 'active' | 'pending';
 
+export type DoublesPairingHttpResponse = {
+    players: Array<DoublesPairingPlayerHttpResponse>;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointsScored: number;
+    pointsConceded: number;
+    pointDifferential: number;
+};
+
+export type DoublesPairingPlayerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+};
+
 export type GameFormat = 'singles' | 'doubles';
 
 export type GameHistoryItemHttpResponse = {
@@ -62,6 +79,10 @@ export type GameRecordingMemberHttpResponse = {
     userId: string;
     displayName: string;
     profilePictureUrl?: null | string;
+};
+
+export type GetBestDoublesPairingHttpResponse = {
+    pairing: null | DoublesPairingHttpResponse;
 };
 
 export type GetCrewLeaderboardHttpResponse = {
@@ -427,6 +448,39 @@ export type RecordGameResponses = {
 };
 
 export type RecordGameResponse = RecordGameResponses[keyof RecordGameResponses];
+
+export type GetBestDoublesPairingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/best-doubles-pairing';
+};
+
+export type GetBestDoublesPairingErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBestDoublesPairingError = GetBestDoublesPairingErrors[keyof GetBestDoublesPairingErrors];
+
+export type GetBestDoublesPairingResponses = {
+    /**
+     * OK
+     */
+    200: GetBestDoublesPairingHttpResponse;
+};
+
+export type GetBestDoublesPairingResponse = GetBestDoublesPairingResponses[keyof GetBestDoublesPairingResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;

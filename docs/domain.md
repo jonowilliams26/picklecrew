@@ -75,6 +75,30 @@ A crew member's all-time cumulative game results within one crew.
 
 - Each crew member's statistics belong to exactly one crew and one user.
 
+## Doubles pairing statistics
+
+A doubles pairing's all-time cumulative results within one crew.
+
+### Business rules
+
+- A doubles pairing consists of two crew members playing on the same side of a doubles game.
+- A doubles pairing is unordered.
+- A side containing a guest does not receive doubles pairing statistics.
+- A qualifying crew-member pairing receives its side's full score as points scored and the opposing side's full score as points conceded, including when the opposing side contains a guest.
+- Singles games do not contribute to doubles pairing statistics.
+- Games played equals wins plus losses.
+- Point differential equals points scored minus points conceded.
+- Win percentage equals wins divided by games played.
+- No minimum number of games is required for a pairing to qualify as a crew's best doubles pairing.
+- A crew's best doubles pairing must contain two currently active crew members.
+- Historical doubles pairing statistics remain when a player becomes inactive.
+- The best doubles pairing is selected by highest win percentage, then most games played, then highest point differential.
+- Exactly one pairing is selected when qualifying pairings exist.
+
+### Relationships
+
+- Each doubles pairing's statistics belong to exactly one crew and exactly two users.
+
 ## Crew invitation
 
 A request sent through WorkOS for a person identified by email address to join a crew.

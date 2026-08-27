@@ -10,6 +10,7 @@ internal static class Endpoints
     {
         app.MapPost("/setup", CreateOrganizationWithUser);
         app.MapPost("/users", CreateUser);
+        app.MapPut("/users/{userId}", UpdateUser);
         app.MapPost("/organizations", CreateOrganization);
         app.MapPost("/memberships", CreateMembership);
         app.MapPost("/invitations", CreateInvitation);
@@ -83,6 +84,20 @@ internal static class Endpoints
             $"/users/{user.Id}",
             new IdentifierHttpResponse { Id = user.Id }
         );
+    }
+
+    private static Ok<IdentifierHttpResponse> UpdateUser(
+        string userId,
+        UpdateUserHttpRequest request,
+        FakeWorkOsState state)
+    {
+        var user = state.UpdateUser(
+            userId,
+            request.DisplayName,
+            request.ProfilePictureUrl
+        );
+
+        return TypedResults.Ok(new IdentifierHttpResponse { Id = user.Id });
     }
 
     private static Results<Created<IdentifierHttpResponse>, ProblemHttpResult>
@@ -377,6 +392,13 @@ public sealed record CreateUserHttpRequest
     public string? LastName { get; init; }
 
     public string? DisplayName { get; init; }
+
+    public string? ProfilePictureUrl { get; init; }
+}
+
+public sealed record UpdateUserHttpRequest
+{
+    public required string DisplayName { get; init; }
 
     public string? ProfilePictureUrl { get; init; }
 }
