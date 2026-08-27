@@ -179,24 +179,16 @@ a {
 }
 
 .onboarding-shell {
-  background:
-    radial-gradient(circle at 10% 18%, rgba(201, 244, 59, 0.42), transparent 20rem),
-    radial-gradient(circle at 92% 84%, rgba(128, 103, 238, 0.2), transparent 25rem),
-    var(--paper);
+  background: var(--background);
 }
 
 .dashboard-shell {
-  background:
-    radial-gradient(circle at 86% 15%, rgba(201, 244, 59, 0.24), transparent 19rem),
-    radial-gradient(circle at 8% 88%, rgba(104, 217, 202, 0.16), transparent 24rem),
-    var(--paper);
+  isolation: isolate;
+  background: var(--background);
 }
 
 .loading-shell {
-  background:
-    radial-gradient(circle at 12% 18%, rgba(201, 244, 59, 0.4), transparent 22rem),
-    radial-gradient(circle at 88% 82%, rgba(128, 103, 238, 0.2), transparent 25rem),
-    var(--paper);
+  background: var(--background);
 }
 
 .loading-shell::before {
@@ -448,6 +440,7 @@ a {
   background-image: radial-gradient(rgba(21, 53, 45, 0.12) 1px, transparent 1px);
   background-size: 24px 24px;
   content: '';
+  z-index: -1;
   mask-image: linear-gradient(135deg, black, transparent 42%, transparent 72%, black);
   pointer-events: none;
 }
