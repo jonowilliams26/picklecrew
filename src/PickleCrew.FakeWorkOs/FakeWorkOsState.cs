@@ -30,6 +30,21 @@ internal sealed class FakeWorkOsState
         );
     }
 
+    public FakeUser UpdateUser(
+        string id,
+        string displayName,
+        string? profilePictureUrl)
+    {
+        var user = users[id] with
+        {
+            DisplayName = displayName,
+            ProfilePictureUrl = profilePictureUrl,
+        };
+        users[id] = user;
+
+        return user;
+    }
+
     public FakeOrganization? FindOrganization(string externalId)
     {
         organizations.TryGetValue(externalId, out var organization);

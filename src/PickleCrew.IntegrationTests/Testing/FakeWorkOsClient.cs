@@ -67,6 +67,26 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         );
     }
 
+    public async Task UpdateUserAsync(
+        string userId,
+        string displayName,
+        string? profilePictureUrl = null,
+        CancellationToken cancellationToken = default)
+    {
+        var encodedUserId = Uri.EscapeDataString(userId);
+        using var response = await client.PutAsJsonAsync(
+            $"/users/{encodedUserId}",
+            new UpdateUserHttpRequest
+            {
+                DisplayName = displayName,
+                ProfilePictureUrl = profilePictureUrl,
+            },
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
     public Task<string> CreateOrganizationAsync(
         string organizationId,
         string name,
@@ -472,6 +492,13 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         public string? LastName { get; init; }
 
         public string? DisplayName { get; init; }
+
+        public string? ProfilePictureUrl { get; init; }
+    }
+
+    private sealed record UpdateUserHttpRequest
+    {
+        public required string DisplayName { get; init; }
 
         public string? ProfilePictureUrl { get; init; }
     }
