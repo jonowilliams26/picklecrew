@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
-using PickleCrew.Api.WorkOs;
 using WorkOS;
 
 namespace PickleCrew.Api.Crews;
@@ -58,15 +57,11 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
 
     internal static async Task<Ok<SendCrewInvitationHttpResponse>> HandleAsync(
         SendCrewInvitationHttpRequest request,
-        CrewUserContext crewUserContext,
-        IWorkOsService workOs,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
         var emailAddress = NormalizeEmailAddress(request.EmailAddress);
-        var roster = await workOs.ListCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var roster = await crewService.ListCrewMembersAsync(cancellationToken);
         var isActiveMember = roster.ActiveMembers.Any(member => string.Equals(
             member.EmailAddress,
             emailAddress,
@@ -104,8 +99,7 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
         }
 
         var outcome = await SendInvitationAsync(
-            workOs,
-            crewUserContext,
+            crewService,
             emailAddress,
             cancellationToken
         );
@@ -114,19 +108,13 @@ internal sealed class SendCrewInvitationEndpoint : IEndpoint
     }
 
     private static async Task<SendCrewInvitationHttpResponse> SendInvitationAsync(
-        IWorkOsService workOs,
-        CrewUserContext crewUserContext,
+        ICrewService crewService,
         string emailAddress,
         CancellationToken cancellationToken)
     {
         try
         {
-            await workOs.SendCrewInvitationAsync(
-                crewUserContext.OrganizationId,
-                emailAddress,
-                crewUserContext.UserId,
-                cancellationToken
-            );
+            await crewService.SendCrewInvitationAsync(emailAddress, cancellationToken);
 
             return CreateOutcome(emailAddress, CrewInvitationOutcomeStatus.Sent);
         }

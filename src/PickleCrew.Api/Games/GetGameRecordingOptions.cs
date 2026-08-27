@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using PickleCrew.Api.Services;
-using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Games;
 
@@ -31,13 +30,10 @@ internal sealed class GetGameRecordingOptionsEndpoint : IEndpoint
         Ok<GetGameRecordingOptionsHttpResponse>,
         ForbidHttpResult>> HandleAsync(
         CrewUserContext crewUserContext,
-        IWorkOsService workOs,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
 
         var recorderIsActive = activeMembers.Any(
             member => member.WorkOsUserId == crewUserContext.UserId

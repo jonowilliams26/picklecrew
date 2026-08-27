@@ -1,14 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
-using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class CrewStandingsService(
     CrewScopedDbContext database,
-    IWorkOsService workOs,
-    CrewUserContext crewUserContext)
+    ICrewService crewService)
 {
     public async Task<CrewStanding> GetMemberStandingAsync(
         string userId,
@@ -24,10 +22,7 @@ internal sealed class CrewStandingsService(
     public async Task<CrewStanding[]> GetStandingsAsync(
         CancellationToken cancellationToken)
     {
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
 
         var activeMembersByUserId = activeMembers.ToDictionary(
             member => member.WorkOsUserId,

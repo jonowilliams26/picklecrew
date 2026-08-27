@@ -6,7 +6,6 @@ using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Shared;
-using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Games;
 
@@ -53,15 +52,11 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static async Task<Ok<PaginatedHttpResponse<GameHistoryItemHttpResponse>>> HandleAsync(
         [AsParameters] GetGamesHttpRequest request,
-        CrewUserContext crewUserContext,
-        IWorkOsService workOs,
+        ICrewService crewService,
         CrewScopedDbContext database,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
 
         var games = await database.Games
             .AsNoTracking()

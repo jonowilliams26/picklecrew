@@ -4,7 +4,6 @@ using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Games.Services;
 using PickleCrew.Api.Services;
-using PickleCrew.Api.WorkOs;
 
 namespace PickleCrew.Api.Games;
 
@@ -187,16 +186,13 @@ internal sealed class RecordGameEndpoint : IEndpoint
         ForbidHttpResult>> HandleAsync(
         RecordGameHttpRequest request,
         CrewUserContext crewUserContext,
-        IWorkOsService workOs,
+        ICrewService crewService,
         CrewScopedDbContext database,
         GameStatisticsService gameStatisticsService,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await workOs.ListActiveCrewMembersAsync(
-            crewUserContext.OrganizationId,
-            cancellationToken
-        );
+        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
 
         var activeMemberByUserId = activeMembers.ToDictionary(
             member => member.WorkOsUserId,
