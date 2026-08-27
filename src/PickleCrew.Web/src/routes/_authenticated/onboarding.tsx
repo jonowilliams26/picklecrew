@@ -58,7 +58,7 @@ function OnboardingPage() {
   )
 
   return (
-    <main className="onboarding-shell relative isolate min-h-screen overflow-hidden">
+    <main className="onboarding-shell relative isolate min-h-dvh overflow-hidden">
       <PickleBall className="pickleball onboarding-ball onboarding-ball-one" />
       <PickleBall className="pickleball onboarding-ball onboarding-ball-two" />
 
@@ -68,7 +68,7 @@ function OnboardingPage() {
       </div>
 
       <section
-        className="relative z-2 mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-[900px] flex-col items-center justify-center gap-12 py-28 text-center max-[680px]:w-[calc(100%-28px)] max-[680px]:gap-7 max-[680px]:pt-20 max-[680px]:pb-12"
+        className="relative z-2 mx-auto flex min-h-dvh w-[calc(100%-40px)] max-w-[900px] flex-col items-center justify-center gap-12 py-28 text-center max-[680px]:w-[calc(100%-28px)] max-[680px]:gap-7 max-[680px]:pt-20 max-[680px]:pb-12"
         aria-labelledby="onboarding-heading"
       >
         <OnboardingIntro state={onboardingState} />
