@@ -98,6 +98,20 @@ export function createInitialGameFormValues(): GameFormValues {
   }
 }
 
+export function createRematchGameFormValues({
+  values,
+}: {
+  values: GameFormValues
+}): GameFormValues {
+  return {
+    format: values.format,
+    sides: [
+      { ...values.sides[0], score: '' },
+      { ...values.sides[1], score: '' },
+    ],
+  }
+}
+
 export function changeGameFormat({
   values,
   format,

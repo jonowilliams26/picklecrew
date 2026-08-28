@@ -7,6 +7,7 @@ import {
   changeSideScore,
   createInitialGameFormValues,
   createRecordGameRequest,
+  createRematchGameFormValues,
   isValidFinalScore,
   participantFieldName,
   type GameFormValues,
@@ -104,6 +105,58 @@ describe('Game form transitions', () => {
 
     assert.notDeepEqual(changedValues, createInitialGameFormValues())
     assert.deepEqual(createInitialGameFormValues(), initialValues)
+  })
+
+  test('a rematch keeps the format, participants, and Sides but clears the scores', () => {
+    let values = changeGameFormat({
+      values: createInitialGameFormValues(),
+      format: 'doubles',
+    })
+    values = setParticipant({
+      values,
+      sideIndex: 0,
+      participantIndex: 0,
+      kind: 'member',
+      value: 'user_one',
+    })
+    values = setParticipant({
+      values,
+      sideIndex: 0,
+      participantIndex: 1,
+      kind: 'guest',
+      value: 'Jamie',
+    })
+    values = setParticipant({
+      values,
+      sideIndex: 1,
+      participantIndex: 0,
+      kind: 'member',
+      value: 'user_two',
+    })
+    values = setParticipant({
+      values,
+      sideIndex: 1,
+      participantIndex: 1,
+      kind: 'guest',
+      value: 'Taylor',
+    })
+    values = setScores({ values, firstScore: '11', secondScore: '7' })
+
+    const rematchValues = createRematchGameFormValues({ values })
+
+    assert.equal(rematchValues.format, 'doubles')
+    assert.deepEqual(
+      rematchValues.sides[0].participants,
+      values.sides[0].participants,
+    )
+    assert.deepEqual(
+      rematchValues.sides[1].participants,
+      values.sides[1].participants,
+    )
+    assert.equal(rematchValues.sides[0].score, '')
+    assert.equal(rematchValues.sides[1].score, '')
+    assert.equal(values.sides[0].score, '11')
+    assert.equal(values.sides[1].score, '7')
   })
 })
 

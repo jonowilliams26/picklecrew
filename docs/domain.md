@@ -139,6 +139,7 @@ A completed pickleball game with a final score between two sides.
 - Only completed games with one winning side are recorded.
 - A game may include any combination of active crew members and guests, but at least one participant must be an active member of the owning crew.
 - Games are recorded immediately after they are played.
+- After recording a game, starting a rematch keeps the same format, participants, and sides while leaving both scores empty for the new result.
 - The played date and time are assigned automatically when the game is saved and cannot be changed.
 - Any active member of the owning crew may record a game, including a game they did not participate in.
 - Recording a game does not require participant approval.

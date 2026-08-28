@@ -3,6 +3,7 @@ import { useServerFn } from '@tanstack/react-start'
 import {
   CircleAlertIcon,
   Crown,
+  Plus,
   RotateCcw,
   Save,
   Sparkles,
@@ -67,6 +68,7 @@ import {
   changeSideScore,
   createInitialGameFormValues,
   createRecordGameRequest,
+  createRematchGameFormValues,
   participantFieldName,
   scoreFieldName,
   type GameFormValues,
@@ -273,11 +275,19 @@ function GameRecordingForm({
     }
   }
 
-  const reset = () => {
-    setValues(createInitialGameFormValues())
+  const startGame = ({ nextValues }: { nextValues: GameFormValues }) => {
+    setValues(nextValues)
     setFieldErrors({})
     setSubmissionError(undefined)
     setSavedGame(undefined)
+  }
+
+  const recordAnother = () => {
+    startGame({ nextValues: createInitialGameFormValues() })
+  }
+
+  const rematch = () => {
+    startGame({ nextValues: createRematchGameFormValues({ values }) })
   }
 
   if (savedGame) {
@@ -285,7 +295,8 @@ function GameRecordingForm({
       <GameSavedConfirmation
         game={savedGame}
         memberByUserId={memberByUserId}
-        onRecordAnother={reset}
+        onRecordAnother={recordAnother}
+        onRematch={rematch}
       />
     )
   }
@@ -703,10 +714,12 @@ function GameSavedConfirmation({
   game,
   memberByUserId,
   onRecordAnother,
+  onRematch,
 }: {
   game: RecordGameHttpResponse
   memberByUserId: ReadonlyMap<string, GameRecordingMemberHttpResponse>
   onRecordAnother: () => void
+  onRematch: () => void
 }) {
   const firstSide = game.sides[0]
   const secondSide = game.sides[1]
@@ -764,16 +777,26 @@ function GameSavedConfirmation({
             The result is saved and ready for the next rally.
           </p>
         </CardContent>
-        <CardFooter className="border-t border-ink/15 p-5 md:p-6">
+        <CardFooter className="grid grid-cols-1 gap-3 border-t border-ink/15 p-5 md:grid-cols-2 md:p-6">
+          <Button
+            className="w-full"
+            variant="paper"
+            size="xl"
+            type="button"
+            onClick={onRecordAnother}
+          >
+            <Plus data-icon="inline-start" />
+            Record another Game
+          </Button>
           <Button
             className="w-full"
             variant="crew"
             size="xl"
             type="button"
-            onClick={onRecordAnother}
+            onClick={onRematch}
           >
             <RotateCcw data-icon="inline-start" />
-            Record another Game
+            Rematch
           </Button>
         </CardFooter>
       </Card>
