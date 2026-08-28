@@ -23,6 +23,7 @@ app.UseHttpLogging();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseRequestTimeouts();
+app.UseDevelopmentApiDelay();
 app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
