@@ -101,6 +101,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("text");
 
+                    b.Property<long>("CrewScore")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid>("CrewUuid")
                         .HasColumnType("uuid");
 
@@ -109,6 +112,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("GamesPlayed")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("LongestWinStreak")
                         .HasColumnType("bigint");
@@ -120,6 +126,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("Losses")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointDifferential")
                         .HasColumnType("bigint");
 
                     b.Property<long>("PointsConceded")
@@ -136,6 +145,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
+
+                    b.Property<decimal>("WinPercentage")
+                        .HasColumnType("numeric");
 
                     b.Property<long>("Wins")
                         .HasColumnType("bigint");

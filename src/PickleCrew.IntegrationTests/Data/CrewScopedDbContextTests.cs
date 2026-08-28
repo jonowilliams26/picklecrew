@@ -41,6 +41,44 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         await AssertScopedToCrew(secondCrewDatabase, secondCrew);
     }
 
+    [Fact]
+    public async Task CrewMemberStatistics_WhenBaseStatisticsAreSaved_ShouldPersistQueryableCalculatedValues()
+    {
+        await using var database = fixture.CreateDbContext();
+        var crew = CreateCrew("Calculated Statistics Crew");
+
+        database.AddRange(
+            CreateProvisioningAttempt(crew),
+            crew
+        );
+        await database.SaveChangesAsync();
+
+        var statistics = new CrewMemberStatistics
+        {
+            CrewId = crew.Id,
+            CrewUuid = crew.Uuid,
+            UserId = $"user_{Guid.NewGuid():N}",
+            Wins = 2,
+            Losses = 1,
+            PointsScored = 35,
+            PointsConceded = 29,
+        };
+        database.CrewMemberStatistics.Add(statistics);
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        var persistedStatistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewScore > 200)
+            .OrderByDescending(candidate => candidate.WinPercentage)
+            .SingleAsync(candidate => candidate.UserId == statistics.UserId);
+
+        Assert.Equal(3, persistedStatistics.GamesPlayed);
+        Assert.Equal(2m / 3m, persistedStatistics.WinPercentage);
+        Assert.Equal(6, persistedStatistics.PointDifferential);
+        Assert.Equal(206, persistedStatistics.CrewScore);
+    }
+
     private static async Task AssertScopedToCrew(
         CrewScopedDbContext database,
         Crew expectedCrew)
