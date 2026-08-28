@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -73,6 +73,11 @@ export const recordGame = <ThrowOnError extends boolean = false>(options: Option
  * Gets the best doubles pairing for the active Crew.
  */
 export const getBestDoublesPairing = <ThrowOnError extends boolean = false>(options?: Options<GetBestDoublesPairingData, ThrowOnError>): RequestResult<GetBestDoublesPairingResponses, GetBestDoublesPairingErrors, ThrowOnError> => (options?.client ?? client).get<GetBestDoublesPairingResponses, GetBestDoublesPairingErrors, ThrowOnError>({ url: '/statistics/best-doubles-pairing', ...options });
+
+/**
+ * Gets the Chief Paddler for the active Crew.
+ */
+export const getChiefPaddler = <ThrowOnError extends boolean = false>(options?: Options<GetChiefPaddlerData, ThrowOnError>): RequestResult<GetChiefPaddlerResponses, GetChiefPaddlerErrors, ThrowOnError> => (options?.client ?? client).get<GetChiefPaddlerResponses, GetChiefPaddlerErrors, ThrowOnError>({ url: '/statistics/chief-paddler', ...options });
 
 /**
  * Gets the signed-in user's all-time statistics for the active Crew.

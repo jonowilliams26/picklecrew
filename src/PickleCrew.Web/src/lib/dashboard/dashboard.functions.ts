@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
 import {
   getBestDoublesPairing as getBestDoublesPairingRequest,
+  getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
@@ -24,12 +25,14 @@ export const getDashboard = createServerFn({ method: 'GET' })
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
+        chiefPaddler,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
         getRecentGamesRequest({ client }),
         getCrewLeaderboardRequest({ client }),
         getCrewLongestWinStreakRequest({ client }),
         getBestDoublesPairingRequest({ client }),
+        getChiefPaddlerRequest({ client }),
       ])
       const results = [
         personalStatistics,
@@ -37,6 +40,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
+        chiefPaddler,
       ]
 
       if (
@@ -44,7 +48,8 @@ export const getDashboard = createServerFn({ method: 'GET' })
         recentGames.error ||
         leaderboard.error ||
         longestWinStreak.error ||
-        bestDoublesPairing.error
+        bestDoublesPairing.error ||
+        chiefPaddler.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -67,6 +72,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         leaderboard: leaderboard.data,
         longestWinStreak: longestWinStreak.data,
         bestDoublesPairing: bestDoublesPairing.data,
+        chiefPaddler: chiefPaddler.data,
       })
     } catch {
       return failure({

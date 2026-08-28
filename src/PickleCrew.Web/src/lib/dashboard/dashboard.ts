@@ -1,5 +1,6 @@
 import type {
   GetBestDoublesPairingHttpResponse,
+  GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
   GetPersonalStatisticsHttpResponse,
@@ -13,6 +14,7 @@ export type DashboardData = Readonly<{
   leaderboard: GetCrewLeaderboardHttpResponse
   longestWinStreak: GetCrewLongestWinStreakHttpResponse
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
+  chiefPaddler: GetChiefPaddlerHttpResponse
 }>
 
 type DashboardForbiddenError = Readonly<{

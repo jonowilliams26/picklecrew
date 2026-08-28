@@ -4,6 +4,13 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type ChiefPaddlerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    thatsAPaddlin: number;
+};
+
 export type CreateCrewHttpRequest = {
     name: string;
 };
@@ -83,6 +90,10 @@ export type GameRecordingMemberHttpResponse = {
 
 export type GetBestDoublesPairingHttpResponse = {
     pairing: null | DoublesPairingHttpResponse;
+};
+
+export type GetChiefPaddlerHttpResponse = {
+    chiefPaddler: null | ChiefPaddlerHttpResponse;
 };
 
 export type GetCrewLeaderboardHttpResponse = {
@@ -482,6 +493,39 @@ export type GetBestDoublesPairingResponses = {
 };
 
 export type GetBestDoublesPairingResponse = GetBestDoublesPairingResponses[keyof GetBestDoublesPairingResponses];
+
+export type GetChiefPaddlerData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/chief-paddler';
+};
+
+export type GetChiefPaddlerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetChiefPaddlerError = GetChiefPaddlerErrors[keyof GetChiefPaddlerErrors];
+
+export type GetChiefPaddlerResponses = {
+    /**
+     * OK
+     */
+    200: GetChiefPaddlerHttpResponse;
+};
+
+export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;
