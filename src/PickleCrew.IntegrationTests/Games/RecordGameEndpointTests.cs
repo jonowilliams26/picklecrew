@@ -1074,26 +1074,24 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 .Select(crew => crew.Id)
                 .SingleAsync();
             seedDbContext.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = crewId,
-                    CrewUuid = context.Uuid,
-                    UserId = winnerUserId,
-                    Wins = 2,
-                    Losses = 1,
-                    PointsScored = 31,
-                    PointsConceded = 20,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = crewId,
-                    CrewUuid = context.Uuid,
-                    UserId = loserUserId,
-                    Wins = 1,
-                    Losses = 2,
-                    PointsScored = 20,
-                    PointsConceded = 31,
-                }
+                CreateMemberStatistics(
+                    crewId,
+                    context.Uuid,
+                    winnerUserId,
+                    wins: 2,
+                    losses: 1,
+                    pointsScored: 31,
+                    pointsConceded: 20
+                ),
+                CreateMemberStatistics(
+                    crewId,
+                    context.Uuid,
+                    loserUserId,
+                    wins: 1,
+                    losses: 2,
+                    pointsScored: 20,
+                    pointsConceded: 31
+                )
             );
             await seedDbContext.SaveChangesAsync();
         }
@@ -1670,6 +1668,28 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(pointsConceded, statistics.PointsConceded);
     }
 
+    private static CrewMemberStatistics CreateMemberStatistics(
+        long crewId,
+        Guid crewUuid,
+        string userId,
+        long wins,
+        long losses,
+        long pointsScored,
+        long pointsConceded)
+    {
+        var statistics = new CrewMemberStatistics
+        {
+            CrewId = crewId,
+            CrewUuid = crewUuid,
+            UserId = userId,
+            Wins = wins,
+            Losses = losses,
+            PointsScored = pointsScored,
+            PointsConceded = pointsConceded,
+        };
+        return statistics;
+    }
+
     private static void AssertStatistics(
         CrewMemberStatistics statistics,
         Guid crewUuid,
@@ -1683,6 +1703,17 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(losses, statistics.Losses);
         Assert.Equal(pointsScored, statistics.PointsScored);
         Assert.Equal(pointsConceded, statistics.PointsConceded);
+
+        var gamesPlayed = wins + losses;
+        var pointDifferential = pointsScored - pointsConceded;
+
+        Assert.Equal(gamesPlayed, statistics.GamesPlayed);
+        Assert.Equal(
+            gamesPlayed == 0 ? 0 : (decimal)wins / gamesPlayed,
+            statistics.WinPercentage
+        );
+        Assert.Equal(pointDifferential, statistics.PointDifferential);
+        Assert.Equal((wins * 100) + pointDifferential, statistics.CrewScore);
     }
 
     private static void AssertMemberParticipant(

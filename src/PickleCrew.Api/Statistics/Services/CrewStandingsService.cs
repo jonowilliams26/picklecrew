@@ -37,6 +37,8 @@ internal sealed class CrewStandingsService(
                 UserId = statistics.UserId,
                 Wins = statistics.Wins,
                 Losses = statistics.Losses,
+                GamesPlayed = statistics.GamesPlayed,
+                WinPercentage = statistics.WinPercentage,
                 ThatsAPaddlin = statistics.ThatsAPaddlin,
                 CurrentWinStreak = statistics.CurrentWinStreak,
                 CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
@@ -45,6 +47,8 @@ internal sealed class CrewStandingsService(
                 LongestWinStreakEndedAtUtc = statistics.LongestWinStreakEndedAtUtc,
                 PointsScored = statistics.PointsScored,
                 PointsConceded = statistics.PointsConceded,
+                PointDifferential = statistics.PointDifferential,
+                CrewScore = statistics.CrewScore,
             })
             .ToDictionaryAsync(statistics => statistics.UserId, cancellationToken);
 
@@ -54,11 +58,15 @@ internal sealed class CrewStandingsService(
                 UserId = member.WorkOsUserId,
                 Wins = 0,
                 Losses = 0,
+                GamesPlayed = 0,
+                WinPercentage = 0,
                 ThatsAPaddlin = 0,
                 CurrentWinStreak = 0,
                 LongestWinStreak = 0,
                 PointsScored = 0,
                 PointsConceded = 0,
+                PointDifferential = 0,
+                CrewScore = 0,
             })
             .ToArray();
 
@@ -68,7 +76,6 @@ internal sealed class CrewStandingsService(
             .Select(statistics =>
             {
                 var member = activeMembersByUserId[statistics.UserId];
-                var gamesPlayed = statistics.Wins + statistics.Losses;
 
                 return new CrewStanding
                 {
@@ -78,16 +85,14 @@ internal sealed class CrewStandingsService(
                     Rank = statistics.Rank,
                     Wins = statistics.Wins,
                     Losses = statistics.Losses,
-                    GamesPlayed = gamesPlayed,
+                    GamesPlayed = statistics.GamesPlayed,
                     ThatsAPaddlin = statistics.ThatsAPaddlin,
                     CurrentWinStreak = statistics.CurrentWinStreak,
                     CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
                     LongestWinStreak = statistics.LongestWinStreak,
                     LongestWinStreakStartedAtUtc = statistics.LongestWinStreakStartedAtUtc,
                     LongestWinStreakEndedAtUtc = statistics.LongestWinStreakEndedAtUtc,
-                    WinPercentage = gamesPlayed == 0
-                        ? 0
-                        : (decimal)statistics.Wins / gamesPlayed,
+                    WinPercentage = statistics.WinPercentage,
                     PointsScored = statistics.PointsScored,
                     PointsConceded = statistics.PointsConceded,
                     PointDifferential = statistics.PointDifferential,
@@ -183,6 +188,10 @@ internal sealed record CrewMemberStatisticsTotals
 
     public required long Losses { get; init; }
 
+    public required long GamesPlayed { get; init; }
+
+    public required decimal WinPercentage { get; init; }
+
     public required long ThatsAPaddlin { get; init; }
 
     public required long CurrentWinStreak { get; init; }
@@ -199,7 +208,7 @@ internal sealed record CrewMemberStatisticsTotals
 
     public required long PointsConceded { get; init; }
 
-    public long PointDifferential => PointsScored - PointsConceded;
+    public required long PointDifferential { get; init; }
 
-    public long CrewScore => (Wins * 100) + PointDifferential;
+    public required long CrewScore { get; init; }
 }
