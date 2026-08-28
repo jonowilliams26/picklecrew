@@ -30,7 +30,9 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
             CreateMemberStatistics(firstCrew),
             CreateMemberStatistics(secondCrew),
             CreatePairingStatistics(firstCrew),
-            CreatePairingStatistics(secondCrew)
+            CreatePairingStatistics(secondCrew),
+            CreateMatchupStatistics(firstCrew),
+            CreateMatchupStatistics(secondCrew)
         );
         await database.SaveChangesAsync();
 
@@ -39,6 +41,44 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
 
         await AssertScopedToCrew(firstCrewDatabase, firstCrew);
         await AssertScopedToCrew(secondCrewDatabase, secondCrew);
+    }
+
+    [Fact]
+    public async Task CrewMemberStatistics_WhenBaseStatisticsAreSaved_ShouldPersistQueryableCalculatedValues()
+    {
+        await using var database = fixture.CreateDbContext();
+        var crew = CreateCrew("Calculated Statistics Crew");
+
+        database.AddRange(
+            CreateProvisioningAttempt(crew),
+            crew
+        );
+        await database.SaveChangesAsync();
+
+        var statistics = new CrewMemberStatistics
+        {
+            CrewId = crew.Id,
+            CrewUuid = crew.Uuid,
+            UserId = $"user_{Guid.NewGuid():N}",
+            Wins = 2,
+            Losses = 1,
+            PointsScored = 35,
+            PointsConceded = 29,
+        };
+        database.CrewMemberStatistics.Add(statistics);
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        var persistedStatistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(candidate => candidate.CrewScore > 200)
+            .OrderByDescending(candidate => candidate.WinPercentage)
+            .SingleAsync(candidate => candidate.UserId == statistics.UserId);
+
+        Assert.Equal(3, persistedStatistics.GamesPlayed);
+        Assert.Equal(2m / 3m, persistedStatistics.WinPercentage);
+        Assert.Equal(6, persistedStatistics.PointDifferential);
+        Assert.Equal(206, persistedStatistics.CrewScore);
     }
 
     private static async Task AssertScopedToCrew(
@@ -51,12 +91,17 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         var pairingStatistics = await database.CrewDoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync();
+        var matchupStatistics = await database.CrewMatchupStatistics
+            .AsNoTracking()
+            .SingleAsync();
         var game = await database.Games.AsNoTracking().SingleAsync();
 
         Assert.Equal(expectedCrew.Id, memberStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, memberStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, pairingStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, pairingStatistics.CrewUuid);
+        Assert.Equal(expectedCrew.Id, matchupStatistics.CrewId);
+        Assert.Equal(expectedCrew.Uuid, matchupStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, game.CrewId);
         Assert.Equal(expectedCrew.Uuid, game.CrewUuid);
     }
@@ -120,6 +165,17 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
             CrewUuid = crew.Uuid,
             Player1Id = key.Player1Id,
             Player2Id = key.Player2Id,
+        };
+    }
+
+    private static CrewMatchupStatistics CreateMatchupStatistics(Crew crew)
+    {
+        return new CrewMatchupStatistics
+        {
+            CrewId = crew.Id,
+            CrewUuid = crew.Uuid,
+            UserId = $"user_{Guid.NewGuid():N}",
+            OpponentUserId = $"user_{Guid.NewGuid():N}",
         };
     }
 

@@ -16,6 +16,26 @@ public sealed class CrewMemberStatistics
 
     public long ThatsAPaddlin { get; set; }
 
+    // No-op private setters allow EF Core to persist these calculated getters.
+    // See https://github.com/dotnet/efcore/issues/13316.
+    public long GamesPlayed
+    {
+        get => Wins + Losses;
+        private set
+        {
+        }
+    }
+
+    public decimal WinPercentage
+    {
+        get => GamesPlayed == 0
+            ? 0
+            : (decimal)Wins / GamesPlayed;
+        private set
+        {
+        }
+    }
+
     public long CurrentWinStreak { get; set; }
 
     public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; set; }
@@ -29,6 +49,22 @@ public sealed class CrewMemberStatistics
     public long PointsScored { get; set; }
 
     public long PointsConceded { get; set; }
+
+    public long PointDifferential
+    {
+        get => PointsScored - PointsConceded;
+        private set
+        {
+        }
+    }
+
+    public long CrewScore
+    {
+        get => (Wins * 100) + PointDifferential;
+        private set
+        {
+        }
+    }
 
     public uint Version { get; private set; }
 }

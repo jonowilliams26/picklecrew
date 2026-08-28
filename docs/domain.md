@@ -94,6 +94,28 @@ The active crew member who holds the Crew's bragging-rights award for the most a
 
 - A Crew has zero or one Chief Paddler.
 
+## Matchup statistics
+
+A crew member's all-time cumulative results against one opposing crew member within one crew.
+
+### Business rules
+
+- Matchup statistics are directional; each opposing pair has one matchup from each crew member's perspective.
+- Matchup statistics are calculated separately for each crew.
+- A matchup is created when two crew members first play on opposing sides and is updated by each subsequent game in which they oppose one another.
+- A crew member receives one win or loss and their side's full points scored and points conceded against each opposing crew member.
+- In doubles, every crew member receives the full result against every crew member on the opposing side.
+- Crew members on the same side do not have a matchup against one another.
+- Guests do not have matchup statistics, but a game containing guests still contributes to matchups between opposing crew members.
+- Games played equals wins plus losses.
+- Win percentage equals wins divided by games played.
+- Point differential equals points scored minus points conceded.
+- Recording a game and applying all of its matchup contributions is atomic.
+
+### Relationships
+
+- Each matchup's statistics belong to exactly one crew, exactly one crew member, and exactly one opposing crew member.
+
 ## Doubles pairing statistics
 
 A doubles pairing's all-time cumulative results within one crew.
