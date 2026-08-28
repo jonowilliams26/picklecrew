@@ -9,7 +9,6 @@ import {
   AuthKitProvider,
   type AuthKitProviderProps,
 } from '@workos/authkit-tanstack-react-start/client'
-import { LoadingScreen } from '~/components/loading-screen'
 import { getCrewMembership } from '~/lib/crews/membership.functions'
 import { decideCrewMembershipRoute } from '~/lib/crews/membership-routing'
 
@@ -73,9 +72,6 @@ export const Route = createFileRoute('/_authenticated')({
     }
   },
   shouldReload: false,
-  pendingComponent: MembershipPending,
-  pendingMs: 0,
-  pendingMinMs: 200,
   component: AuthenticatedLayout,
 })
 
@@ -87,8 +83,4 @@ function AuthenticatedLayout() {
       <Outlet />
     </AuthKitProvider>
   )
-}
-
-function MembershipPending() {
-  return <LoadingScreen />
 }

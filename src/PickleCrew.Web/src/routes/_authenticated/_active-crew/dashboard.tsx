@@ -469,7 +469,7 @@ function DashboardPage() {
                     longestWinStreak.displayName ? (
                       <DashboardAvatar
                         className="size-16 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="bg-cream font-heading text-xl"
+                        fallbackClassName="bg-cream font-heading text-xl text-ink"
                         person={{
                           userId: longestWinStreak.userId,
                           displayName: longestWinStreak.displayName,
