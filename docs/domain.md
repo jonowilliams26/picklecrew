@@ -57,6 +57,9 @@ A crew member's all-time cumulative game results within one crew.
 - Each participating crew member gains their side's full score as points scored and the opposing side's full score as points conceded.
 - In doubles, each participating crew member receives the full contribution; scores are not divided between partners.
 - Guests do not receive crew member statistics.
+- A crew member on the winning side of a recorded game gains one **That's a Paddlin** when the final score is exactly 11–0.
+- Each crew member on a winning doubles side gains one **That's a Paddlin**, including when another participant is a guest.
+- Losing crew members and guests do not gain **That's a Paddlin**.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
 - Win percentage equals wins divided by games played and is zero when no games have been played.

@@ -1077,6 +1077,7 @@
           "wins",
           "losses",
           "gamesPlayed",
+          "thatsAPaddlin",
           "currentWinStreak",
           "currentWinStreakStartedAtUtc",
           "longestWinStreak",
@@ -1101,6 +1102,10 @@
             "format": "int64"
           },
           "gamesPlayed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "thatsAPaddlin": {
             "type": "integer",
             "format": "int64"
           },

@@ -37,6 +37,7 @@ internal sealed class CrewStandingsService(
                 UserId = statistics.UserId,
                 Wins = statistics.Wins,
                 Losses = statistics.Losses,
+                ThatsAPaddlin = statistics.ThatsAPaddlin,
                 CurrentWinStreak = statistics.CurrentWinStreak,
                 CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
                 LongestWinStreak = statistics.LongestWinStreak,
@@ -53,6 +54,7 @@ internal sealed class CrewStandingsService(
                 UserId = member.WorkOsUserId,
                 Wins = 0,
                 Losses = 0,
+                ThatsAPaddlin = 0,
                 CurrentWinStreak = 0,
                 LongestWinStreak = 0,
                 PointsScored = 0,
@@ -77,6 +79,7 @@ internal sealed class CrewStandingsService(
                     Wins = statistics.Wins,
                     Losses = statistics.Losses,
                     GamesPlayed = gamesPlayed,
+                    ThatsAPaddlin = statistics.ThatsAPaddlin,
                     CurrentWinStreak = statistics.CurrentWinStreak,
                     CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
                     LongestWinStreak = statistics.LongestWinStreak,
@@ -145,6 +148,8 @@ internal sealed record CrewStanding
 
     public required long GamesPlayed { get; init; }
 
+    public required long ThatsAPaddlin { get; init; }
+
     public required long CurrentWinStreak { get; init; }
 
     public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
@@ -177,6 +182,8 @@ internal sealed record CrewMemberStatisticsTotals
     public required long Wins { get; init; }
 
     public required long Losses { get; init; }
+
+    public required long ThatsAPaddlin { get; init; }
 
     public required long CurrentWinStreak { get; init; }
 
