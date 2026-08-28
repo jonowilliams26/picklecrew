@@ -27,6 +27,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 {
                     UserId = x.Participant.UserId!,
                     Won = x.Side.Score > opposingSide.Score,
+                    IsThatsAPaddlin = x.Side.Score == 11 && opposingSide.Score == 0,
                     PointsScored = x.Side.Score,
                     PointsConceded = opposingSide.Score,
                 };
@@ -122,6 +123,11 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
 
             statistics.PointsScored += playerGameStats.PointsScored;
             statistics.PointsConceded += playerGameStats.PointsConceded;
+
+            if (playerGameStats.IsThatsAPaddlin)
+            {
+                statistics.ThatsAPaddlin += 1;
+            }
 
             if (playerGameStats.Won)
             {
@@ -221,6 +227,8 @@ internal sealed record PlayerGameStatistics
     public required string UserId { get; init; }
 
     public bool Won { get; init; }
+
+    public bool IsThatsAPaddlin { get; init; }
 
     public long PointsScored { get; init; }
 

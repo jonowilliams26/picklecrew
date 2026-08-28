@@ -77,6 +77,7 @@ public sealed class CrewRankingCalculatorTests
             UserId = userId,
             Wins = wins,
             Losses = 0,
+            ThatsAPaddlin = 0,
             CurrentWinStreak = 0,
             LongestWinStreak = 0,
             PointsScored = Math.Max(pointDifferential, 0),

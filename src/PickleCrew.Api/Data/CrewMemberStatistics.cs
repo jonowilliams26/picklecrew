@@ -14,6 +14,8 @@ public sealed class CrewMemberStatistics
 
     public long Losses { get; set; }
 
+    public long ThatsAPaddlin { get; set; }
+
     public long CurrentWinStreak { get; set; }
 
     public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; set; }

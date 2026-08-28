@@ -12,6 +12,8 @@ public sealed record GetPersonalStatisticsHttpResponse
 
     public required long GamesPlayed { get; init; }
 
+    public required long ThatsAPaddlin { get; init; }
+
     public required long CurrentWinStreak { get; init; }
 
     public required DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
@@ -61,6 +63,7 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
             Wins = standing.Wins,
             Losses = standing.Losses,
             GamesPlayed = standing.GamesPlayed,
+            ThatsAPaddlin = standing.ThatsAPaddlin,
             CurrentWinStreak = standing.CurrentWinStreak,
             CurrentWinStreakStartedAtUtc = standing.CurrentWinStreakStartedAtUtc,
             LongestWinStreak = standing.LongestWinStreak,

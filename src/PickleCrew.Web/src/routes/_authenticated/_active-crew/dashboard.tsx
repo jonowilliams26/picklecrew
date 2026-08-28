@@ -4,6 +4,7 @@ import {
   CircleAlert,
   Crown,
   Flame,
+  Hammer,
   Medal,
   Target,
   Trophy,
@@ -148,10 +149,10 @@ function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
               <Card className="dashboard-stat-card dashboard-stat-card-lime min-h-[310px] border-2 border-ink bg-lime shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-5 xl:row-span-2">
                 <CardHeader>
-                  <CardTitle className="text-[10px] font-black tracking-[.14em] uppercase">
+                  <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                     Your win percentage
                   </CardTitle>
-                  <CardDescription className="font-heading text-ink-soft">
+                  <CardDescription className="font-heading text-[11px] text-ink-soft">
                     {formatCount({
                       count: personalStatistics.wins,
                       singular: 'win',
@@ -233,13 +234,26 @@ function DashboardPage() {
                 icon={TrendingUp}
                 iconClassName="bg-cream text-ink"
               />
+              <PersonalMetricCard
+                className="bg-purple text-white shadow-[6px_7px_0_var(--ink)] xl:col-span-4"
+                eyebrow="That's a Paddlin"
+                description="11–0 wins. Zero points. Zero mercy."
+                value={personalStatistics.thatsAPaddlin.toLocaleString('en-AU')}
+                emptyState={
+                  personalStatistics.thatsAPaddlin === 0
+                    ? "No paddlins yet. Court's waiting. Go obliterate somebody."
+                    : undefined
+                }
+                icon={Hammer}
+                iconClassName="bg-lime text-ink"
+              />
 
-              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
+              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-12">
                 <CardHeader>
-                  <CardTitle className="text-[10px] font-black tracking-[.14em] uppercase">
+                  <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                     Last 10 games
                   </CardTitle>
-                  <CardDescription className="font-heading">
+                  <CardDescription className="font-heading text-[11px]">
                     {recentGameCount === 0
                       ? 'No recent games'
                       : `${recentRecord} · last ${recentGameCount}`}
@@ -256,7 +270,7 @@ function DashboardPage() {
                 <CardContent>
                   {recentGameCount > 0 ? (
                     <div
-                      className="grid w-fit grid-cols-5 gap-2"
+                      className="flex flex-wrap gap-2"
                       aria-label={`${formatCount({ count: recentGames.wins, singular: 'win' })} and ${formatCount({ count: recentGames.losses, singular: 'loss', plural: 'losses' })} in the last ${formatCount({ count: recentGameCount, singular: 'game' })}`}
                     >
                       {recentGames.games.map((game) => {
@@ -363,10 +377,10 @@ function DashboardPage() {
 
             <Card className="dashboard-pair-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
               <CardHeader>
-                <CardTitle className="text-[10px] font-black tracking-[.14em] uppercase">
+                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Best doubles pairing
                 </CardTitle>
-                <CardDescription className="font-heading text-white/70">
+                <CardDescription className="font-heading text-[11px] text-white/70">
                   The duo nobody wants across the net
                 </CardDescription>
                 <CardAction className="grid size-11 place-items-center rounded-full border-2 border-white bg-aqua text-ink [&_svg]:size-5">
@@ -441,10 +455,10 @@ function DashboardPage() {
 
             <Card className="dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
               <CardHeader>
-                <CardTitle className="text-[10px] font-black tracking-[.14em] uppercase">
+                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Longest crew win streak
                 </CardTitle>
-                <CardDescription className="font-heading text-ink-soft">
+                <CardDescription className="font-heading text-[11px] text-ink-soft">
                   The record to chase
                 </CardDescription>
                 <CardAction className="grid size-11 rotate-[7deg] place-items-center rounded-full border-2 border-ink bg-lime shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
@@ -633,15 +647,19 @@ function SectionHeading({
 function PersonalMetricCard({
   className,
   eyebrow,
+  description,
   value,
   detail,
+  emptyState,
   icon: Icon,
   iconClassName,
 }: {
   className: string
   eyebrow: string
+  description?: string
   value: string
-  detail: string
+  detail?: string
+  emptyState?: string
   icon: typeof Medal
   iconClassName: string
 }) {
@@ -653,9 +671,14 @@ function PersonalMetricCard({
       )}
     >
       <CardHeader>
-        <CardTitle className="text-[9px] font-black tracking-[.14em] uppercase">
+        <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
           {eyebrow}
         </CardTitle>
+        {description ? (
+          <CardDescription className="font-heading text-[11px] text-current opacity-75">
+            {description}
+          </CardDescription>
+        ) : null}
         <CardAction
           className={cn(
             'grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-current [&_svg]:size-5',
@@ -666,12 +689,22 @@ function PersonalMetricCard({
         </CardAction>
       </CardHeader>
       <CardContent className="mt-auto gap-1">
-        <strong className="font-heading text-6xl leading-none font-black tracking-[-.065em]">
-          {value}
-        </strong>
-        <span className="text-[10px] font-bold tracking-[.05em] uppercase opacity-75">
-          {detail}
-        </span>
+        {emptyState ? (
+          <p className="m-0 max-w-xs text-sm leading-relaxed font-medium opacity-80">
+            {emptyState}
+          </p>
+        ) : (
+          <>
+            <strong className="font-heading text-6xl leading-none font-black tracking-[-.065em]">
+              {value}
+            </strong>
+            {detail ? (
+              <span className="text-[10px] font-bold tracking-[.05em] uppercase opacity-75">
+                {detail}
+              </span>
+            ) : null}
+          </>
+        )}
       </CardContent>
     </Card>
   )

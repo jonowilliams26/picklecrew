@@ -128,6 +128,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<long>("PointsScored")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("ThatsAPaddlin")
+                        .HasColumnType("bigint");
+
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()

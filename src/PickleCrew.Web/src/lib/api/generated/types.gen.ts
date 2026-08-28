@@ -106,6 +106,7 @@ export type GetPersonalStatisticsHttpResponse = {
     wins: number;
     losses: number;
     gamesPlayed: number;
+    thatsAPaddlin: number;
     currentWinStreak: number;
     currentWinStreakStartedAtUtc: null | string;
     longestWinStreak: number;
