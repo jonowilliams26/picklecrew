@@ -8,7 +8,6 @@ import {
 import type { User } from '@workos/authkit-tanstack-react-start'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
-  ChartNoAxesColumnIncreasing,
   ChevronUp,
   ClipboardList,
   LayoutDashboard,
@@ -38,7 +37,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -56,11 +54,6 @@ const authenticatedRoute = getRouteApi('/_authenticated')
 const navigationItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Games', icon: ClipboardList, to: '/games' },
-  {
-    label: 'Leaderboard',
-    icon: ChartNoAxesColumnIncreasing,
-    to: undefined,
-  },
   { label: 'Crew', icon: UsersRound, to: '/crew' },
 ] as const
 
@@ -197,21 +190,16 @@ function ActiveCrewSidebar({
                     <SidebarMenuButton
                       className="dashboard-nav-link h-9 rounded-lg px-3 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground data-active:bg-transparent data-active:font-bold data-active:text-foreground"
                       render={
-                        item.to ? (
-                          <Link
-                            to={item.to}
-                            onClick={closeMobileNavigation}
-                          />
-                        ) : undefined
+                        <Link
+                          to={item.to}
+                          onClick={closeMobileNavigation}
+                        />
                       }
                       isActive={isActive}
                     >
                       <Icon aria-hidden="true" />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
-                    {!item.to ? (
-                      <SidebarMenuBadge>Soon</SidebarMenuBadge>
-                    ) : null}
                   </SidebarMenuItem>
                 )
               })}
