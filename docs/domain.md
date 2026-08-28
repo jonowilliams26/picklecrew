@@ -60,7 +60,7 @@ A crew member's all-time cumulative game results within one crew.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
 - Win percentage equals wins divided by games played and is zero when no games have been played.
-- Crew score equals all-time wins multiplied by 100.
+- Crew score equals all-time wins multiplied by 100, plus point differential.
 - Crew rank is calculated against every active crew member, including members without recorded games.
 - Members with equal Crew scores share the same competition rank, and later ranks skip the tied positions (for example, 1, 1, 3).
 - Members with equal Crew scores are ordered alphabetically by display name.

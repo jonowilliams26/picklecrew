@@ -87,8 +87,8 @@ internal sealed class CrewStandingsService(
                         : (decimal)statistics.Wins / gamesPlayed,
                     PointsScored = statistics.PointsScored,
                     PointsConceded = statistics.PointsConceded,
-                    PointDifferential = statistics.PointsScored - statistics.PointsConceded,
-                    CrewScore = statistics.Wins * 100,
+                    PointDifferential = statistics.PointDifferential,
+                    CrewScore = statistics.CrewScore,
                     ActiveCrewMemberCount = activeMembers.Length,
                 };
             })
@@ -105,21 +105,21 @@ internal static class CrewRankingCalculator
         CrewMemberStatisticsTotals[] statistics)
     {
         var rankedStatistics = statistics
-            .OrderByDescending(memberStatistics => memberStatistics.Wins)
+            .OrderByDescending(memberStatistics => memberStatistics.CrewScore)
             .ThenBy(memberStatistics => memberStatistics.UserId, StringComparer.Ordinal)
             .ToArray();
 
-        var previousWins = default(long?);
+        var previousCrewScore = default(long?);
         var rank = 0;
 
         for (var index = 0; index < rankedStatistics.Length; index++)
         {
             var memberStatistics = rankedStatistics[index];
 
-            if (previousWins != memberStatistics.Wins)
+            if (previousCrewScore != memberStatistics.CrewScore)
             {
                 rank = index + 1;
-                previousWins = memberStatistics.Wins;
+                previousCrewScore = memberStatistics.CrewScore;
             }
 
             rankedStatistics[index] = memberStatistics with { Rank = rank };
@@ -191,4 +191,8 @@ internal sealed record CrewMemberStatisticsTotals
     public required long PointsScored { get; init; }
 
     public required long PointsConceded { get; init; }
+
+    public long PointDifferential => PointsScored - PointsConceded;
+
+    public long CrewScore => (Wins * 100) + PointDifferential;
 }

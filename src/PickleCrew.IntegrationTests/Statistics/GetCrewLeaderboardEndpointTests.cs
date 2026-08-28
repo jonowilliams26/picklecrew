@@ -9,7 +9,7 @@ namespace PickleCrew.IntegrationTests.Statistics;
 public sealed class GetCrewLeaderboardEndpointTests(AppHostFixture fixture)
 {
     [Fact]
-    public async Task GetCrewLeaderboard_WhenMembersIncludeTiesAndFormerMembers_ShouldRankOnlyActiveMembers()
+    public async Task GetCrewLeaderboard_WhenMembersHaveDifferentScoresAndFormerMembers_ShouldRankOnlyActiveMembers()
     {
         var administratorId = $"user_test_{Guid.NewGuid():N}";
         var winnerId = $"user_test_{Guid.NewGuid():N}";
@@ -84,15 +84,15 @@ public sealed class GetCrewLeaderboardEndpointTests(AppHostFixture fixture)
         Assert.NotNull(result);
         Assert.Collection(
             result.Entries,
-            entry => AssertEntry(entry, winner.UserId, 1, 5, 1, 500),
-            entry => AssertEntry(entry, tied.UserId, 2, 3, 2, 300),
+            entry => AssertEntry(entry, winner.UserId, 1, 5, 1, 516),
+            entry => AssertEntry(entry, tied.UserId, 2, 3, 2, 304),
             entry => AssertEntry(
                 entry,
                 context.Administrator.UserId,
-                2,
+                3,
                 3,
                 4,
-                300
+                296
             ),
             entry => AssertEntry(entry, zeroGameMember.UserId, 4, 0, 0, 0)
         );
