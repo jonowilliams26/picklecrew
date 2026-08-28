@@ -5,9 +5,14 @@ namespace PickleCrew.Api.Statistics;
 
 public sealed record GetChiefPaddlerHttpResponse
 {
-    public required string? UserId { get; init; }
+    public required ChiefPaddlerHttpResponse? ChiefPaddler { get; init; }
+}
 
-    public required string? DisplayName { get; init; }
+public sealed record ChiefPaddlerHttpResponse
+{
+    public required string UserId { get; init; }
+
+    public required string DisplayName { get; init; }
 
     public required string? ProfilePictureUrl { get; init; }
 
@@ -37,10 +42,15 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
 
         return TypedResults.Ok(new GetChiefPaddlerHttpResponse
         {
-            UserId = chiefPaddler?.UserId,
-            DisplayName = chiefPaddler?.DisplayName,
-            ProfilePictureUrl = chiefPaddler?.ProfilePictureUrl,
-            ThatsAPaddlin = chiefPaddler?.ThatsAPaddlin ?? 0,
+            ChiefPaddler = chiefPaddler is null
+                ? null
+                : new ChiefPaddlerHttpResponse
+                {
+                    UserId = chiefPaddler.UserId,
+                    DisplayName = chiefPaddler.DisplayName,
+                    ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
+                    ThatsAPaddlin = chiefPaddler.ThatsAPaddlin,
+                },
         });
     }
 }

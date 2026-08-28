@@ -734,6 +734,33 @@
   },
   "components": {
     "schemas": {
+      "ChiefPaddlerHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "thatsAPaddlin"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "thatsAPaddlin": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "CreateCrewHttpRequest": {
         "required": [
           "name"
@@ -1049,34 +1076,19 @@
       },
       "GetChiefPaddlerHttpResponse": {
         "required": [
-          "userId",
-          "displayName",
-          "profilePictureUrl",
-          "thatsAPaddlin"
+          "chiefPaddler"
         ],
         "type": "object",
         "properties": {
-          "userId": {
-            "type": [
-              "null",
-              "string"
+          "chiefPaddler": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChiefPaddlerHttpResponse"
+              }
             ]
-          },
-          "displayName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "profilePictureUrl": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "thatsAPaddlin": {
-            "type": "integer",
-            "format": "int64"
           }
         }
       },

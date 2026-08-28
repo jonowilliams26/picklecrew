@@ -4,6 +4,13 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type ChiefPaddlerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    thatsAPaddlin: number;
+};
+
 export type CreateCrewHttpRequest = {
     name: string;
 };
@@ -86,10 +93,7 @@ export type GetBestDoublesPairingHttpResponse = {
 };
 
 export type GetChiefPaddlerHttpResponse = {
-    userId: null | string;
-    displayName: null | string;
-    profilePictureUrl: null | string;
-    thatsAPaddlin: number;
+    chiefPaddler: null | ChiefPaddlerHttpResponse;
 };
 
 export type GetCrewLeaderboardHttpResponse = {

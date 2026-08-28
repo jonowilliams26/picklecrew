@@ -39,7 +39,6 @@ import {
   formatStreakPeriod,
   getCurrentStreakDetail,
   getInitials,
-  hasChiefPaddler,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
 
@@ -103,7 +102,7 @@ function DashboardPage() {
     leaderboard,
     longestWinStreak,
     bestDoublesPairing,
-    chiefPaddler,
+    chiefPaddler: chiefPaddlerResponse,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -124,7 +123,7 @@ function DashboardPage() {
   const pairing = bestDoublesPairing.pairing
   const firstPairingPlayer = pairing?.players[0]
   const secondPairingPlayer = pairing?.players[1]
-  const isChiefPaddlerAwarded = hasChiefPaddler(chiefPaddler)
+  const chiefPaddler = chiefPaddlerResponse.chiefPaddler
 
   if (
     pairing &&
@@ -535,7 +534,7 @@ function DashboardPage() {
                   <Hammer aria-hidden="true" />
                 </CardAction>
               </CardHeader>
-              {isChiefPaddlerAwarded ? (
+              {chiefPaddler ? (
                 <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex min-w-0 items-center gap-5">
                     <div className="relative shrink-0">

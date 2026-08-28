@@ -47,11 +47,11 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
         var result = await response.Content.ReadFromJsonAsync<GetChiefPaddlerHttpResponse>(
             TestJsonSerializerOptions.Default
         );
-        Assert.NotNull(result);
-        Assert.Equal(leaderId, result.UserId);
-        Assert.Equal("Casey Paddler", result.DisplayName);
-        Assert.Equal("https://example.test/casey.jpg", result.ProfilePictureUrl);
-        Assert.Equal(2, result.ThatsAPaddlin);
+        var chiefPaddler = Assert.IsType<ChiefPaddlerHttpResponse>(result?.ChiefPaddler);
+        Assert.Equal(leaderId, chiefPaddler.UserId);
+        Assert.Equal("Casey Paddler", chiefPaddler.DisplayName);
+        Assert.Equal("https://example.test/casey.jpg", chiefPaddler.ProfilePictureUrl);
+        Assert.Equal(2, chiefPaddler.ThatsAPaddlin);
     }
 
     [Fact]
@@ -79,10 +79,10 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
         var result = await response.Content.ReadFromJsonAsync<GetChiefPaddlerHttpResponse>(
             TestJsonSerializerOptions.Default
         );
-        Assert.NotNull(result);
-        Assert.Equal(alphaId, result.UserId);
-        Assert.Equal("Alpha Leader", result.DisplayName);
-        Assert.Equal(1, result.ThatsAPaddlin);
+        var chiefPaddler = Assert.IsType<ChiefPaddlerHttpResponse>(result?.ChiefPaddler);
+        Assert.Equal(alphaId, chiefPaddler.UserId);
+        Assert.Equal("Alpha Leader", chiefPaddler.DisplayName);
+        Assert.Equal(1, chiefPaddler.ThatsAPaddlin);
     }
 
     [Fact]
@@ -100,10 +100,7 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        Assert.Null(result.UserId);
-        Assert.Null(result.DisplayName);
-        Assert.Null(result.ProfilePictureUrl);
-        Assert.Equal(0, result.ThatsAPaddlin);
+        Assert.Null(result.ChiefPaddler);
     }
 
     [Fact]
@@ -160,10 +157,10 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
         var result = await response.Content.ReadFromJsonAsync<GetChiefPaddlerHttpResponse>(
             TestJsonSerializerOptions.Default
         );
-        Assert.NotNull(result);
-        Assert.Equal(activeLeaderId, result.UserId);
-        Assert.Equal("Active Leader", result.DisplayName);
-        Assert.Equal(2, result.ThatsAPaddlin);
+        var chiefPaddler = Assert.IsType<ChiefPaddlerHttpResponse>(result?.ChiefPaddler);
+        Assert.Equal(activeLeaderId, chiefPaddler.UserId);
+        Assert.Equal("Active Leader", chiefPaddler.DisplayName);
+        Assert.Equal(2, chiefPaddler.ThatsAPaddlin);
 
         await using var verificationDatabase = fixture.CreateDbContext();
         var historicalCount = await verificationDatabase.CrewMemberStatistics

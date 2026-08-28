@@ -66,21 +66,6 @@ export function formatCount({
   return `${count.toLocaleString('en-AU')} ${count === 1 ? singular : plural}`
 }
 
-export type AwardedChiefPaddler = GetChiefPaddlerHttpResponse & {
-  userId: string
-  displayName: string
-}
-
-export function hasChiefPaddler(
-  chiefPaddler: GetChiefPaddlerHttpResponse,
-): chiefPaddler is AwardedChiefPaddler {
-  return (
-    chiefPaddler.thatsAPaddlin > 0 &&
-    chiefPaddler.userId !== null &&
-    chiefPaddler.displayName !== null
-  )
-}
-
 export function getInitials({ displayName }: { displayName: string }): string {
   const initials = displayName
     .split(/\s+/)
