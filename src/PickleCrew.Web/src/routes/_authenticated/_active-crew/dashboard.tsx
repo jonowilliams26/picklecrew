@@ -244,7 +244,7 @@ function DashboardPage() {
                       ? 'No recent games'
                       : `${recentRecord} · last ${recentGameCount}`}
                   </CardDescription>
-                  {recentGames.winStreak > 0 ? (
+                  {recentGames.winStreak > 1 ? (
                     <CardAction>
                       <Badge className="bg-lime text-ink">
                         <Flame data-icon="inline-start" />
