@@ -9,7 +9,7 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 30_000,
     defaultPendingComponent: PageLoadingSkeleton,
-    defaultPendingMs: 0,
+    defaultPendingMs: 150,
     defaultPendingMinMs: 200,
     defaultStaleReloadMode: 'blocking',
     scrollRestoration: true,
