@@ -85,6 +85,13 @@ export type GetBestDoublesPairingHttpResponse = {
     pairing: null | DoublesPairingHttpResponse;
 };
 
+export type GetChiefPaddlerHttpResponse = {
+    userId: null | string;
+    displayName: null | string;
+    profilePictureUrl: null | string;
+    thatsAPaddlin: number;
+};
+
 export type GetCrewLeaderboardHttpResponse = {
     entries: Array<CrewLeaderboardEntryHttpResponse>;
 };
@@ -482,6 +489,39 @@ export type GetBestDoublesPairingResponses = {
 };
 
 export type GetBestDoublesPairingResponse = GetBestDoublesPairingResponses[keyof GetBestDoublesPairingResponses];
+
+export type GetChiefPaddlerData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/chief-paddler';
+};
+
+export type GetChiefPaddlerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetChiefPaddlerError = GetChiefPaddlerErrors[keyof GetChiefPaddlerErrors];
+
+export type GetChiefPaddlerResponses = {
+    /**
+     * OK
+     */
+    200: GetChiefPaddlerHttpResponse;
+};
+
+export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;

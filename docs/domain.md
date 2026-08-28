@@ -78,6 +78,22 @@ A crew member's all-time cumulative game results within one crew.
 
 - Each crew member's statistics belong to exactly one crew and one user.
 
+## Chief Paddler
+
+The active crew member who holds the Crew's bragging-rights award for the most all-time **That's a Paddlin** wins.
+
+### Business rules
+
+- A Crew has no Chief Paddler when every active member has zero **That's a Paddlin** wins.
+- The active member with the highest positive **That's a Paddlin** count is Chief Paddler.
+- Exactly one Chief Paddler is selected; tied leaders are resolved alphabetically by current display name, then by user identifier.
+- Former members cannot be the current Chief Paddler, while their historical personal statistics remain preserved.
+- Statistics from another Crew do not affect the award.
+
+### Relationships
+
+- A Crew has zero or one Chief Paddler.
+
 ## Doubles pairing statistics
 
 A doubles pairing's all-time cumulative results within one crew.

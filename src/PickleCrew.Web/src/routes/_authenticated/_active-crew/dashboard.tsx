@@ -9,6 +9,7 @@ import {
   Target,
   Trophy,
   TrendingUp,
+  UserRound,
   UsersRound,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -38,6 +39,7 @@ import {
   formatStreakPeriod,
   getCurrentStreakDetail,
   getInitials,
+  hasChiefPaddler,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
 
@@ -101,6 +103,7 @@ function DashboardPage() {
     leaderboard,
     longestWinStreak,
     bestDoublesPairing,
+    chiefPaddler,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -121,6 +124,7 @@ function DashboardPage() {
   const pairing = bestDoublesPairing.pairing
   const firstPairingPlayer = pairing?.players[0]
   const secondPairingPlayer = pairing?.players[1]
+  const isChiefPaddlerAwarded = hasChiefPaddler(chiefPaddler)
 
   if (
     pairing &&
@@ -332,7 +336,7 @@ function DashboardPage() {
           />
 
           <div className="grid gap-5 xl:grid-cols-12">
-            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-2">
+            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-3">
               <CardHeader className="border-b-2 border-line pb-8!">
                 <CardTitle className="font-heading text-3xl font-black tracking-[-.045em] sm:text-4xl">
                   Crew leaderboard
@@ -515,6 +519,89 @@ function DashboardPage() {
                   <p className="m-0 max-w-xs text-sm text-ink-soft">
                     Get on the court and start proving who runs this Crew.
                   </p>
+                </CardContent>
+              )}
+            </Card>
+
+            <Card className="relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
+              <CardHeader className="relative z-1">
+                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
+                  Chief Paddler
+                </CardTitle>
+                <CardDescription className="font-heading text-[11px] text-ink-soft">
+                  Most 11–0 wins in the Crew
+                </CardDescription>
+                <CardAction className="grid size-11 rotate-[-7deg] place-items-center rounded-full border-2 border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
+                  <Hammer aria-hidden="true" />
+                </CardAction>
+              </CardHeader>
+              {isChiefPaddlerAwarded ? (
+                <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-5">
+                    <div className="relative shrink-0">
+                      <DashboardAvatar
+                        className="size-24 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                        fallbackClassName="bg-lime font-heading text-3xl text-ink"
+                        person={{
+                          userId: chiefPaddler.userId,
+                          displayName: chiefPaddler.displayName,
+                          profilePictureUrl:
+                            chiefPaddler.profilePictureUrl ?? null,
+                        }}
+                      />
+                      <span className="absolute -top-3 -right-3 grid size-10 rotate-[10deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
+                        <Crown aria-label="Chief Paddler" />
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="text-[9px] font-black tracking-[.12em] uppercase">
+                        Reigning Chief
+                      </span>
+                      <strong className="truncate font-heading text-3xl font-black">
+                        {chiefPaddler.displayName}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col sm:items-end">
+                    <strong className="font-heading text-7xl leading-[.75] font-black tracking-[-.08em]">
+                      {chiefPaddler.thatsAPaddlin.toLocaleString('en-AU')}
+                    </strong>
+                    <span className="text-[9px] font-black tracking-[.1em] uppercase">
+                      paddlins delivered
+                    </span>
+                  </div>
+                  <Crown
+                    className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
+                    aria-hidden="true"
+                  />
+                </CardContent>
+              ) : (
+                <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-5">
+                    <div className="relative shrink-0">
+                      <span className="grid size-24 rotate-[-5deg] place-items-center rounded-full border-2 border-dashed border-ink bg-cream shadow-[4px_5px_0_var(--ink)] [&_svg]:size-10">
+                        <UserRound aria-label="Chief Paddler unclaimed" />
+                      </span>
+                      <span className="absolute -top-3 -right-3 grid size-10 rotate-[10deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
+                        <Crown aria-hidden="true" />
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="text-[9px] font-black tracking-[.12em] uppercase">
+                        Chief wanted
+                      </span>
+                      <strong className="font-heading text-3xl font-black">
+                        The throne&apos;s empty
+                      </strong>
+                    </div>
+                  </div>
+                  <p className="m-0 max-w-44 text-sm text-ink-soft sm:text-right">
+                    Hand out an 11–0 paddlin and claim it.
+                  </p>
+                  <Crown
+                    className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
+                    aria-hidden="true"
+                  />
                 </CardContent>
               )}
             </Card>

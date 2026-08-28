@@ -8,6 +8,7 @@ import {
   formatStreakPeriod,
   getCurrentStreakDetail,
   getInitials,
+  hasChiefPaddler,
 } from './dashboard.ts'
 
 describe('dashboard formatting', () => {
@@ -33,6 +34,27 @@ describe('dashboard formatting', () => {
     assert.equal(
       formatCount({ count: 2, singular: 'person', plural: 'people' }),
       '2 people',
+    )
+  })
+
+  test('identifies awarded and empty Chief Paddler results', () => {
+    assert.equal(
+      hasChiefPaddler({
+        userId: 'user_chief',
+        displayName: 'Casey Paddler',
+        profilePictureUrl: null,
+        thatsAPaddlin: 3,
+      }),
+      true,
+    )
+    assert.equal(
+      hasChiefPaddler({
+        userId: null,
+        displayName: null,
+        profilePictureUrl: null,
+        thatsAPaddlin: 0,
+      }),
+      false,
     )
   })
 
