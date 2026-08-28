@@ -6,14 +6,14 @@ namespace PickleCrew.UnitTests.Statistics;
 public sealed class CrewRankingCalculatorTests
 {
     [Fact]
-    public void Rank_WhenScoresIncludeTie_ShouldAssignCompetitionRanks()
+    public void Rank_WhenCrewScoresIncludeTie_ShouldAssignCompetitionRanks()
     {
         var statistics = new[]
         {
-            CreateStatistics("user_casey", 1),
-            CreateStatistics("user_blair", 3),
-            CreateStatistics("user_zero", 0),
-            CreateStatistics("user_alex", 3),
+            CreateStatistics("user_casey", wins: 1, pointDifferential: 10),
+            CreateStatistics("user_blair", wins: 3, pointDifferential: 5),
+            CreateStatistics("user_zero", wins: 0, pointDifferential: 0),
+            CreateStatistics("user_alex", wins: 3, pointDifferential: 5),
         };
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
@@ -28,13 +28,31 @@ public sealed class CrewRankingCalculatorTests
     }
 
     [Fact]
+    public void Rank_WhenPointDifferentialOffsetsWinDifference_ShouldRankByCrewScore()
+    {
+        var statistics = new[]
+        {
+            CreateStatistics("user_more_wins", wins: 3, pointDifferential: -60),
+            CreateStatistics("user_better_differential", wins: 2, pointDifferential: 60),
+        };
+
+        var rankedStatistics = CrewRankingCalculator.Rank(statistics);
+
+        Assert.Collection(
+            rankedStatistics,
+            memberStatistics => AssertRanking(memberStatistics, "user_better_differential", 1),
+            memberStatistics => AssertRanking(memberStatistics, "user_more_wins", 2)
+        );
+    }
+
+    [Fact]
     public void Rank_WhenScoresAreEqual_ShouldOrderByUserIdAndAssignFirstRank()
     {
         var statistics = new[]
         {
-            CreateStatistics("user_2", 0),
-            CreateStatistics("user_3", 0),
-            CreateStatistics("user_1", 0),
+            CreateStatistics("user_2", wins: 0, pointDifferential: 0),
+            CreateStatistics("user_3", wins: 0, pointDifferential: 0),
+            CreateStatistics("user_1", wins: 0, pointDifferential: 0),
         };
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
@@ -51,7 +69,8 @@ public sealed class CrewRankingCalculatorTests
 
     private static CrewMemberStatisticsTotals CreateStatistics(
         string userId,
-        long wins)
+        long wins,
+        long pointDifferential)
     {
         return new CrewMemberStatisticsTotals
         {
@@ -60,8 +79,8 @@ public sealed class CrewRankingCalculatorTests
             Losses = 0,
             CurrentWinStreak = 0,
             LongestWinStreak = 0,
-            PointsScored = 0,
-            PointsConceded = 0,
+            PointsScored = Math.Max(pointDifferential, 0),
+            PointsConceded = Math.Max(-pointDifferential, 0),
         };
     }
 

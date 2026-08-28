@@ -80,7 +80,7 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(62, result.PointsScored);
         Assert.Equal(49, result.PointsConceded);
         Assert.Equal(13, result.PointDifferential);
-        Assert.Equal(400, result.CrewScore);
+        Assert.Equal(413, result.CrewScore);
         Assert.Equal(2, result.CrewRank);
         Assert.Equal(3, result.ActiveCrewMemberCount);
     }
