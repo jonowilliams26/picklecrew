@@ -56,6 +56,29 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 .ToArray()
             : [];
 
+        var matchupGameStatistics = game.Sides
+            .SelectMany(side =>
+            {
+                var opposingSide = game.Sides.First(candidate => candidate != side);
+
+                return side.Participants
+                    .Where(participant => participant.UserId is not null)
+                    .SelectMany(participant => opposingSide.Participants
+                        .Where(opponent => opponent.UserId is not null)
+                        .Select(opponent => new MatchupGameStatistics
+                        {
+                            Key = new CrewMatchupKey(
+                                participant.UserId!,
+                                opponent.UserId!
+                            ),
+                            Won = side.Score > opposingSide.Score,
+                            PointsScored = side.Score,
+                            PointsConceded = opposingSide.Score,
+                        })
+                    );
+            })
+            .ToArray();
+
         var participatingUserIds = playerGameStatistics
             .Select(x => x.UserId)
             .ToArray();
@@ -98,10 +121,40 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 );
         }
 
+        var matchupUserIds = matchupGameStatistics
+            .SelectMany(statistics => new[]
+            {
+                statistics.Key.UserId,
+                statistics.Key.OpponentUserId,
+            })
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var matchupStatisticsByKey = new Dictionary<
+            CrewMatchupKey,
+            CrewMatchupStatistics>();
+
+        if (matchupGameStatistics.Length > 0)
+        {
+            matchupStatisticsByKey = await database.CrewMatchupStatistics
+                .Where(statistics =>
+                    matchupUserIds.Contains(statistics.UserId)
+                    && matchupUserIds.Contains(statistics.OpponentUserId)
+                )
+                .ToDictionaryAsync(
+                    statistics => new CrewMatchupKey(
+                        statistics.UserId,
+                        statistics.OpponentUserId
+                    ),
+                    cancellationToken
+                );
+        }
+
         var createdStatistics = new List<CrewMemberStatistics>();
         var updatedStatistics = new List<CrewMemberStatistics>();
         var createdPairingStatistics = new List<CrewDoublesPairingStatistics>();
         var updatedPairingStatistics = new List<CrewDoublesPairingStatistics>();
+        var createdMatchupStatistics = new List<CrewMatchupStatistics>();
+        var updatedMatchupStatistics = new List<CrewMatchupStatistics>();
 
         foreach (var playerGameStats in playerGameStatistics)
         {
@@ -201,12 +254,46 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             }
         }
 
+        foreach (var matchupGameStats in matchupGameStatistics)
+        {
+            if (!matchupStatisticsByKey.TryGetValue(matchupGameStats.Key, out var statistics))
+            {
+                statistics = new CrewMatchupStatistics
+                {
+                    CrewId = game.CrewId,
+                    CrewUuid = game.CrewUuid,
+                    UserId = matchupGameStats.Key.UserId,
+                    OpponentUserId = matchupGameStats.Key.OpponentUserId,
+                };
+                matchupStatisticsByKey.Add(matchupGameStats.Key, statistics);
+                createdMatchupStatistics.Add(statistics);
+            }
+            else
+            {
+                updatedMatchupStatistics.Add(statistics);
+            }
+
+            statistics.PointsScored += matchupGameStats.PointsScored;
+            statistics.PointsConceded += matchupGameStats.PointsConceded;
+
+            if (matchupGameStats.Won)
+            {
+                statistics.Wins += 1;
+            }
+            else
+            {
+                statistics.Losses += 1;
+            }
+        }
+
         return new CalculateGameStatisticsResult
         {
             Created = [.. createdStatistics],
             Updated = [.. updatedStatistics],
             CreatedPairingStatistics = [.. createdPairingStatistics],
             UpdatedPairingStatistics = [.. updatedPairingStatistics],
+            CreatedMatchupStatistics = [.. createdMatchupStatistics],
+            UpdatedMatchupStatistics = [.. updatedMatchupStatistics],
         };
     }
 }
@@ -220,6 +307,10 @@ internal sealed record CalculateGameStatisticsResult
     public required CrewDoublesPairingStatistics[] CreatedPairingStatistics { get; init; }
 
     public required CrewDoublesPairingStatistics[] UpdatedPairingStatistics { get; init; }
+
+    public required CrewMatchupStatistics[] CreatedMatchupStatistics { get; init; }
+
+    public required CrewMatchupStatistics[] UpdatedMatchupStatistics { get; init; }
 }
 
 internal sealed record PlayerGameStatistics
@@ -238,6 +329,17 @@ internal sealed record PlayerGameStatistics
 internal sealed record DoublesPairingGameStatistics
 {
     public required CrewDoublesPairingKey Key { get; init; }
+
+    public bool Won { get; init; }
+
+    public long PointsScored { get; init; }
+
+    public long PointsConceded { get; init; }
+}
+
+internal sealed record MatchupGameStatistics
+{
+    public required CrewMatchupKey Key { get; init; }
 
     public bool Won { get; init; }
 

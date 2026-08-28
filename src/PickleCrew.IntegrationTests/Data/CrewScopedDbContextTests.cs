@@ -30,7 +30,9 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
             CreateMemberStatistics(firstCrew),
             CreateMemberStatistics(secondCrew),
             CreatePairingStatistics(firstCrew),
-            CreatePairingStatistics(secondCrew)
+            CreatePairingStatistics(secondCrew),
+            CreateMatchupStatistics(firstCrew),
+            CreateMatchupStatistics(secondCrew)
         );
         await database.SaveChangesAsync();
 
@@ -89,12 +91,17 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         var pairingStatistics = await database.CrewDoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync();
+        var matchupStatistics = await database.CrewMatchupStatistics
+            .AsNoTracking()
+            .SingleAsync();
         var game = await database.Games.AsNoTracking().SingleAsync();
 
         Assert.Equal(expectedCrew.Id, memberStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, memberStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, pairingStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, pairingStatistics.CrewUuid);
+        Assert.Equal(expectedCrew.Id, matchupStatistics.CrewId);
+        Assert.Equal(expectedCrew.Uuid, matchupStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, game.CrewId);
         Assert.Equal(expectedCrew.Uuid, game.CrewUuid);
     }
@@ -158,6 +165,17 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
             CrewUuid = crew.Uuid,
             Player1Id = key.Player1Id,
             Player2Id = key.Player2Id,
+        };
+    }
+
+    private static CrewMatchupStatistics CreateMatchupStatistics(Crew crew)
+    {
+        return new CrewMatchupStatistics
+        {
+            CrewId = crew.Id,
+            CrewUuid = crew.Uuid,
+            UserId = $"user_{Guid.NewGuid():N}",
+            OpponentUserId = $"user_{Guid.NewGuid():N}",
         };
     }
 

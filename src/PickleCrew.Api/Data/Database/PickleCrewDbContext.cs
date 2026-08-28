@@ -23,6 +23,8 @@ public class PickleCrewDbContext : DbContext
 
     public DbSet<CrewDoublesPairingStatistics> CrewDoublesPairingStatistics => Set<CrewDoublesPairingStatistics>();
 
+    public DbSet<CrewMatchupStatistics> CrewMatchupStatistics => Set<CrewMatchupStatistics>();
+
     public DbSet<Game> Games => Set<Game>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -73,6 +75,21 @@ public class PickleCrewDbContext : DbContext
                 .IsRowVersion();
         });
 
+        modelBuilder.Entity<CrewMatchupStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.CrewId,
+                entity.UserId,
+                entity.OpponentUserId,
+            });
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+            statistics.Property(entity => entity.Version)
+                .IsRowVersion();
+        });
+
         modelBuilder.Entity<Game>(game =>
         {
             game.HasIndex(entity => entity.Uuid).IsUnique();
@@ -103,6 +120,8 @@ internal sealed class CrewScopedDbContext(
         modelBuilder.Entity<CrewMemberStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
         modelBuilder.Entity<CrewDoublesPairingStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewMatchupStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
         modelBuilder.Entity<Game>()
             .HasQueryFilter(game => game.CrewId == CrewId);
