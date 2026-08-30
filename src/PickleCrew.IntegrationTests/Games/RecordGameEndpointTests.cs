@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games;
-using PickleCrew.Api.Games.Services;
+using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
@@ -488,6 +488,59 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(3, statistics.LongestWinStreak);
         Assert.Equal(games[0].PlayedAtUtc, statistics.LongestWinStreakStartedAtUtc);
         Assert.Equal(games[3].PlayedAtUtc, statistics.LongestWinStreakEndedAtUtc);
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenActiveStreakExceedsEndedLongestStreak_ShouldReplaceLongestWinStreakPeriod()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponent = context.Members[0];
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var scores = new[]
+        {
+            (11, 7),
+            (11, 8),
+            (9, 11),
+            (11, 6),
+            (11, 5),
+            (11, 4),
+        };
+
+        foreach (var (administratorScore, opponentScore) in scores)
+        {
+            using var response = await apiClient.PostAsJsonAsync(
+                "/games",
+                CreateRequest(
+                    context.Administrator.UserId,
+                    opponent.UserId,
+                    administratorScore,
+                    opponentScore
+                ),
+                TestJsonSerializerOptions.Default
+            );
+            response.EnsureSuccessStatusCode();
+        }
+
+        await using var database = fixture.CreateDbContext();
+        var games = await database.Games
+            .AsNoTracking()
+            .Where(game => game.CrewUuid == context.Uuid)
+            .OrderBy(game => game.Id)
+            .ToArrayAsync();
+        var statistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .SingleAsync(candidate =>
+                candidate.CrewUuid == context.Uuid &&
+                candidate.UserId == context.Administrator.UserId
+            );
+
+        Assert.Equal(3, statistics.CurrentWinStreak);
+        Assert.Equal(games[3].PlayedAtUtc, statistics.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(3, statistics.LongestWinStreak);
+        Assert.Equal(games[3].PlayedAtUtc, statistics.LongestWinStreakStartedAtUtc);
+        Assert.Null(statistics.LongestWinStreakEndedAtUtc);
     }
 
     [Fact]
@@ -1146,13 +1199,18 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             ],
         };
         var statisticsService = new GameStatisticsService(staleDbContext);
-        var statisticsChanges = await statisticsService.CalculateStatistics(
+        var statisticsChanges = await statisticsService.CalculateStatisticsAsync(
             game,
             CancellationToken.None
         );
-        Assert.Empty(statisticsChanges.Created);
-        Assert.Equal(2, statisticsChanges.Updated.Length);
-        staleDbContext.CrewMemberStatistics.AddRange(statisticsChanges.Created);
+        Assert.Equal(2, statisticsChanges.PlayerStatistics.Length);
+        Assert.All(
+            statisticsChanges.PlayerStatistics,
+            change => Assert.Equal(
+                CalculateGameStatisticsResultOperation.Updated,
+                change.Operation
+            )
+        );
         staleDbContext.Games.Add(game);
 
         await using (var competingDbContext = fixture.CreateDbContext())
@@ -1307,14 +1365,26 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             ],
         };
         var statisticsService = new GameStatisticsService(staleDatabase);
-        var statisticsChanges = await statisticsService.CalculateStatistics(
+        var statisticsChanges = await statisticsService.CalculateStatisticsAsync(
             game,
             CancellationToken.None
         );
-        Assert.Empty(statisticsChanges.Created);
-        Assert.Empty(statisticsChanges.CreatedPairingStatistics);
-        Assert.Equal(4, statisticsChanges.Updated.Length);
-        Assert.Equal(2, statisticsChanges.UpdatedPairingStatistics.Length);
+        Assert.Equal(4, statisticsChanges.PlayerStatistics.Length);
+        Assert.All(
+            statisticsChanges.PlayerStatistics,
+            change => Assert.Equal(
+                CalculateGameStatisticsResultOperation.Updated,
+                change.Operation
+            )
+        );
+        Assert.Equal(2, statisticsChanges.DoublesPairingStatistics.Length);
+        Assert.All(
+            statisticsChanges.DoublesPairingStatistics,
+            change => Assert.Equal(
+                CalculateGameStatisticsResultOperation.Updated,
+                change.Operation
+            )
+        );
         staleDatabase.Games.Add(game);
 
         await using (var competingDatabase = fixture.CreateDbContext())

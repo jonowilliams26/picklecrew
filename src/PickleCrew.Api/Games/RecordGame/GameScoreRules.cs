@@ -1,4 +1,4 @@
-namespace PickleCrew.Api.Games.Services;
+namespace PickleCrew.Api.Games.RecordGame;
 
 internal static class GameScoreRules
 {

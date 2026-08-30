@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
-using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.RecordGame;
 
 namespace PickleCrew.IntegrationTests.Testing;
 

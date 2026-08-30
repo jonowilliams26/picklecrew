@@ -2,8 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
-using PickleCrew.Api.Games;
-using PickleCrew.Api.Games.Services;
+using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Services;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -348,12 +347,18 @@ public sealed class RecordGameMatchupTests(AppHostFixture fixture)
             8
         );
         var statisticsService = new GameStatisticsService(staleDatabase);
-        var changes = await statisticsService.CalculateStatistics(
+        var changes = await statisticsService.CalculateStatisticsAsync(
             staleGame,
             CancellationToken.None
         );
-        Assert.Empty(changes.CreatedMatchupStatistics);
-        Assert.Equal(2, changes.UpdatedMatchupStatistics.Length);
+        Assert.Equal(2, changes.MatchupStatistics.Length);
+        Assert.All(
+            changes.MatchupStatistics,
+            change => Assert.Equal(
+                CalculateGameStatisticsResultOperation.Updated,
+                change.Operation
+            )
+        );
         staleDatabase.Games.Add(staleGame);
 
         await using (var competingDatabase = fixture.CreateDbContext())

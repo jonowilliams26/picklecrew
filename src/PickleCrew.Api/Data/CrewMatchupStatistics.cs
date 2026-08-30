@@ -43,7 +43,3 @@ public sealed class CrewMatchupStatistics
 
     public uint Version { get; private set; }
 }
-
-internal readonly record struct CrewMatchupKey(
-    string UserId,
-    string OpponentUserId);

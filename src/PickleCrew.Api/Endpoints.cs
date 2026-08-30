@@ -1,6 +1,7 @@
 using PickleCrew.Api.Crews;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Statistics;
 using PickleCrew.Api.Testing;
 
