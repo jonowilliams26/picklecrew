@@ -10,6 +10,8 @@ namespace PickleCrew.Api.Crews;
 
 public sealed record CreateCrewHttpRequest
 {
+    public required Guid RequestId { get; init; }
+
     public required string Name { get; init; }
 }
 
@@ -35,6 +37,14 @@ internal sealed class CreateCrewEndpoint : IEndpoint
     internal static Dictionary<string, string[]> Validate(CreateCrewHttpRequest request)
     {
         const int maximumNameLength = 100;
+
+        if (request.RequestId == Guid.Empty)
+        {
+            return new Dictionary<string, string[]>
+            {
+                [nameof(request.RequestId)] = ["Request ID must not be empty."],
+            };
+        }
 
         var normalizedName = request.Name?.Trim() ?? string.Empty;
         if (normalizedName.Length == 0)
@@ -69,7 +79,9 @@ internal sealed class CreateCrewEndpoint : IEndpoint
         var workOsUserId = userContext.UserId;
         var attempt = await database.CrewProvisioningAttempts
             .SingleOrDefaultAsync(
-                candidate => candidate.WorkOsUserId == workOsUserId,
+                candidate =>
+                    candidate.WorkOsUserId == workOsUserId &&
+                    candidate.RequestId == request.RequestId,
                 cancellationToken
             );
 
@@ -98,6 +110,7 @@ internal sealed class CreateCrewEndpoint : IEndpoint
             attempt = new CrewProvisioningAttempt
             {
                 CrewUuid = Guid.NewGuid(),
+                RequestId = request.RequestId,
                 CrewName = normalizedName,
                 WorkOsUserId = workOsUserId,
                 StartedAtUtc = timeProvider.GetUtcNow(),

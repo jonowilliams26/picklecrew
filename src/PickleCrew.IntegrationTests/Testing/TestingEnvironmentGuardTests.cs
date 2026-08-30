@@ -30,6 +30,7 @@ public sealed class TestingEnvironmentGuardTests
         {
             Content = JsonContent.Create(new CreateCrewHttpRequest
             {
+                RequestId = Guid.NewGuid(),
                 Name = "Kitchen Legends",
             }),
         };

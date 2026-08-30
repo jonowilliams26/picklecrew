@@ -23,6 +23,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
         {
             Content = JsonContent.Create(new CreateCrewHttpRequest
             {
+                RequestId = Guid.NewGuid(),
                 Name = "Kitchen Legends",
             }),
         };
@@ -45,10 +46,15 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
     {
         var identity = TestIdentity.CreateSubjectOnly();
         using var apiClient = fixture.CreateApiClient(identity);
+        var requestId = Guid.NewGuid();
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews",
-            new CreateCrewHttpRequest { Name = "  Kitchen Legends  " }
+            new CreateCrewHttpRequest
+            {
+                RequestId = requestId,
+                Name = "  Kitchen Legends  ",
+            }
         );
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -70,6 +76,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
         Assert.Equal(createdCrew.CrewId, storedCrew.Uuid);
         Assert.Equal(createdCrew.Name, storedCrew.Name);
         Assert.Equal(createdCrew.OrganizationId, storedCrew.WorkOsOrganizationId);
+        Assert.Equal(requestId, storedAttempt.RequestId);
         Assert.Equal(identity.UserId, storedAttempt.WorkOsUserId);
         Assert.Equal(createdCrew.OrganizationId, storedAttempt.WorkOsOrganizationId);
         Assert.False(string.IsNullOrWhiteSpace(storedAttempt.WorkOsMembershipId));
@@ -90,13 +97,18 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
             FakeWorkOsOperation.CreateOrganization
         );
 
+        var request = new CreateCrewHttpRequest
+        {
+            RequestId = Guid.NewGuid(),
+            Name = "Kitchen Legends",
+        };
         using var failedResponse = await failingApiClient.PostAsJsonAsync(
             "/crews",
-            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+            request
         );
         using var retriedResponse = await retryingApiClient.PostAsJsonAsync(
             "/crews",
-            new CreateCrewHttpRequest { Name = "Kitchen Legends" }
+            request
         );
 
         Assert.Equal(HttpStatusCode.InternalServerError, failedResponse.StatusCode);
@@ -105,11 +117,88 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var attempt = await dbContext.CrewProvisioningAttempts
             .AsNoTracking()
-            .SingleAsync(candidate => candidate.WorkOsUserId == identity.UserId);
+            .SingleAsync(candidate =>
+                candidate.WorkOsUserId == identity.UserId &&
+                candidate.RequestId == request.RequestId
+            );
 
         Assert.NotNull(attempt.WorkOsOrganizationId);
         Assert.NotNull(attempt.WorkOsMembershipId);
         Assert.NotNull(attempt.CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task CreateCrew_WhenUserAlreadyCreatedCrew_ShouldProvisionDistinctAdditionalCrew()
+    {
+        var identity = TestIdentity.CreateSubjectOnly();
+        using var apiClient = fixture.CreateApiClient(identity);
+        var firstRequest = new CreateCrewHttpRequest
+        {
+            RequestId = Guid.NewGuid(),
+            Name = "Kitchen Legends",
+        };
+        var secondRequest = new CreateCrewHttpRequest
+        {
+            RequestId = Guid.NewGuid(),
+            Name = "Kitchen Legends",
+        };
+
+        using var firstResponse = await apiClient.PostAsJsonAsync("/crews", firstRequest);
+        using var secondResponse = await apiClient.PostAsJsonAsync("/crews", secondRequest);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, secondResponse.StatusCode);
+
+        var firstCrew = await firstResponse.Content.ReadFromJsonAsync<CreateCrewHttpResponse>();
+        var secondCrew = await secondResponse.Content.ReadFromJsonAsync<CreateCrewHttpResponse>();
+        Assert.NotNull(firstCrew);
+        Assert.NotNull(secondCrew);
+        Assert.NotEqual(firstCrew.CrewId, secondCrew.CrewId);
+        Assert.NotEqual(firstCrew.OrganizationId, secondCrew.OrganizationId);
+        Assert.Equal(firstCrew.Name, secondCrew.Name);
+
+        await using var database = fixture.CreateDbContext();
+        var attempts = await database.CrewProvisioningAttempts
+            .AsNoTracking()
+            .Where(attempt => attempt.WorkOsUserId == identity.UserId)
+            .ToListAsync();
+
+        Assert.Equal(2, attempts.Count);
+        Assert.All(attempts, attempt => Assert.NotNull(attempt.CompletedAtUtc));
+
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        Assert.NotNull(await fakeWorkOs.FindActiveMembershipAsync(
+            identity.UserId,
+            firstCrew.OrganizationId
+        ));
+        Assert.NotNull(await fakeWorkOs.FindActiveMembershipAsync(
+            identity.UserId,
+            secondCrew.OrganizationId
+        ));
+    }
+
+    [Fact]
+    public async Task CreateCrew_WhenCompletedRequestIsRetried_ShouldReturnOriginalCrew()
+    {
+        var identity = TestIdentity.CreateSubjectOnly();
+        using var apiClient = fixture.CreateApiClient(identity);
+        var request = new CreateCrewHttpRequest
+        {
+            RequestId = Guid.NewGuid(),
+            Name = "Kitchen Legends",
+        };
+
+        using var firstResponse = await apiClient.PostAsJsonAsync("/crews", request);
+        using var retryResponse = await apiClient.PostAsJsonAsync("/crews", request);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, retryResponse.StatusCode);
+
+        var firstCrew = await firstResponse.Content.ReadFromJsonAsync<CreateCrewHttpResponse>();
+        var retriedCrew = await retryResponse.Content.ReadFromJsonAsync<CreateCrewHttpResponse>();
+        Assert.NotNull(firstCrew);
+        Assert.NotNull(retriedCrew);
+        Assert.Equal(firstCrew, retriedCrew);
     }
 
     [Fact]
@@ -179,6 +268,7 @@ public sealed class CreateCrewEndpointTests(AppHostFixture fixture)
             "/crews",
             new CreateCrewHttpRequest
             {
+                RequestId = Guid.NewGuid(),
                 Name = $"Crew {identity.UserId}",
             }
         );

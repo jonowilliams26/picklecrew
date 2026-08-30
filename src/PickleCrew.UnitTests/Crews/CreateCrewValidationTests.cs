@@ -5,6 +5,20 @@ namespace PickleCrew.UnitTests.Crews;
 
 public sealed class CreateCrewValidationTests
 {
+    [Fact]
+    public void Validate_WhenRequestIdIsEmpty_ShouldReturnValidationError()
+    {
+        var errors = CreateCrewEndpoint.Validate(
+            new CreateCrewHttpRequest
+            {
+                RequestId = Guid.Empty,
+                Name = "Kitchen Legends",
+            }
+        );
+
+        Assert.Contains(nameof(CreateCrewHttpRequest.RequestId), errors);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -12,7 +26,11 @@ public sealed class CreateCrewValidationTests
     public void Validate_WhenNameIsBlank_ShouldReturnValidationError(string? name)
     {
         var errors = CreateCrewEndpoint.Validate(
-            new CreateCrewHttpRequest { Name = name! }
+            new CreateCrewHttpRequest
+            {
+                RequestId = Guid.NewGuid(),
+                Name = name!,
+            }
         );
 
         Assert.Contains(nameof(CreateCrewHttpRequest.Name), errors);
@@ -24,7 +42,11 @@ public sealed class CreateCrewValidationTests
     public void Validate_WhenNameLengthIsValid_ShouldReturnNoValidationErrors(int length)
     {
         var errors = CreateCrewEndpoint.Validate(
-            new CreateCrewHttpRequest { Name = $" {new string('a', length)} " }
+            new CreateCrewHttpRequest
+            {
+                RequestId = Guid.NewGuid(),
+                Name = $" {new string('a', length)} ",
+            }
         );
 
         Assert.Empty(errors);
@@ -34,7 +56,11 @@ public sealed class CreateCrewValidationTests
     public void Validate_WhenNameIsTooLong_ShouldReturnValidationError()
     {
         var errors = CreateCrewEndpoint.Validate(
-            new CreateCrewHttpRequest { Name = $" {new string('a', 101)} " }
+            new CreateCrewHttpRequest
+            {
+                RequestId = Guid.NewGuid(),
+                Name = $" {new string('a', 101)} ",
+            }
         );
 
         Assert.Contains(nameof(CreateCrewHttpRequest.Name), errors);

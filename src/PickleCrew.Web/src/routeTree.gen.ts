@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedActiveCrewRouteRouteImport } from './routes/_authenticated/_active-crew/route'
+import { Route as AuthenticatedCreateCrewRouteImport } from './routes/_authenticated/create-crew'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedActiveCrewCrewRouteImport } from './routes/_authenticated/_active-crew/crew'
 import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated/_active-crew/dashboard'
@@ -36,6 +37,11 @@ const AuthenticatedActiveCrewRouteRoute =
     id: '/_active-crew',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCreateCrewRoute = AuthenticatedCreateCrewRouteImport.update({
+  id: '/create-crew',
+  path: '/create-crew',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -88,6 +94,7 @@ const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create-crew': typeof AuthenticatedCreateCrewRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create-crew': typeof AuthenticatedCreateCrewRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/_active-crew': typeof AuthenticatedActiveCrewRouteRouteWithChildren
+  '/_authenticated/create-crew': typeof AuthenticatedCreateCrewRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/_active-crew/crew': typeof AuthenticatedActiveCrewCrewRoute
   '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/create-crew'
     | '/onboarding'
     | '/crew'
     | '/dashboard'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/create-crew'
     | '/onboarding'
     | '/crew'
     | '/dashboard'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_authenticated/_active-crew'
+    | '/_authenticated/create-crew'
     | '/_authenticated/onboarding'
     | '/_authenticated/_active-crew/crew'
     | '/_authenticated/_active-crew/dashboard'
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedActiveCrewRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/create-crew': {
+      id: '/_authenticated/create-crew'
+      path: '/create-crew'
+      fullPath: '/create-crew'
+      preLoaderRoute: typeof AuthenticatedCreateCrewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -288,12 +307,14 @@ const AuthenticatedActiveCrewRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActiveCrewRouteRoute: typeof AuthenticatedActiveCrewRouteRouteWithChildren
+  AuthenticatedCreateCrewRoute: typeof AuthenticatedCreateCrewRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActiveCrewRouteRoute:
     AuthenticatedActiveCrewRouteRouteWithChildren,
+  AuthenticatedCreateCrewRoute: AuthenticatedCreateCrewRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
 }
 

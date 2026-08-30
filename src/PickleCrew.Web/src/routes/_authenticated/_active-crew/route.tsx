@@ -8,6 +8,8 @@ import {
 import type { User } from '@workos/authkit-tanstack-react-start'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
+  Check,
+  ChevronsUpDown,
   ChevronUp,
   ClipboardList,
   LayoutDashboard,
@@ -108,7 +110,7 @@ function ActiveCrewLayout() {
               to="/record-game"
             >
               <Plus data-icon="inline-start" />
-              New Game
+              New game
             </Link>
           ) : null}
         </header>
@@ -116,6 +118,71 @@ function ActiveCrewLayout() {
         <Outlet />
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+function CrewSwitcher({ crewName }: { crewName: string }) {
+  const { isMobile, setOpenMobile } = useSidebar()
+  const closeMobileNavigation = () => setOpenMobile(false)
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuButton
+                className="hover:bg-sidebar-foreground/5 active:bg-sidebar-foreground/10 data-open:bg-sidebar-foreground/10 data-open:hover:bg-sidebar-foreground/10"
+                size="lg"
+              />
+            }
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <UsersRound aria-hidden="true" />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+              <strong className="w-full truncate font-heading text-sm">
+                {crewName}
+              </strong>
+              <span className="w-full truncate text-[10px] text-muted-foreground">
+                Current crew
+              </span>
+            </span>
+            <ChevronsUpDown aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="min-w-56"
+            align="start"
+            side={isMobile ? 'bottom' : 'right'}
+            sideOffset={8}
+          >
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Crews</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <UsersRound aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">{crewName}</span>
+                <Check className="ml-auto" aria-hidden="true" />
+                <span className="sr-only">Current crew</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    to="/create-crew"
+                    onClick={closeMobileNavigation}
+                  />
+                }
+              >
+                <Plus aria-hidden="true" />
+                Create new crew
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
   )
 }
 
@@ -145,32 +212,18 @@ function ActiveCrewSidebar({
           <span>PickleCrew</span>
         </Link>
 
-        <div className="flex min-w-0 items-stretch gap-3 px-2">
-          <span
-            className="w-0.5 shrink-0 rounded-full bg-gradient-to-b from-orange/70 to-lime/70"
-            aria-hidden="true"
-          />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[9px] font-extrabold tracking-[.12em] text-muted-foreground uppercase">
-              Current crew
-            </span>
-            <strong className="truncate font-heading text-base">
-              {crewName}
-            </strong>
-          </div>
-        </div>
+        <CrewSwitcher crewName={crewName} />
 
         <Link
           className={buttonVariants({
             className: 'w-full',
-            size: 'lg',
             variant: 'crew',
           })}
           to="/record-game"
           onClick={closeMobileNavigation}
         >
           <Plus data-icon="inline-start" />
-          Record game
+          New game
         </Link>
       </SidebarHeader>
 

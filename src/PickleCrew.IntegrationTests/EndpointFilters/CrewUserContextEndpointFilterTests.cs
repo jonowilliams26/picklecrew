@@ -91,6 +91,7 @@ public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
         var provisioningAttempt = new CrewProvisioningAttempt
         {
             CrewUuid = crew.Uuid,
+            RequestId = Guid.NewGuid(),
             CrewName = crew.Name,
             WorkOsUserId = userId,
             WorkOsOrganizationId = crew.WorkOsOrganizationId,

@@ -216,6 +216,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("StartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -231,7 +234,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.HasKey("CrewUuid");
 
-                    b.HasIndex("WorkOsUserId")
+                    b.HasIndex("WorkOsUserId", "RequestId")
                         .IsUnique();
 
                     b.ToTable("CrewProvisioningAttempts");

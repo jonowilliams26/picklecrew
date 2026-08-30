@@ -763,10 +763,15 @@
       },
       "CreateCrewHttpRequest": {
         "required": [
+          "requestId",
           "name"
         ],
         "type": "object",
         "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "name": {
             "type": "string"
           }
