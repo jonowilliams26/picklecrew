@@ -4,6 +4,8 @@ public sealed class CrewProvisioningAttempt
 {
     public Guid CrewUuid { get; init; }
 
+    public required Guid RequestId { get; init; }
+
     public required string CrewName { get; init; }
 
     public required string WorkOsUserId { get; init; }

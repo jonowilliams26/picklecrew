@@ -121,6 +121,7 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         return new CrewProvisioningAttempt
         {
             CrewUuid = crew.Uuid,
+            RequestId = Guid.NewGuid(),
             CrewName = crew.Name,
             WorkOsUserId = $"user_{Guid.NewGuid():N}",
             WorkOsOrganizationId = crew.WorkOsOrganizationId,

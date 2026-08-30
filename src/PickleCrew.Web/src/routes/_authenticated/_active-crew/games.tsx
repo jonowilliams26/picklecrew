@@ -146,7 +146,7 @@ function GamesPage() {
             to="/record-game"
           >
             <Plus data-icon="inline-start" />
-            Record game
+            New game
           </Link>
         </header>
 

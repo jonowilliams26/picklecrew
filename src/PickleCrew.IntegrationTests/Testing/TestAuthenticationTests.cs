@@ -52,6 +52,7 @@ public sealed class TestAuthenticationTests(AppHostFixture fixture)
         var provisioningAttempt = new CrewProvisioningAttempt
         {
             CrewUuid = crew.Uuid,
+            RequestId = Guid.NewGuid(),
             CrewName = crew.Name,
             WorkOsUserId = identity.UserId,
             WorkOsOrganizationId = crew.WorkOsOrganizationId,

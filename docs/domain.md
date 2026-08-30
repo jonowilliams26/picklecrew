@@ -8,9 +8,10 @@ A named group that users belong to within Picklecrew.
 
 - A crew must have a name.
 - Crew names do not need to be unique.
+- Any active crew member may create another crew, regardless of their role in their current crew.
 - The user who creates a crew is its administrator.
 - A newly created crew becomes its creator's active crew.
-- After creating a crew during onboarding, its creator may invite friends or skip the invitation step.
+- After creating a crew, its creator may invite friends or skip the invitation step.
 - The invitation step is offered only as part of the uninterrupted crew-creation flow; after a refresh or later sign-in, the creator's active crew membership takes them to the dashboard instead.
 
 ### Relationships
@@ -29,6 +30,7 @@ A person who uses Picklecrew.
 - Crew administrator status is represented by the `admin` role on the user's WorkOS organization membership and is not stored separately by Picklecrew.
 - A user must have an active membership in one or more crews.
 - A user without an active crew membership must create a crew.
+- A user may create more than one crew, with no application-defined limit.
 - Any active crew membership allows a user to skip onboarding.
 - A signed-in user operates within the context of one active crew.
 - Application data accessed after sign-in is scoped to the user's active crew.

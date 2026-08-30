@@ -38,7 +38,11 @@ public class PickleCrewDbContext : DbContext
         modelBuilder.Entity<CrewProvisioningAttempt>(attempt =>
         {
             attempt.HasKey(entity => entity.CrewUuid);
-            attempt.HasIndex(entity => entity.WorkOsUserId).IsUnique();
+            attempt.HasIndex(entity => new
+            {
+                entity.WorkOsUserId,
+                entity.RequestId,
+            }).IsUnique();
             attempt.HasOne<Crew>()
                 .WithOne()
                 .HasPrincipalKey<CrewProvisioningAttempt>(candidate => candidate.CrewUuid)

@@ -12,6 +12,7 @@ export type ChiefPaddlerHttpResponse = {
 };
 
 export type CreateCrewHttpRequest = {
+    requestId: string;
     name: string;
 };
 

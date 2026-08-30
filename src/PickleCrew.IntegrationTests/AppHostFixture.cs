@@ -160,7 +160,11 @@ internal static class AppHostFixtureExtensions
         using var apiClient = fixture.CreateApiClient(creator);
         using var response = await apiClient.PostAsJsonAsync(
             "/crews",
-            new CreateCrewHttpRequest { Name = crewName }
+            new CreateCrewHttpRequest
+            {
+                RequestId = Guid.NewGuid(),
+                Name = crewName,
+            }
         );
 
         response.EnsureSuccessStatusCode();
