@@ -1,15 +1,15 @@
 using PickleCrew.Api.Data;
-using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.RecordGame;
 using Xunit;
 
 namespace PickleCrew.UnitTests.Games;
 
-public sealed class RecordGameValidationTests
+public sealed class RecordGameValidatorTests
 {
     [Fact]
     public void Validate_WhenSinglesGameIsValid_ShouldReturnNoErrors()
     {
-        var errors = RecordGameEndpoint.Validate(CreateSinglesRequest());
+        var errors = RecordGameValidator.Validate(CreateSinglesRequest());
 
         Assert.Empty(errors);
     }
@@ -26,7 +26,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Empty(errors);
     }
@@ -39,7 +39,7 @@ public sealed class RecordGameValidationTests
             Sides = [CreateSide(11, CreateMember("user_one"))],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains(nameof(request.Sides), errors);
     }
@@ -68,7 +68,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains("Sides[0].Participants", errors);
     }
@@ -91,7 +91,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains("Sides[0].Participants[0]", errors);
     }
@@ -107,7 +107,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains("Sides[0].Participants[0].UserId", errors);
         Assert.Contains("Sides[1].Participants[0].UserId", errors);
@@ -124,7 +124,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains("Sides[1].Participants[0].GuestName", errors);
     }
@@ -141,7 +141,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains("Sides[0].Participants[1].GuestName", errors);
         Assert.Contains("Sides[1].Participants[1].GuestName", errors);
@@ -158,7 +158,7 @@ public sealed class RecordGameValidationTests
             ],
         };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains(nameof(request.Sides), errors);
         Assert.Contains(
@@ -172,7 +172,7 @@ public sealed class RecordGameValidationTests
     {
         var request = CreateSinglesRequest() with { Format = (GameFormat)99 };
 
-        var errors = RecordGameEndpoint.Validate(request);
+        var errors = RecordGameValidator.Validate(request);
 
         Assert.Contains(nameof(request.Format), errors);
     }

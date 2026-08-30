@@ -12,7 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
-using PickleCrew.Api.Games.Services;
+using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.OpenApi;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
