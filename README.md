@@ -44,6 +44,10 @@ Stop the app:
 aspire stop
 ```
 
+## Rebuild statistics
+
+Set `REBUILD_STATISTICS=true` to rebuild statistics from recorded games during API startup.
+
 ## Cloud deployment
 
 The deployment environments map to WorkOS as follows:

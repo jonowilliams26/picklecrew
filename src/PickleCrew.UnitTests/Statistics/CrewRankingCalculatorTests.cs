@@ -10,10 +10,10 @@ public sealed class CrewRankingCalculatorTests
     {
         var statistics = new[]
         {
-            CreateStatistics("user_casey", wins: 1, pointDifferential: 10),
-            CreateStatistics("user_blair", wins: 3, pointDifferential: 5),
-            CreateStatistics("user_zero", wins: 0, pointDifferential: 0),
-            CreateStatistics("user_alex", wins: 3, pointDifferential: 5),
+            CreateStatistics("user_casey", crewScore: 110),
+            CreateStatistics("user_blair", crewScore: 305),
+            CreateStatistics("user_zero", crewScore: 0),
+            CreateStatistics("user_alex", crewScore: 305),
         };
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
@@ -28,20 +28,20 @@ public sealed class CrewRankingCalculatorTests
     }
 
     [Fact]
-    public void Rank_WhenPointDifferentialOffsetsWinDifference_ShouldRankByCrewScore()
+    public void Rank_WhenCrewScoresDiffer_ShouldRankByCrewScore()
     {
         var statistics = new[]
         {
-            CreateStatistics("user_more_wins", wins: 3, pointDifferential: -60),
-            CreateStatistics("user_better_differential", wins: 2, pointDifferential: 60),
+            CreateStatistics("user_lower_score", crewScore: 320),
+            CreateStatistics("user_higher_score", crewScore: 325),
         };
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
 
         Assert.Collection(
             rankedStatistics,
-            memberStatistics => AssertRanking(memberStatistics, "user_better_differential", 1),
-            memberStatistics => AssertRanking(memberStatistics, "user_more_wins", 2)
+            memberStatistics => AssertRanking(memberStatistics, "user_higher_score", 1),
+            memberStatistics => AssertRanking(memberStatistics, "user_lower_score", 2)
         );
     }
 
@@ -50,9 +50,9 @@ public sealed class CrewRankingCalculatorTests
     {
         var statistics = new[]
         {
-            CreateStatistics("user_2", wins: 0, pointDifferential: 0),
-            CreateStatistics("user_3", wins: 0, pointDifferential: 0),
-            CreateStatistics("user_1", wins: 0, pointDifferential: 0),
+            CreateStatistics("user_2", crewScore: 0),
+            CreateStatistics("user_3", crewScore: 0),
+            CreateStatistics("user_1", crewScore: 0),
         };
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
@@ -69,23 +69,22 @@ public sealed class CrewRankingCalculatorTests
 
     private static CrewMemberStatisticsTotals CreateStatistics(
         string userId,
-        long wins,
-        long pointDifferential)
+        long crewScore)
     {
         return new CrewMemberStatisticsTotals
         {
             UserId = userId,
-            Wins = wins,
+            Wins = 0,
             Losses = 0,
-            GamesPlayed = wins,
-            WinPercentage = wins == 0 ? 0 : 1,
+            GamesPlayed = 0,
+            WinPercentage = 0,
             ThatsAPaddlin = 0,
             CurrentWinStreak = 0,
             LongestWinStreak = 0,
-            PointsScored = Math.Max(pointDifferential, 0),
-            PointsConceded = Math.Max(-pointDifferential, 0),
-            PointDifferential = pointDifferential,
-            CrewScore = (wins * 100) + pointDifferential,
+            PointsScored = 0,
+            PointsConceded = 0,
+            PointDifferential = 0,
+            CrewScore = crewScore,
         };
     }
 

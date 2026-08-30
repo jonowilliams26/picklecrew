@@ -6,6 +6,7 @@ using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games;
 using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Services;
+using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -364,6 +365,8 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             pointsScored: 7,
             pointsConceded: 11
         );
+        Assert.Equal(104, statistics[context.Administrator.UserId].CrewScore);
+        Assert.Equal(0, statistics[opponent.UserId].CrewScore);
         Assert.Equal(
             0,
             await dbContext.CrewDoublesPairingStatistics.CountAsync(candidate =>
@@ -1783,7 +1786,6 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             statistics.WinPercentage
         );
         Assert.Equal(pointDifferential, statistics.PointDifferential);
-        Assert.Equal((wins * 100) + pointDifferential, statistics.CrewScore);
     }
 
     private static void AssertMemberParticipant(

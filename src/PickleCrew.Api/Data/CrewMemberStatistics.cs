@@ -58,13 +58,7 @@ public sealed class CrewMemberStatistics
         }
     }
 
-    public long CrewScore
-    {
-        get => (Wins * 100) + PointDifferential;
-        private set
-        {
-        }
-    }
+    public long CrewScore { get; set; }
 
     public uint Version { get; private set; }
 }

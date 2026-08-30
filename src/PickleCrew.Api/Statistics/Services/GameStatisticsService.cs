@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 
-namespace PickleCrew.Api.Games.RecordGame;
+namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class GameStatisticsService(CrewScopedDbContext database)
 {
@@ -77,6 +77,11 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             statistics.PointsScored += playerGameStatistics.PointsScored;
             statistics.PointsConceded += playerGameStatistics.PointsConceded;
             statistics.ThatsAPaddlin += playerGameStatistics.IsThatsAPaddlin ? 1 : 0;
+            statistics.CrewScore += CrewScoreCalculator.Calculate(
+                playerGameStatistics.Won,
+                playerGameStatistics.PointsScored,
+                playerGameStatistics.PointsConceded
+            );
 
             if (playerGameStatistics.Won)
             {

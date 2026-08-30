@@ -3,6 +3,7 @@ using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
+using PickleCrew.Api.Statistics.Services;
 
 namespace PickleCrew.Api.Games.RecordGame;
 

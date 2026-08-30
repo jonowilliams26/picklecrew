@@ -12,7 +12,6 @@ using Microsoft.IdentityModel.Tokens;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
-using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.OpenApi;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
@@ -60,16 +59,22 @@ internal static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddGameServices(this IServiceCollection services)
-    {
-        services.AddScoped<GameStatisticsService>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddStatisticsServices(this IServiceCollection services)
+    public static IServiceCollection AddStatisticsServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddScoped<CrewStandingsService>();
+        services.AddScoped<GameStatisticsService>();
+        services.AddScoped<StatisticsRebuildService>();
+
+        var rebuildStatistics = configuration.GetValue<bool>(
+            StatisticsRebuildHostedService.EnabledConfigurationKey
+        );
+
+        if (rebuildStatistics)
+        {
+            services.AddHostedService<StatisticsRebuildHostedService>();
+        }
 
         return services;
     }
