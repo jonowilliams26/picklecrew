@@ -44,7 +44,7 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task CrewMemberStatistics_WhenBaseStatisticsAreSaved_ShouldPersistQueryableCalculatedValues()
+    public async Task CrewMemberStatistics_WhenStatisticsAreSaved_ShouldPersistQueryableValues()
     {
         await using var database = fixture.CreateDbContext();
         var crew = CreateCrew("Calculated Statistics Crew");
@@ -64,6 +64,7 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
             Losses = 1,
             PointsScored = 35,
             PointsConceded = 29,
+            CrewScore = 211,
         };
         database.CrewMemberStatistics.Add(statistics);
         await database.SaveChangesAsync();
@@ -78,7 +79,7 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         Assert.Equal(3, persistedStatistics.GamesPlayed);
         Assert.Equal(2m / 3m, persistedStatistics.WinPercentage);
         Assert.Equal(6, persistedStatistics.PointDifferential);
-        Assert.Equal(206, persistedStatistics.CrewScore);
+        Assert.Equal(211, persistedStatistics.CrewScore);
     }
 
     private static async Task AssertScopedToCrew(

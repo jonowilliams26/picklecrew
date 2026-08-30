@@ -84,15 +84,15 @@ public sealed class GetCrewLeaderboardEndpointTests(AppHostFixture fixture)
         Assert.NotNull(result);
         Assert.Collection(
             result.Entries,
-            entry => AssertEntry(entry, winner.UserId, 1, 5, 1, 516),
-            entry => AssertEntry(entry, tied.UserId, 2, 3, 2, 304),
+            entry => AssertEntry(entry, winner.UserId, 1, 5, 1, 520),
+            entry => AssertEntry(entry, tied.UserId, 2, 3, 2, 312),
             entry => AssertEntry(
                 entry,
                 context.Administrator.UserId,
-                3,
+                2,
                 3,
                 4,
-                296
+                312
             ),
             entry => AssertEntry(entry, zeroGameMember.UserId, 4, 0, 0, 0)
         );

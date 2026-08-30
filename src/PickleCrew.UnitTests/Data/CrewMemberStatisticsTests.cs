@@ -20,7 +20,21 @@ public sealed class CrewMemberStatisticsTests
         Assert.Equal(3, statistics.GamesPlayed);
         Assert.Equal(2m / 3m, statistics.WinPercentage);
         Assert.Equal(6, statistics.PointDifferential);
-        Assert.Equal(206, statistics.CrewScore);
+    }
+
+    [Fact]
+    public void CrewScore_WhenAssigned_ShouldReturnAssignedValue()
+    {
+        var statistics = new CrewMemberStatistics
+        {
+            UserId = "user_test",
+            Wins = 2,
+            PointsScored = 35,
+            PointsConceded = 29,
+            CrewScore = 211,
+        };
+
+        Assert.Equal(211, statistics.CrewScore);
     }
 
     [Fact]

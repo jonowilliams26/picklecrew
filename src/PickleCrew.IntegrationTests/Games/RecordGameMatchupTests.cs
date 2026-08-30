@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games.RecordGame;
+using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Services;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
