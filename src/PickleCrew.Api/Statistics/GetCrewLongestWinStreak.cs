@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using PickleCrew.Api.Statistics.Services;
+using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
 
 namespace PickleCrew.Api.Statistics;
 
@@ -28,25 +30,56 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetCrewLongestWinStreakHttpResponse>> HandleAsync(
-        CrewStandingsService standingsService,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var standings = await standingsService.GetStandingsAsync(cancellationToken);
-        var recordHolder = standings
-            .Where(standing => standing.LongestWinStreak > 0)
-            .OrderByDescending(standing => standing.LongestWinStreak)
-            .ThenBy(standing =>
-                standing.LongestWinStreakStartedAtUtc ?? DateTimeOffset.MaxValue
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
+        var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
+        var candidates = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics =>
+                activeMemberUserIds.Contains(statistics.UserId)
+                && statistics.LongestWinStreak > 0
             )
-            .ThenBy(standing => standing.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(standing => standing.UserId, StringComparer.Ordinal)
+            .Select(statistics => new
+            {
+                statistics.UserId,
+                statistics.LongestWinStreak,
+                statistics.LongestWinStreakStartedAtUtc,
+                statistics.LongestWinStreakEndedAtUtc,
+            })
+            .ToArrayAsync(cancellationToken);
+
+        var recordHolder = candidates
+            .Select(candidate => new
+            {
+                Member = activeMembersByUserId[candidate.UserId],
+                candidate.LongestWinStreak,
+                candidate.LongestWinStreakStartedAtUtc,
+                candidate.LongestWinStreakEndedAtUtc,
+            })
+            .OrderByDescending(candidate => candidate.LongestWinStreak)
+            .ThenBy(candidate =>
+                candidate.LongestWinStreakStartedAtUtc ?? DateTimeOffset.MaxValue
+            )
+            .ThenBy(
+                candidate => candidate.Member.DisplayName,
+                StringComparer.OrdinalIgnoreCase
+            )
+            .ThenBy(
+                candidate => candidate.Member.WorkOsUserId,
+                StringComparer.Ordinal
+            )
             .FirstOrDefault();
 
         return TypedResults.Ok(new GetCrewLongestWinStreakHttpResponse
         {
-            UserId = recordHolder?.UserId,
-            DisplayName = recordHolder?.DisplayName,
-            ProfilePictureUrl = recordHolder?.ProfilePictureUrl,
+            UserId = recordHolder?.Member.WorkOsUserId,
+            DisplayName = recordHolder?.Member.DisplayName,
+            ProfilePictureUrl = recordHolder?.Member.ProfilePictureUrl,
             LongestWinStreak = recordHolder?.LongestWinStreak ?? 0,
             LongestWinStreakStartedAtUtc = recordHolder?.LongestWinStreakStartedAtUtc,
             LongestWinStreakEndedAtUtc = recordHolder?.LongestWinStreakEndedAtUtc,

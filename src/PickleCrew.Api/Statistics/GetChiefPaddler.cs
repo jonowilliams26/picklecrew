@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using PickleCrew.Api.Statistics.Services;
+using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
 
 namespace PickleCrew.Api.Statistics;
 
@@ -29,15 +31,42 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetChiefPaddlerHttpResponse>> HandleAsync(
-        CrewStandingsService standingsService,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var standings = await standingsService.GetStandingsAsync(cancellationToken);
-        var chiefPaddler = standings
-            .Where(standing => standing.ThatsAPaddlin > 0)
-            .OrderByDescending(standing => standing.ThatsAPaddlin)
-            .ThenBy(standing => standing.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(standing => standing.UserId, StringComparer.Ordinal)
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
+        var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
+        var candidates = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics =>
+                activeMemberUserIds.Contains(statistics.UserId)
+                && statistics.ThatsAPaddlin > 0
+            )
+            .Select(statistics => new
+            {
+                statistics.UserId,
+                statistics.ThatsAPaddlin,
+            })
+            .ToArrayAsync(cancellationToken);
+
+        var chiefPaddler = candidates
+            .Select(candidate => new
+            {
+                Member = activeMembersByUserId[candidate.UserId],
+                candidate.ThatsAPaddlin,
+            })
+            .OrderByDescending(candidate => candidate.ThatsAPaddlin)
+            .ThenBy(
+                candidate => candidate.Member.DisplayName,
+                StringComparer.OrdinalIgnoreCase
+            )
+            .ThenBy(
+                candidate => candidate.Member.WorkOsUserId,
+                StringComparer.Ordinal
+            )
             .FirstOrDefault();
 
         return TypedResults.Ok(new GetChiefPaddlerHttpResponse
@@ -46,9 +75,9 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
                 ? null
                 : new ChiefPaddlerHttpResponse
                 {
-                    UserId = chiefPaddler.UserId,
-                    DisplayName = chiefPaddler.DisplayName,
-                    ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
+                    UserId = chiefPaddler.Member.WorkOsUserId,
+                    DisplayName = chiefPaddler.Member.DisplayName,
+                    ProfilePictureUrl = chiefPaddler.Member.ProfilePictureUrl,
                     ThatsAPaddlin = chiefPaddler.ThatsAPaddlin,
                 },
         });
