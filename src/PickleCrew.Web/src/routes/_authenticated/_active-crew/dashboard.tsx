@@ -734,7 +734,7 @@ function DashboardPage() {
                   </CardFooter>
                 </>
               ) : (
-                <CardContent className="my-auto items-center justify-center gap-2 text-center">
+                <CardContent className="relative z-1 my-auto items-center justify-center gap-2 text-center">
                   <strong className="font-heading text-3xl font-black">
                     No win streak yet
                   </strong>
