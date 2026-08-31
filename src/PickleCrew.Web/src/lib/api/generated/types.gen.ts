@@ -17,6 +17,11 @@ export type BestPartnerHttpResponse = {
     pointDifferential: number;
 };
 
+export type BiggestRivalryHttpResponse = {
+    players: Array<RivalPlayerHttpResponse>;
+    gamesPlayed: number;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -123,6 +128,10 @@ export type GetBestDoublesPairingHttpResponse = {
 
 export type GetBestPartnerHttpResponse = {
     bestPartner: null | BestPartnerHttpResponse;
+};
+
+export type GetBiggestRivalsHttpResponse = {
+    rivalry: null | BiggestRivalryHttpResponse;
 };
 
 export type GetChiefPaddlerHttpResponse = {
@@ -273,6 +282,15 @@ export type RecordGameParticipantHttpRequest = {
 export type RecordGameSideHttpRequest = {
     score: number;
     participants: Array<RecordGameParticipantHttpRequest>;
+};
+
+export type RivalPlayerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+    wins: number;
+    losses: number;
+    winPercentage: number | string;
 };
 
 export type SendCrewInvitationHttpRequest = {
@@ -574,6 +592,39 @@ export type GetBestPartnerResponses = {
 };
 
 export type GetBestPartnerResponse = GetBestPartnerResponses[keyof GetBestPartnerResponses];
+
+export type GetBiggestRivalsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/biggest-rivals';
+};
+
+export type GetBiggestRivalsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBiggestRivalsError = GetBiggestRivalsErrors[keyof GetBiggestRivalsErrors];
+
+export type GetBiggestRivalsResponses = {
+    /**
+     * OK
+     */
+    200: GetBiggestRivalsHttpResponse;
+};
+
+export type GetBiggestRivalsResponse = GetBiggestRivalsResponses[keyof GetBiggestRivalsResponses];
 
 export type GetChiefPaddlerData = {
     body?: never;

@@ -137,6 +137,26 @@ A crew member's active opposing crew member against whom they have the most all-
 - Each crew member has zero or one Nemesis in each crew.
 - Each Nemesis identifies exactly one opposing crew member.
 
+## Biggest rivalry
+
+The all-time head-to-head matchup between two active crew members whose win-loss record is closest to even within one crew.
+
+### Business rules
+
+- Matchup balance is the absolute difference between a crew member's win percentage and a 50% win percentage.
+- A matchup must include at least three games to qualify.
+- The qualifying matchup with the smallest balance difference is the biggest rivalry.
+- When matchups have the same balance difference, the matchup with the most games played is selected.
+- Remaining ties are resolved by the crew members' identifiers to select exactly one matchup.
+- A crew has no biggest rivalry when no matchup qualifies.
+- Former crew members cannot be part of the current biggest rivalry, while their historical matchup statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one biggest rivalry.
+- Each biggest rivalry has exactly two active crew members.
+
 ## Doubles pairing statistics
 
 A doubles pairing's all-time cumulative results within one crew.

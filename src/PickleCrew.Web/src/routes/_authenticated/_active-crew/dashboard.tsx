@@ -9,6 +9,7 @@ import {
   Heart,
   Medal,
   Skull,
+  Swords,
   Target,
   Trophy,
   TrendingUp,
@@ -110,6 +111,7 @@ function DashboardPage() {
     longestWinStreak,
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
+    biggestRivals,
     chiefPaddler: chiefPaddlerResponse,
     friendsOrLovers,
   } = result.value
@@ -132,6 +134,9 @@ function DashboardPage() {
   const pairing = bestDoublesPairing.pairing
   const firstPairingPlayer = pairing?.players[0]
   const secondPairingPlayer = pairing?.players[1]
+  const rivalry = biggestRivals.rivalry
+  const firstRival = rivalry?.players[0]
+  const secondRival = rivalry?.players[1]
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
@@ -148,6 +153,13 @@ function DashboardPage() {
       !secondPairingPlayer)
   ) {
     throw new Error('A doubles pairing must contain exactly two players.')
+  }
+
+  if (
+    rivalry &&
+    (rivalry.players.length !== 2 || !firstRival || !secondRival)
+  ) {
+    throw new Error('A rivalry must contain exactly two players.')
   }
 
   return (
@@ -590,6 +602,79 @@ function DashboardPage() {
               )}
               <Heart
                 className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
+                aria-hidden="true"
+              />
+            </Card>
+
+            <Card className="relative min-h-[330px] overflow-hidden border-2 border-ink bg-ink text-cream shadow-[7px_8px_0_var(--orange)] xl:col-span-6 xl:row-start-4">
+              <CardHeader>
+                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
+                  Biggest rivals
+                </CardTitle>
+                <CardDescription className="font-heading text-[11px] text-cream/70">
+                  The closest all-time head-to-head in the Crew
+                </CardDescription>
+                <CardAction className="grid size-11 rotate-[5deg] place-items-center rounded-full border-2 border-cream bg-orange text-ink shadow-[3px_4px_0_var(--cream)] [&_svg]:size-5">
+                  <Swords aria-hidden="true" />
+                </CardAction>
+              </CardHeader>
+              {rivalry && firstRival && secondRival ? (
+                <>
+                  <CardContent className="items-center gap-3 text-center">
+                    <div className="flex items-center justify-center">
+                      <DashboardAvatar
+                        className="relative z-1 size-20 rotate-[-7deg] border-2 border-cream shadow-[4px_5px_0_var(--orange)]"
+                        fallbackClassName="font-heading text-2xl"
+                        person={firstRival}
+                      />
+                      <span
+                        className="relative z-2 -mx-2 grid size-11 rotate-[6deg] place-items-center rounded-full border-2 border-cream bg-lime font-heading text-sm font-black text-ink"
+                        aria-hidden="true"
+                      >
+                        VS
+                      </span>
+                      <DashboardAvatar
+                        className="relative z-1 size-20 rotate-[7deg] border-2 border-cream shadow-[4px_5px_0_var(--orange)]"
+                        fallbackClassName="font-heading text-2xl"
+                        person={secondRival}
+                      />
+                    </div>
+                    <CardTitle className="font-heading text-3xl font-black">
+                      {firstRival.displayName} vs {secondRival.displayName}
+                    </CardTitle>
+                    <strong className="font-heading text-6xl leading-none font-black tracking-[-.06em] text-orange">
+                      {formatRecord({
+                        wins: firstRival.wins,
+                        losses: firstRival.losses,
+                      })}
+                    </strong>
+                  </CardContent>
+                  <CardFooter className="mt-auto justify-center">
+                    <Badge
+                      className="rotate-[-2deg] border border-cream bg-transparent px-3 text-cream"
+                      variant="outline"
+                    >
+                      {formatCount({
+                        count: rivalry.gamesPlayed,
+                        singular: 'game',
+                      })}{' '}
+                      head-to-head
+                    </Badge>
+                  </CardFooter>
+                </>
+              ) : (
+                <CardContent className="my-auto items-center justify-center gap-2 text-center">
+                  <strong className="font-heading text-3xl font-black">
+                    No rivalry yet
+                  </strong>
+                  <p className="m-0 max-w-xs text-sm text-cream/70">
+                    Record a Game between Crew members and let the scorekeeping
+                    begin.
+                  </p>
+                </CardContent>
+              )}
+              <Swords
+                className="pointer-events-none absolute -right-8 -bottom-6 size-48 rotate-[14deg] opacity-10"
                 aria-hidden="true"
               />
             </Card>

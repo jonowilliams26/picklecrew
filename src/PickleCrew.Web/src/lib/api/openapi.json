@@ -527,6 +527,57 @@
         }
       }
     },
+    "/statistics/biggest-rivals": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the biggest rivals for the active Crew.",
+        "operationId": "GetBiggestRivals",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBiggestRivalsHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/chief-paddler": {
       "get": {
         "tags": [
@@ -942,6 +993,25 @@
             "format": "int64"
           },
           "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "BiggestRivalryHttpResponse": {
+        "required": [
+          "players",
+          "gamesPlayed"
+        ],
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RivalPlayerHttpResponse"
+            }
+          },
+          "gamesPlayed": {
             "type": "integer",
             "format": "int64"
           }
@@ -1370,6 +1440,24 @@
               },
               {
                 "$ref": "#/components/schemas/BestPartnerHttpResponse"
+              }
+            ]
+          }
+        }
+      },
+      "GetBiggestRivalsHttpResponse": {
+        "required": [
+          "rivalry"
+        ],
+        "type": "object",
+        "properties": {
+          "rivalry": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BiggestRivalryHttpResponse"
               }
             ]
           }
@@ -1991,6 +2079,46 @@
             "items": {
               "$ref": "#/components/schemas/RecordGameParticipantHttpRequest"
             }
+          }
+        }
+      },
+      "RivalPlayerHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "wins",
+          "losses",
+          "winPercentage"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "winPercentage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
