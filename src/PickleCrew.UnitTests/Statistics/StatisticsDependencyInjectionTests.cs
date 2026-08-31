@@ -44,8 +44,7 @@ public sealed class StatisticsDependencyInjectionTests
         return new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [StatisticsRebuildHostedService.EnabledConfigurationKey] =
-                    rebuildStatistics.ToString(),
+                ["RebuildStatistics"] = rebuildStatistics.ToString(),
             })
             .Build();
     }

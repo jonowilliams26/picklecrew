@@ -263,7 +263,7 @@ jobs:
             "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}" \
             "WorkOS__ClientId=${WORKOS_CLIENT_ID}" \
             "WorkOS__ApiKey=${WORKOS_API_KEY}" \
-            "REBUILD_STATISTICS=${REBUILD_STATISTICS}"
+            "RebuildStatistics=${REBUILD_STATISTICS}"
 
       - name: Deploy API to Fly
         env:

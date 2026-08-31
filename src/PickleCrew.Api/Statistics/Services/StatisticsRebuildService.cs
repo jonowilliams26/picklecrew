@@ -9,7 +9,7 @@ internal sealed class StatisticsRebuildHostedService(
     ILogger<StatisticsRebuildHostedService> logger)
     : IHostedService
 {
-    public const string EnabledConfigurationKey = "REBUILD_STATISTICS";
+    public const string EnabledConfigurationKey = "RebuildStatistics";
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
