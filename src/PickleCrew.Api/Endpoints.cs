@@ -56,6 +56,7 @@ internal static class Endpoints
             .WithTags("Statistics")
             .WithCrewUserContext()
             .MapEndpoint<GetBestDoublesPairingEndpoint>()
+            .MapEndpoint<GetBestPartnerEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()

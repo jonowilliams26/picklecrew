@@ -4,6 +4,19 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type BestPartnerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointsScored: number;
+    pointsConceded: number;
+    pointDifferential: number;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -91,6 +104,10 @@ export type GameRecordingMemberHttpResponse = {
 
 export type GetBestDoublesPairingHttpResponse = {
     pairing: null | DoublesPairingHttpResponse;
+};
+
+export type GetBestPartnerHttpResponse = {
+    bestPartner: null | BestPartnerHttpResponse;
 };
 
 export type GetChiefPaddlerHttpResponse = {
@@ -494,6 +511,39 @@ export type GetBestDoublesPairingResponses = {
 };
 
 export type GetBestDoublesPairingResponse = GetBestDoublesPairingResponses[keyof GetBestDoublesPairingResponses];
+
+export type GetBestPartnerData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/best-partner';
+};
+
+export type GetBestPartnerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBestPartnerError = GetBestPartnerErrors[keyof GetBestPartnerErrors];
+
+export type GetBestPartnerResponses = {
+    /**
+     * OK
+     */
+    200: GetBestPartnerHttpResponse;
+};
+
+export type GetBestPartnerResponse = GetBestPartnerResponses[keyof GetBestPartnerResponses];
 
 export type GetChiefPaddlerData = {
     body?: never;

@@ -6,6 +6,7 @@ import {
   formatRecord,
   formatSignedNumber,
   formatStreakPeriod,
+  getBestPartnerPresentation,
   getCurrentStreakDetail,
   getInitials,
 } from './dashboard.ts'
@@ -59,6 +60,47 @@ describe('dashboard formatting', () => {
       getCurrentStreakDetail({ currentWinStreak: 5, longestWinStreak: 5 }),
       'You’ve got the hot paddle — personal best in progress',
     )
+  })
+
+  test('builds available and empty Best Partner presentations', () => {
+    assert.deepEqual(
+      getBestPartnerPresentation({
+        bestPartner: {
+          userId: 'user_partner',
+          displayName: 'Alex Partner',
+          profilePictureUrl: null,
+          wins: 8,
+          losses: 2,
+          gamesPlayed: 10,
+          winPercentage: '0.8',
+          pointsScored: 110,
+          pointsConceded: 101,
+          pointDifferential: 9,
+        },
+      }),
+      {
+        available: true,
+        partner: {
+          userId: 'user_partner',
+          displayName: 'Alex Partner',
+          profilePictureUrl: null,
+          wins: 8,
+          losses: 2,
+          gamesPlayed: 10,
+          winPercentage: '0.8',
+          pointsScored: 110,
+          pointsConceded: 101,
+          pointDifferential: 9,
+        },
+        winPercentage: 80,
+      },
+    )
+    assert.deepEqual(getBestPartnerPresentation({ bestPartner: null }), {
+      available: false,
+      title: 'No best partner yet',
+      description:
+        'Play at least three doubles Games with the same Crew member to qualify.',
+    })
   })
 
   test('formats completed, active, and absent streak periods', () => {
