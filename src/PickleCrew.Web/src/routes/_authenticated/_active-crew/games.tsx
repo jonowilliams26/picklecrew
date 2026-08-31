@@ -95,7 +95,7 @@ function GamesPage() {
           <CardHeader>
             <CardTitle>Game history</CardTitle>
             <CardDescription>
-              Completed Games for the current Crew appear here.
+              Completed games for the current crew appear here.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -138,7 +138,7 @@ function GamesPage() {
               Game history
             </h1>
             <p className="m-0 max-w-xl text-sm leading-relaxed text-ink-soft">
-              Every final score, matchup, and date from this Crew.
+              Every final score, matchup, and date from this crew.
             </p>
           </div>
           <Link
@@ -158,9 +158,9 @@ function GamesPage() {
                   <EmptyMedia variant="icon">
                     <ClipboardList />
                   </EmptyMedia>
-                  <EmptyTitle>No Games recorded yet</EmptyTitle>
+                  <EmptyTitle>No games recorded yet</EmptyTitle>
                   <EmptyDescription>
-                    Record the first result to start this Crew&apos;s history.
+                    Record the first result to start this crew&apos;s history.
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
@@ -176,7 +176,7 @@ function GamesPage() {
             </CardContent>
           </Card>
         ) : (
-          <section className="flex flex-col gap-4" aria-label="Completed Games">
+          <section className="flex flex-col gap-4" aria-label="Completed games">
             {history.items.map((game) => (
               <GameResultCard game={game} key={game.gameId} />
             ))}
@@ -186,7 +186,7 @@ function GamesPage() {
         {history.totalPages > 1 ? (
           <div className="-mt-4 flex items-center justify-end gap-3">
             <p className="m-0 whitespace-nowrap font-mono text-[10px] tracking-[.08em] text-muted-foreground uppercase">
-              Showing {startGame}–{endGame} of {history.totalCount} Games
+              Showing {startGame}–{endGame} of {history.totalCount} games
             </p>
             <GamePagination page={page} totalPages={history.totalPages} />
           </div>

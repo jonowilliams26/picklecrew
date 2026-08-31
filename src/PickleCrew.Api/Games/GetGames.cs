@@ -69,7 +69,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
             cacheOption,
             async factoryCancellationToken =>
             {
-                var activeMembers = await crewService.ListActiveCrewMembersAsync(
+                var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
                     factoryCancellationToken
                 );
                 var persistedGames = await database.Games
@@ -77,13 +77,9 @@ internal sealed class GetGamesEndpoint : IEndpoint
                     .OrderByDescending(game => game.PlayedAtUtc)
                     .ThenByDescending(game => game.Id)
                     .ToArrayAsync(factoryCancellationToken);
-                var activeMemberByUserId = activeMembers.ToDictionary(
-                    member => member.WorkOsUserId,
-                    StringComparer.Ordinal
-                );
 
                 return persistedGames
-                    .Select(game => ToHttpResponse(game, activeMemberByUserId))
+                    .Select(game => ToHttpResponse(game, activeMembersByUserId))
                     .Paginate(request);
             },
             cancellationToken
@@ -94,7 +90,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static GameHistoryItemHttpResponse ToHttpResponse(
         Game game,
-        Dictionary<string, ActiveCrewMember> activeMemberByUserId)
+        Dictionary<string, ActiveCrewMember> activeMembersByUserId)
     {
         return new GameHistoryItemHttpResponse
         {
@@ -111,7 +107,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
                         .OrderBy(participant => participant.SlotNumber)
                         .Select(participant => ToHttpResponse(
                             participant,
-                            activeMemberByUserId
+                            activeMembersByUserId
                         ))
                         .ToArray(),
                 })
@@ -121,13 +117,13 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static GameHistoryParticipantHttpResponse ToHttpResponse(
         GameParticipant participant,
-        Dictionary<string, ActiveCrewMember> activeMemberByUserId)
+        Dictionary<string, ActiveCrewMember> activeMembersByUserId)
     {
         ActiveCrewMember? activeMember = null;
 
         if (participant.UserId is { } userId)
         {
-            activeMemberByUserId.TryGetValue(userId, out activeMember);
+            activeMembersByUserId.TryGetValue(userId, out activeMember);
         }
 
         return new GameHistoryParticipantHttpResponse

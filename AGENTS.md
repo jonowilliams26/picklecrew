@@ -34,11 +34,18 @@ Local Development Orchestration:
 
 ## Frontend Conventions
 
+- Use sentence case for user-facing copy; capitalize domain terms only when grammar requires it.
 - Style TanStack `Link` elements with `buttonVariants`; do not render links through Base UI `Button`.
 
 ## Naming Conventions
 
 - Name injected `PickleCrewDbContext` instances `database`.
+
+## Database Queries
+
+- Prefer one database query when EF Core can filter, order, and select the result.
+- Use sensible, deterministic tie-breakers and select with `FirstOrDefaultAsync` when appropriate.
+- Loading all rows for in-memory selection is discouraged and should be a last resort.
 
 ## Authorization
 

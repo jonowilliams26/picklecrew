@@ -76,6 +76,7 @@ A crew member's all-time cumulative game results within one crew.
 - A longest win streak is the greatest current win streak the crew member has achieved.
 - A longest win streak records when its first win was played and when the streak ended; its end is absent while that record-setting streak remains active.
 - A crew's longest win streak is the greatest longest win streak held by one of its crew members.
+- When active crew members hold equal longest win streaks, the member whose record-setting streak started most recently holds the crew's longest win streak.
 - Recorded games are the source for date-range and doubles-pairing statistics.
 
 ### Relationships
@@ -90,7 +91,7 @@ The active crew member who holds the Crew's bragging-rights award for the most a
 
 - A Crew has no Chief Paddler when every active member has zero **That's a Paddlin** wins.
 - The active member with the highest positive **That's a Paddlin** count is Chief Paddler.
-- Exactly one Chief Paddler is selected; tied leaders are resolved alphabetically by current display name, then by user identifier.
+- Exactly one Chief Paddler is selected; tied leaders are resolved by highest Crew score, then by user identifier.
 - Former members cannot be the current Chief Paddler, while their historical personal statistics remain preserved.
 - Statistics from another Crew do not affect the award.
 
@@ -120,6 +121,43 @@ A crew member's all-time cumulative results against one opposing crew member wit
 
 - Each matchup's statistics belong to exactly one crew, exactly one crew member, and exactly one opposing crew member.
 
+## Nemesis
+
+A crew member's active opposing crew member against whom they have the most all-time losses within one crew.
+
+### Business rules
+
+- A Nemesis is calculated separately for each crew from the crew member's directional matchup statistics.
+- An opponent must have played at least three games against the crew member to qualify as their Nemesis.
+- A crew member has no Nemesis until they have lost to a qualifying active opposing crew member.
+- Guests and former crew members cannot be a Nemesis.
+- Tied opponents are resolved by user identifier.
+
+### Relationships
+
+- Each crew member has zero or one Nemesis in each crew.
+- Each Nemesis identifies exactly one opposing crew member.
+
+## Biggest rivalry
+
+The all-time head-to-head matchup between two active crew members whose win-loss record is closest to even within one crew.
+
+### Business rules
+
+- Matchup balance is the absolute difference between a crew member's win percentage and a 50% win percentage.
+- A matchup must include at least three games to qualify.
+- The qualifying matchup with the smallest balance difference is the biggest rivalry.
+- When matchups have the same balance difference, the matchup with the most games played is selected.
+- Remaining ties are resolved by the crew members' identifiers to select exactly one matchup.
+- A crew has no biggest rivalry when no matchup qualifies.
+- Former crew members cannot be part of the current biggest rivalry, while their historical matchup statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one biggest rivalry.
+- Each biggest rivalry has exactly two active crew members.
+
 ## Doubles pairing statistics
 
 A doubles pairing's all-time cumulative results within one crew.
@@ -143,6 +181,44 @@ A doubles pairing's all-time cumulative results within one crew.
 ### Relationships
 
 - Each doubles pairing's statistics belong to exactly one crew and exactly two users.
+
+## Best Partner
+
+The currently active Crew member who forms the signed-in member's strongest qualifying doubles pairing in their active Crew.
+
+### Business rules
+
+- Only doubles pairings containing the signed-in member are considered.
+- A pairing must have played at least three Games to qualify.
+- The partner must be a currently active member of the Crew.
+- Best Partner is selected by highest win percentage, then most Games played, then highest point differential, then partner user identifier.
+- Singles Games and sides containing a Guest do not contribute to a pairing.
+- A qualifying Crew-member side receives pairing statistics when the opposing side contains a Guest.
+- Statistics from another Crew do not affect Best Partner.
+- A member has no Best Partner when no pairing qualifies.
+
+### Relationships
+
+- A Crew member has zero or one Best Partner in their active Crew.
+
+## Friends or lovers?
+
+The active Crew's doubles pairing that has played the most all-time Games together.
+
+### Business rules
+
+- Only pairings containing two currently active Crew members are eligible.
+- Games played equals the pairing's wins plus losses.
+- A pairing must have played at least three Games together to qualify.
+- The qualifying pairing with the most Games played is selected.
+- Ties are resolved by most wins, then highest point differential, then user identifiers.
+- Exactly one pairing is selected when qualifying pairings exist.
+- A Crew has no **Friends or lovers?** pairing when no pairing qualifies.
+- Statistics from another Crew do not affect the selection.
+
+### Relationships
+
+- A Crew has zero or one **Friends or lovers?** pairing.
 
 ## Crew invitation
 

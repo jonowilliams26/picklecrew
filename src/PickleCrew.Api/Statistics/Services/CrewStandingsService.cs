@@ -22,11 +22,8 @@ internal sealed class CrewStandingsService(
     public async Task<CrewStanding[]> GetStandingsAsync(
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-
-        var activeMembersByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
         );
 
         var persistedStatistics = await database.CrewMemberStatistics
@@ -52,7 +49,7 @@ internal sealed class CrewStandingsService(
             })
             .ToDictionaryAsync(statistics => statistics.UserId, cancellationToken);
 
-        var statistics = activeMembers
+        var statistics = activeMembersByUserId.Values
             .Select(member => persistedStatistics.GetValueOrDefault(member.WorkOsUserId) ?? new CrewMemberStatisticsTotals
             {
                 UserId = member.WorkOsUserId,
@@ -97,7 +94,7 @@ internal sealed class CrewStandingsService(
                     PointsConceded = statistics.PointsConceded,
                     PointDifferential = statistics.PointDifferential,
                     CrewScore = statistics.CrewScore,
-                    ActiveCrewMemberCount = activeMembers.Length,
+                    ActiveCrewMemberCount = activeMembersByUserId.Count,
                 };
             })
             .OrderBy(standing => standing.Rank)

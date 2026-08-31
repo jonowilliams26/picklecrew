@@ -2,9 +2,13 @@ import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
 import {
   getBestDoublesPairing as getBestDoublesPairingRequest,
+  getBestPartner as getBestPartnerRequest,
+  getBiggestRivals as getBiggestRivalsRequest,
   getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
+  getFriendsOrLovers as getFriendsOrLoversRequest,
+  getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
   getRecentGames as getRecentGamesRequest,
 } from '~/lib/api/generated/sdk.gen'
@@ -21,35 +25,51 @@ export const getDashboard = createServerFn({ method: 'GET' })
       })
       const [
         personalStatistics,
+        nemesis,
         recentGames,
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
+        bestPartner,
+        biggestRivals,
         chiefPaddler,
+        friendsOrLovers,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
+        getNemesisRequest({ client }),
         getRecentGamesRequest({ client }),
         getCrewLeaderboardRequest({ client }),
         getCrewLongestWinStreakRequest({ client }),
         getBestDoublesPairingRequest({ client }),
+        getBestPartnerRequest({ client }),
+        getBiggestRivalsRequest({ client }),
         getChiefPaddlerRequest({ client }),
+        getFriendsOrLoversRequest({ client }),
       ])
       const results = [
         personalStatistics,
+        nemesis,
         recentGames,
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
+        bestPartner,
+        biggestRivals,
         chiefPaddler,
+        friendsOrLovers,
       ]
 
       if (
         personalStatistics.error ||
+        nemesis.error ||
         recentGames.error ||
         leaderboard.error ||
         longestWinStreak.error ||
         bestDoublesPairing.error ||
-        chiefPaddler.error
+        bestPartner.error ||
+        biggestRivals.error ||
+        chiefPaddler.error ||
+        friendsOrLovers.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -61,18 +81,22 @@ export const getDashboard = createServerFn({ method: 'GET' })
             ? 'dashboard-forbidden-error'
             : 'dashboard-unavailable-error',
           message: isForbidden
-            ? 'Your active Crew membership could not be verified. Refresh your Crew and try again.'
+            ? 'Your active crew membership could not be verified. Refresh your crew and try again.'
             : 'Dashboard statistics could not be loaded. Try again.',
         })
       }
 
       return success({
         personalStatistics: personalStatistics.data,
+        nemesis: nemesis.data,
         recentGames: recentGames.data,
         leaderboard: leaderboard.data,
         longestWinStreak: longestWinStreak.data,
         bestDoublesPairing: bestDoublesPairing.data,
+        bestPartner: bestPartner.data,
+        biggestRivals: biggestRivals.data,
         chiefPaddler: chiefPaddler.data,
+        friendsOrLovers: friendsOrLovers.data,
       })
     } catch {
       return failure({

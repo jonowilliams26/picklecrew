@@ -18,6 +18,31 @@ public sealed class WorkOsCrewServiceTests
     }
 
     [Fact]
+    public async Task GetActiveMembersByIdAsync_WhenCalled_ShouldReturnMembersKeyedByUserId()
+    {
+        var member = new ActiveCrewMember
+        {
+            WorkOsUserId = "user_one",
+            DisplayName = "User One",
+            EmailAddress = "user.one@example.com",
+            RoleSlug = "member",
+        };
+        var workOs = new RecordingWorkOsService
+        {
+            ActiveMembers = [member],
+        };
+        var service = CreateService(workOs);
+
+        var membersById = await service.GetActiveMembersByIdAsync(
+            CancellationToken.None
+        );
+
+        Assert.Same(member, membersById["user_one"]);
+        Assert.False(membersById.ContainsKey("USER_ONE"));
+        Assert.Equal("org_active", workOs.ActiveMembersOrganizationId);
+    }
+
+    [Fact]
     public async Task ListCrewMembersAsync_WhenCalled_ShouldUseActiveCrewOrganization()
     {
         var workOs = new RecordingWorkOsService();
@@ -57,6 +82,8 @@ public sealed class WorkOsCrewServiceTests
 
     private sealed class RecordingWorkOsService : IWorkOsService
     {
+        public ActiveCrewMember[] ActiveMembers { get; init; } = [];
+
         public string? ActiveMembersOrganizationId { get; private set; }
 
         public string? CrewMembersOrganizationId { get; private set; }
@@ -104,7 +131,7 @@ public sealed class WorkOsCrewServiceTests
         {
             ActiveMembersOrganizationId = organizationId;
 
-            return Task.FromResult(Array.Empty<ActiveCrewMember>());
+            return Task.FromResult(ActiveMembers);
         }
 
         public Task<CrewRoster> ListCrewMembersAsync(

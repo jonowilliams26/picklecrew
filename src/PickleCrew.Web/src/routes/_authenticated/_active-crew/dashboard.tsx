@@ -1,16 +1,24 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
+import { cva, type VariantProps } from 'class-variance-authority'
+import type { ComponentProps, ReactNode } from 'react'
 import {
   CircleAlert,
   Crown,
   Flame,
   Hammer,
+  Handshake,
+  Heart,
+  History,
   Medal,
+  Skull,
+  Swords,
   Target,
   Trophy,
+  TrendingDown,
   TrendingUp,
-  UserRound,
   UsersRound,
+  type LucideIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
@@ -29,6 +37,7 @@ import { Separator } from '~/components/ui/separator'
 import type {
   CrewLeaderboardEntryHttpResponse,
   DoublesPairingPlayerHttpResponse,
+  RivalPlayerHttpResponse,
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
@@ -37,8 +46,12 @@ import {
   formatRecord,
   formatSignedNumber,
   formatStreakPeriod,
+  getBestPartnerPresentation,
   getCurrentStreakDetail,
+  getFriendsOrLoversCardDetails,
   getInitials,
+  type BestPartnerPresentation,
+  type DashboardData,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
 
@@ -57,6 +70,119 @@ const avatarStyles = [
   'bg-paper text-ink',
 ] as const
 
+const dashboardStatCardVariants = cva(
+  'dashboard-stat-card relative border-2 border-ink',
+  {
+    variants: {
+      tone: {
+        aqua: 'bg-aqua text-ink shadow-[7px_8px_0_var(--ink)]',
+        cream: 'bg-cream text-ink shadow-[7px_8px_0_var(--ink)]',
+        ink: 'bg-ink text-cream shadow-[7px_8px_0_var(--orange)]',
+        lime: 'bg-lime text-ink shadow-[7px_8px_0_var(--ink)]',
+        orange: 'bg-orange text-ink shadow-[7px_8px_0_var(--ink)]',
+        paper: 'bg-paper text-ink shadow-[7px_8px_0_var(--ink)]',
+        purple: 'bg-purple text-white shadow-[7px_8px_0_var(--ink)]',
+      },
+    },
+    defaultVariants: {
+      tone: 'cream',
+    },
+  },
+)
+
+const dashboardCardIconVariants = cva(
+  'grid place-items-center rounded-full border-2 [&_svg]:size-5',
+  {
+    variants: {
+      tone: {
+        aqua:
+          'border-ink bg-aqua text-ink shadow-[3px_4px_0_var(--ink)]',
+        'aqua-on-dark':
+          'border-white bg-aqua text-ink shadow-[3px_4px_0_var(--ink)]',
+        cream:
+          'border-ink bg-cream text-ink shadow-[3px_4px_0_var(--ink)]',
+        lime: 'border-ink bg-lime text-ink shadow-[3px_4px_0_var(--ink)]',
+        orange:
+          'border-ink bg-orange text-ink shadow-[3px_4px_0_var(--ink)]',
+        'orange-on-dark':
+          'border-cream bg-orange text-ink shadow-[3px_4px_0_var(--cream)]',
+        purple:
+          'border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)]',
+      },
+      size: {
+        default: 'size-11',
+        large: 'size-12 [&_svg]:size-6',
+        small: 'size-10 shadow-[2px_3px_0_var(--ink)]',
+      },
+      tilt: {
+        clockwise: 'rotate-[6deg]',
+        counterclockwise: 'rotate-[-6deg]',
+        none: '',
+      },
+    },
+    defaultVariants: {
+      size: 'default',
+      tilt: 'clockwise',
+    },
+  },
+)
+
+const dashboardDecorativeIconVariants = cva(
+  'pointer-events-none absolute -right-8 -bottom-10 rotate-[14deg] opacity-10',
+  {
+    variants: {
+      direction: {
+        clockwise: '',
+        counterclockwise: 'rotate-[-14deg]',
+      },
+      layer: {
+        background: '',
+        raised: 'z-2',
+      },
+      size: {
+        large: 'size-36 sm:size-48',
+        small: 'size-36',
+      },
+    },
+    defaultVariants: {
+      direction: 'clockwise',
+      layer: 'background',
+      size: 'large',
+    },
+  },
+)
+
+const dashboardCardTextVariants = cva('', {
+  variants: {
+    role: {
+      body: 'text-sm',
+      description: 'font-heading text-[11px] text-current opacity-70',
+      emptyTitle: 'font-heading text-3xl font-black',
+      heading:
+        'font-heading text-3xl font-black tracking-[-.045em] sm:text-4xl',
+      heroMetric:
+        'block font-heading text-[clamp(6.5rem,13vw,10rem)] leading-[.68] font-black tracking-[-.1em]',
+      label: 'font-heading text-base font-black',
+      metadata: 'text-[9px] font-black tracking-[.08em] uppercase',
+      metric:
+        'block font-heading text-6xl leading-[.72] font-black tracking-[-.08em]',
+      title: 'text-xs font-black tracking-[.14em] uppercase',
+    },
+  },
+})
+
+const dashboardAvatarFallbackVariants = cva('font-heading font-black', {
+  variants: {
+    size: {
+      default: 'text-lg',
+      small: 'text-sm',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+})
+
 function DashboardPage() {
   const result = Route.useLoaderData()
   const { user } = useAuth()
@@ -73,7 +199,7 @@ function DashboardPage() {
           <CardHeader>
             <CardTitle>Dashboard</CardTitle>
             <CardDescription>
-              Statistics for the current Crew appear here.
+              Statistics for the current crew appear here.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -98,11 +224,15 @@ function DashboardPage() {
 
   const {
     personalStatistics,
+    nemesis: nemesisResponse,
     recentGames,
     leaderboard,
-    longestWinStreak,
+    longestWinStreak: longestWinStreakResponse,
     bestDoublesPairing,
+    bestPartner: bestPartnerResponse,
+    biggestRivals,
     chiefPaddler: chiefPaddlerResponse,
+    friendsOrLovers,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -123,7 +253,18 @@ function DashboardPage() {
   const pairing = bestDoublesPairing.pairing
   const firstPairingPlayer = pairing?.players[0]
   const secondPairingPlayer = pairing?.players[1]
+  const rivalry = biggestRivals.rivalry
+  const firstRival = rivalry?.players[0]
+  const secondRival = rivalry?.players[1]
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const longestWinStreak = longestWinStreakResponse.longestWinStreak
+  const bestPartner = getBestPartnerPresentation({
+    bestPartner: bestPartnerResponse.bestPartner,
+  })
+  const friendsOrLoversDetails = getFriendsOrLoversCardDetails({
+    friendsOrLovers,
+  })
+  const nemesis = nemesisResponse.nemesis
 
   if (
     pairing &&
@@ -132,6 +273,13 @@ function DashboardPage() {
       !secondPairingPlayer)
   ) {
     throw new Error('A doubles pairing must contain exactly two players.')
+  }
+
+  if (
+    rivalry &&
+    (rivalry.players.length !== 2 || !firstRival || !secondRival)
+  ) {
+    throw new Error('A rivalry must contain exactly two players.')
   }
 
   return (
@@ -150,173 +298,48 @@ function DashboardPage() {
 
           {personalStatistics.gamesPlayed > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
-              <Card className="dashboard-stat-card dashboard-stat-card-lime min-h-[310px] border-2 border-ink bg-lime shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-5 xl:row-span-2">
-                <CardHeader>
-                  <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-                    Your win percentage
-                  </CardTitle>
-                  <CardDescription className="font-heading text-[11px] text-ink-soft">
-                    {formatCount({
-                      count: personalStatistics.wins,
-                      singular: 'win',
-                    })}{' '}
-                    from{' '}
-                    {formatCount({
-                      count: personalStatistics.gamesPlayed,
-                      singular: 'game',
-                    })}
-                  </CardDescription>
-                  <CardAction className="grid size-12 rotate-[5deg] place-items-center rounded-full border-2 border-ink bg-cream shadow-[3px_4px_0_var(--ink)] [&_svg]:size-6">
-                    <Target aria-hidden="true" />
-                  </CardAction>
-                </CardHeader>
-                <CardContent className="mt-auto gap-5">
-                  <div className="font-heading text-[clamp(6.5rem,13vw,10rem)] leading-[.68] font-black tracking-[-.1em]">
-                    {winPercentage}
-                    <span className="ml-2 text-[.25em] tracking-[-.03em]">%</span>
-                  </div>
-                  <div
-                    className="h-4 overflow-hidden rounded-full border-2 border-ink bg-cream"
-                    role="progressbar"
-                    aria-label="Win percentage"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progressPercentage}
-                  >
-                    <span
-                      className={cn(
-                        'block h-full bg-orange',
-                        progressPercentage > 0 &&
-                          progressPercentage < 100 &&
-                          'border-r-2 border-ink',
-                      )}
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter className="justify-end">
-                  <span className="text-right text-[9px] font-black tracking-[.08em] uppercase">
-                    {personalRecord} all time
-                  </span>
-                </CardFooter>
-              </Card>
-
-              <PersonalMetricCard
-                className="bg-ink text-cream shadow-[6px_7px_0_var(--orange)] xl:col-span-3"
-                eyebrow="Crew rank"
-                value={`#${personalStatistics.crewRank}`}
-                detail={`of ${formatCount({
-                  count: personalStatistics.activeCrewMemberCount,
-                  singular: 'player',
-                })}`}
-                icon={Medal}
-                iconClassName="bg-orange text-ink"
-              />
-              <PersonalMetricCard
-                className="bg-orange text-ink shadow-[6px_7px_0_var(--ink)] xl:col-span-4"
-                eyebrow="Current streak"
-                value={
-                  personalStatistics.currentWinStreak === 0
-                    ? 'Your move'
-                    : `${personalStatistics.currentWinStreak} W`
-                }
-                detail={getCurrentStreakDetail({
-                  currentWinStreak: personalStatistics.currentWinStreak,
-                  longestWinStreak: personalStatistics.longestWinStreak,
-                })}
-                icon={Flame}
-                iconClassName="bg-lime text-ink"
-              />
-              <PersonalMetricCard
-                className="bg-aqua text-ink shadow-[6px_7px_0_var(--ink)] xl:col-span-3"
-                eyebrow="Point differential"
-                value={formatSignedNumber({
-                  value: personalStatistics.pointDifferential,
-                })}
-                detail={`${personalStatistics.pointsScored.toLocaleString('en-AU')} for · ${personalStatistics.pointsConceded.toLocaleString('en-AU')} against`}
-                icon={TrendingUp}
-                iconClassName="bg-cream text-ink"
-              />
-              <PersonalMetricCard
-                className="bg-purple text-white shadow-[6px_7px_0_var(--ink)] xl:col-span-4"
-                eyebrow="That's a Paddlin"
-                description="11–0 wins. Zero points. Zero mercy."
-                value={personalStatistics.thatsAPaddlin.toLocaleString('en-AU')}
-                emptyState={
-                  personalStatistics.thatsAPaddlin === 0
-                    ? "No paddlins yet. Court's waiting. Go obliterate somebody."
-                    : undefined
-                }
-                icon={Hammer}
-                iconClassName="bg-lime text-ink"
+              <WinPercentageCard
+                personalRecord={personalRecord}
+                personalStatistics={personalStatistics}
+                progressPercentage={progressPercentage}
+                winPercentage={winPercentage}
               />
 
-              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-12">
-                <CardHeader>
-                  <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-                    Last 10 games
-                  </CardTitle>
-                  <CardDescription className="font-heading text-[11px]">
-                    {recentGameCount === 0
-                      ? 'No recent games'
-                      : `${recentRecord} · last ${recentGameCount}`}
-                  </CardDescription>
-                  {recentGames.winStreak > 1 ? (
-                    <CardAction>
-                      <Badge className="bg-lime text-ink">
-                        <Flame data-icon="inline-start" />
-                        {recentGames.winStreak}-game win streak
-                      </Badge>
-                    </CardAction>
-                  ) : null}
-                </CardHeader>
-                <CardContent>
-                  {recentGameCount > 0 ? (
-                    <div
-                      className="flex flex-wrap gap-2"
-                      aria-label={`${formatCount({ count: recentGames.wins, singular: 'win' })} and ${formatCount({ count: recentGames.losses, singular: 'loss', plural: 'losses' })} in the last ${formatCount({ count: recentGameCount, singular: 'game' })}`}
-                    >
-                      {recentGames.games.map((game) => {
-                        const resultLabel = game.result === 'win' ? 'W' : 'L'
+              <CrewRankCard statistics={personalStatistics} />
+              <CurrentStreakCard statistics={personalStatistics} />
+              <PointDifferentialCard statistics={personalStatistics} />
 
-                        return (
-                          <span
-                            className={cn(
-                              'grid size-9 place-items-center rounded-full border-2 border-ink font-mono text-xs font-black shadow-[2px_3px_0_var(--ink)]',
-                              game.result === 'win' ? 'bg-lime' : 'bg-orange',
-                            )}
-                            key={game.gameId}
-                            title={`${game.result === 'win' ? 'Win' : 'Loss'} · ${game.format}`}
-                          >
-                            {resultLabel}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className="m-0 text-sm text-muted-foreground">
-                      Record a game to start your recent form.
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <span className="text-[9px] font-bold tracking-[.08em] text-muted-foreground uppercase">
-                    Newest game first
-                  </span>
-                </CardFooter>
-              </Card>
+              <RecentGamesCard
+                recentGameCount={recentGameCount}
+                recentGames={recentGames}
+                recentRecord={recentRecord}
+              />
+
+              <NemesisCard nemesis={nemesis} />
+
+              <ThatsAPaddlinCard statistics={personalStatistics} />
+
+              <BestPartnerCard bestPartner={bestPartner} />
             </div>
           ) : (
-            <Card className="min-h-[310px] border-2 border-dashed border-ink/30 bg-cream">
-              <CardContent className="my-auto items-center justify-center gap-2 text-center">
-                <strong className="font-heading text-3xl font-black">
+            <Card className="relative min-h-[310px] overflow-hidden border-2 border-dashed border-ink/30 bg-cream">
+              <CardContent className="relative z-1 my-auto items-center justify-center gap-2 text-center">
+                <strong
+                  className={dashboardCardTextVariants({ role: 'emptyTitle' })}
+                >
                   No personal receipts yet
                 </strong>
-                <p className="m-0 max-w-sm text-sm text-ink-soft">
-                  Get on the court, play a Game, and start building a record
+                <p
+                  className={cn(
+                    dashboardCardTextVariants({ role: 'body' }),
+                    'm-0 max-w-sm text-ink-soft',
+                  )}
+                >
+                  Get on the court, play a game, and start building a record
                   worth bragging about.
                 </p>
               </CardContent>
+              <DashboardDecorativeIcon icon={Target} />
             </Card>
           )}
         </section>
@@ -335,279 +358,831 @@ function DashboardPage() {
           />
 
           <div className="grid gap-5 xl:grid-cols-12">
-            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-3">
-              <CardHeader className="border-b-2 border-line pb-8!">
-                <CardTitle className="font-heading text-3xl font-black tracking-[-.045em] sm:text-4xl">
-                  Crew leaderboard
-                </CardTitle>
-                <CardDescription className="font-heading text-ink-soft">
-                  Ranked by totally indisputable crew score.
-                </CardDescription>
-                <CardAction className="grid size-12 rotate-[6deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[3px_4px_0_var(--ink)] [&_svg]:size-6">
-                  <Trophy aria-hidden="true" />
-                </CardAction>
-              </CardHeader>
-              {hasLeaderboardGames ? (
-                <CardContent className="gap-0">
-                  <div className="grid grid-cols-[34px_1fr_auto] gap-3 px-3 pb-2 text-[8px] font-black tracking-[.12em] text-muted-foreground uppercase sm:grid-cols-[42px_1fr_78px_72px]">
-                    <span>Rank</span>
-                    <span>Player</span>
-                    <span className="hidden sm:block">Record</span>
-                    <span className="text-right">Score</span>
-                  </div>
-                  <ol className="m-0 flex list-none flex-col gap-2 p-0">
-                    {leaderboard.entries.map((member) => (
-                      <LeaderboardEntry
-                        currentUserId={user.id}
-                        member={member}
-                        key={member.userId}
-                      />
-                    ))}
-                  </ol>
-                </CardContent>
-              ) : (
-                <CardContent className="my-auto items-center justify-center gap-2 text-center">
-                  <strong className="font-heading text-3xl font-black">
-                    No leaderboard drama yet
-                  </strong>
-                  <p className="m-0 max-w-sm text-sm text-ink-soft">
-                    Get on the court, record a Game, and give the Crew something
-                    to argue about.
-                  </p>
-                </CardContent>
-              )}
-            </Card>
+            <CrewLeaderboardCard
+              currentUserId={user.id}
+              hasLeaderboardGames={hasLeaderboardGames}
+              leaderboard={leaderboard}
+            />
 
-            <Card className="dashboard-pair-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
-              <CardHeader>
-                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-                  Best doubles pairing
-                </CardTitle>
-                <CardDescription className="font-heading text-[11px] text-white/70">
-                  The duo nobody wants across the net
-                </CardDescription>
-                <CardAction className="grid size-11 place-items-center rounded-full border-2 border-white bg-aqua text-ink [&_svg]:size-5">
-                  <UsersRound aria-hidden="true" />
-                </CardAction>
-              </CardHeader>
-              {pairing && firstPairingPlayer && secondPairingPlayer ? (
-                <>
-                  <CardContent className="items-center gap-3 text-center">
-                    <div className="flex items-center justify-center">
-                      <DashboardAvatar
-                        className="z-1 size-20 rotate-[-7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="font-heading text-2xl"
-                        person={firstPairingPlayer}
-                      />
-                      <span
-                        className="z-2 -mx-2 grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-ink bg-cream font-heading text-xl font-black text-ink"
-                        aria-hidden="true"
-                      >
-                        +
-                      </span>
-                      <DashboardAvatar
-                        className="z-1 size-20 rotate-[7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="font-heading text-2xl"
-                        person={secondPairingPlayer}
-                      />
-                    </div>
-                    <CardTitle className="font-heading text-3xl font-black">
-                      {firstPairingPlayer.displayName} +{' '}
-                      {secondPairingPlayer.displayName}
-                    </CardTitle>
-                    <div className="flex items-baseline gap-2">
-                      <strong className="font-heading text-5xl font-black text-lime">
-                        {formatPercentage({ value: pairing.winPercentage })}%
-                      </strong>
-                      <span className="text-[9px] font-black tracking-[.08em] uppercase">
-                        win rate
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="mt-auto justify-center">
-                    <Badge
-                      className="rotate-[-2deg] border border-white bg-transparent px-3 text-white"
-                      variant="outline"
-                    >
-                      {formatCount({ count: pairing.wins, singular: 'win' })} ·{' '}
-                      {formatCount({
-                        count: pairing.losses,
-                        singular: 'loss',
-                        plural: 'losses',
-                      })}{' '}
-                      ·{' '}
-                      {formatCount({
-                        count: pairing.gamesPlayed,
-                        singular: 'game',
-                      })}
-                    </Badge>
-                  </CardFooter>
-                </>
-              ) : (
-                <CardContent className="my-auto items-center justify-center gap-2 text-center">
-                  <strong className="font-heading text-3xl font-black">
-                    No doubles record yet
-                  </strong>
-                  <p className="m-0 max-w-xs text-sm text-white/70">
-                    Grab a partner, hit the court, and start proving which duo
-                    runs this Crew.
-                  </p>
-                </CardContent>
-              )}
-            </Card>
+            <BestDoublesPairingCard
+              firstPairingPlayer={firstPairingPlayer}
+              pairing={pairing}
+              secondPairingPlayer={secondPairingPlayer}
+            />
 
-            <Card className="dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
-              <CardHeader>
-                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-                  Longest crew win streak
-                </CardTitle>
-                <CardDescription className="font-heading text-[11px] text-ink-soft">
-                  The record to chase
-                </CardDescription>
-                <CardAction className="grid size-11 rotate-[7deg] place-items-center rounded-full border-2 border-ink bg-lime shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
-                  <Flame aria-hidden="true" />
-                </CardAction>
-              </CardHeader>
-              {longestWinStreak.longestWinStreak > 0 ? (
-                <>
-                  <CardContent className="relative z-1 flex-row items-end justify-between gap-5">
-                    <div>
-                      <strong className="block font-heading text-8xl leading-[.72] font-black tracking-[-.08em]">
-                        {longestWinStreak.longestWinStreak}
-                      </strong>
-                      <span className="font-heading text-xl font-black">
-                        straight{' '}
-                        {longestWinStreak.longestWinStreak === 1
-                          ? 'win'
-                          : 'wins'}
-                      </span>
-                    </div>
-                    {longestWinStreak.userId &&
-                    longestWinStreak.displayName ? (
-                      <DashboardAvatar
-                        className="size-16 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="bg-cream font-heading text-xl text-ink"
-                        person={{
-                          userId: longestWinStreak.userId,
-                          displayName: longestWinStreak.displayName,
-                          profilePictureUrl:
-                            longestWinStreak.profilePictureUrl ?? null,
-                        }}
-                      />
-                    ) : null}
-                  </CardContent>
-                  <CardFooter className="relative z-1 mt-auto flex-col items-start gap-1">
-                    <strong className="font-heading text-base">
-                      {longestWinStreak.displayName ?? 'No record holder yet'}
-                    </strong>
-                    <span className="text-[9px] font-black tracking-[.08em] uppercase">
-                      {formatStreakPeriod({
-                        startedAtUtc:
-                          longestWinStreak.longestWinStreakStartedAtUtc,
-                        endedAtUtc:
-                          longestWinStreak.longestWinStreakEndedAtUtc,
-                      })}
-                    </span>
-                  </CardFooter>
-                </>
-              ) : (
-                <CardContent className="my-auto items-center justify-center gap-2 text-center">
-                  <strong className="font-heading text-3xl font-black">
-                    No win streak yet
-                  </strong>
-                  <p className="m-0 max-w-xs text-sm text-ink-soft">
-                    Get on the court and start proving who runs this Crew.
-                  </p>
-                </CardContent>
-              )}
-            </Card>
+            <FriendsOrLoversCard details={friendsOrLoversDetails} />
 
-            <Card className="relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
-              <CardHeader className="relative z-1">
-                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-                  Chief Paddler
-                </CardTitle>
-                <CardDescription className="font-heading text-[11px] text-ink-soft">
-                  Most 11–0 wins in the Crew
-                </CardDescription>
-                <CardAction className="grid size-11 rotate-[-7deg] place-items-center rounded-full border-2 border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
-                  <Hammer aria-hidden="true" />
-                </CardAction>
-              </CardHeader>
-              {chiefPaddler ? (
-                <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-5">
-                    <div className="relative shrink-0">
-                      <DashboardAvatar
-                        className="size-24 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="bg-lime font-heading text-3xl text-ink"
-                        person={{
-                          userId: chiefPaddler.userId,
-                          displayName: chiefPaddler.displayName,
-                          profilePictureUrl:
-                            chiefPaddler.profilePictureUrl ?? null,
-                        }}
-                      />
-                      <span className="absolute -top-3 -right-3 grid size-10 rotate-[10deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
-                        <Crown aria-label="Chief Paddler" />
-                      </span>
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <span className="text-[9px] font-black tracking-[.12em] uppercase">
-                        Reigning Chief
-                      </span>
-                      <strong className="truncate font-heading text-3xl font-black">
-                        {chiefPaddler.displayName}
-                      </strong>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 flex-col sm:items-end">
-                    <strong className="font-heading text-7xl leading-[.75] font-black tracking-[-.08em]">
-                      {chiefPaddler.thatsAPaddlin.toLocaleString('en-AU')}
-                    </strong>
-                    <span className="text-[9px] font-black tracking-[.1em] uppercase">
-                      paddlins delivered
-                    </span>
-                  </div>
-                  <Crown
-                    className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
-                    aria-hidden="true"
-                  />
-                </CardContent>
-              ) : (
-                <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-5">
-                    <div className="relative shrink-0">
-                      <span className="grid size-24 rotate-[-5deg] place-items-center rounded-full border-2 border-dashed border-ink bg-cream shadow-[4px_5px_0_var(--ink)] [&_svg]:size-10">
-                        <UserRound aria-label="Chief Paddler unclaimed" />
-                      </span>
-                      <span className="absolute -top-3 -right-3 grid size-10 rotate-[10deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
-                        <Crown aria-hidden="true" />
-                      </span>
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <span className="text-[9px] font-black tracking-[.12em] uppercase">
-                        Chief wanted
-                      </span>
-                      <strong className="font-heading text-3xl font-black">
-                        The throne&apos;s empty
-                      </strong>
-                    </div>
-                  </div>
-                  <p className="m-0 max-w-44 text-sm text-ink-soft sm:text-right">
-                    Hand out an 11–0 paddlin and claim it.
-                  </p>
-                  <Crown
-                    className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
-                    aria-hidden="true"
-                  />
-                </CardContent>
-              )}
-            </Card>
+            <BiggestRivalsCard
+              firstRival={firstRival}
+              rivalry={rivalry}
+              secondRival={secondRival}
+            />
+
+            <LongestWinStreakCard longestWinStreak={longestWinStreak} />
+
+            <ChiefPaddlerCard chiefPaddler={chiefPaddler} />
           </div>
         </section>
       </div>
     </main>
+  )
+}
+
+function DashboardStatCard({
+  className,
+  tone,
+  ...props
+}: ComponentProps<typeof Card> &
+  VariantProps<typeof dashboardStatCardVariants>) {
+  return (
+    <Card
+      className={cn(dashboardStatCardVariants({ tone }), className)}
+      {...props}
+    />
+  )
+}
+
+function DashboardCardHeader({
+  action,
+  className,
+  description,
+  icon: Icon,
+  iconSize,
+  iconTone,
+  title,
+  titleVariant = 'label',
+  tilt,
+}: {
+  action?: ReactNode
+  className?: string
+  description: ReactNode
+  icon?: LucideIcon
+  iconSize?: VariantProps<typeof dashboardCardIconVariants>['size']
+  iconTone?: VariantProps<typeof dashboardCardIconVariants>['tone']
+  title: ReactNode
+  titleVariant?: 'heading' | 'label'
+  tilt?: VariantProps<typeof dashboardCardIconVariants>['tilt']
+}) {
+  if (Icon && !iconTone) {
+    throw new Error('A dashboard card icon must specify an icon tone.')
+  }
+
+  return (
+    <CardHeader className={className}>
+      <CardTitle
+        className={dashboardCardTextVariants({
+          role: titleVariant === 'label' ? 'title' : 'heading',
+        })}
+      >
+        {title}
+      </CardTitle>
+      <CardDescription
+        className={dashboardCardTextVariants({ role: 'description' })}
+      >
+        {description}
+      </CardDescription>
+      {Icon && iconTone ? (
+        <CardAction
+          className={dashboardCardIconVariants({
+            size: iconSize,
+            tilt,
+            tone: iconTone,
+          })}
+        >
+          <Icon aria-hidden="true" />
+        </CardAction>
+      ) : action ? (
+        <CardAction>{action}</CardAction>
+      ) : null}
+    </CardHeader>
+  )
+}
+
+function DashboardDecorativeIcon({
+  direction,
+  icon: Icon,
+  layer,
+  size,
+}: {
+  direction?: VariantProps<typeof dashboardDecorativeIconVariants>['direction']
+  icon: LucideIcon
+  layer?: VariantProps<typeof dashboardDecorativeIconVariants>['layer']
+  size?: VariantProps<typeof dashboardDecorativeIconVariants>['size']
+}) {
+  return (
+    <Icon
+      className={dashboardDecorativeIconVariants({ direction, layer, size })}
+      aria-hidden="true"
+    />
+  )
+}
+
+function DashboardCardEmptyState({
+  className,
+  description,
+  title,
+}: {
+  className?: string
+  description: ReactNode
+  title: ReactNode
+}) {
+  return (
+    <CardContent
+      className={cn(
+        'relative z-1 my-auto items-center justify-center gap-2 text-center',
+        className,
+      )}
+    >
+      <strong className={dashboardCardTextVariants({ role: 'emptyTitle' })}>
+        {title}
+      </strong>
+      <p
+        className={cn(
+          dashboardCardTextVariants({ role: 'body' }),
+          'm-0 max-w-xs text-current opacity-70',
+        )}
+      >
+        {description}
+      </p>
+    </CardContent>
+  )
+}
+
+function DashboardPersonMetric({
+  avatarFallbackClassName,
+  metadata,
+  metric,
+  metricLabel,
+  person,
+}: {
+  avatarFallbackClassName: string
+  metadata: ReactNode
+  metric: ReactNode
+  metricLabel: ReactNode
+  person: Pick<
+    DoublesPairingPlayerHttpResponse,
+    'userId' | 'displayName' | 'profilePictureUrl'
+  >
+}) {
+  return (
+    <>
+      <CardContent className="relative z-3">
+        <div>
+          <strong className={dashboardCardTextVariants({ role: 'metric' })}>
+            {metric}
+          </strong>
+          <span
+            className={cn(
+              dashboardCardTextVariants({ role: 'label' }),
+              'whitespace-nowrap',
+            )}
+          >
+            {metricLabel}
+          </span>
+        </div>
+      </CardContent>
+      <CardFooter className="relative z-3 mt-auto items-center gap-3">
+        <DashboardAvatar
+          className="size-20 rotate-[-5deg] border-2 border-ink shadow-[3px_4px_0_var(--ink)]"
+          fallbackClassName={avatarFallbackClassName}
+          person={person}
+        />
+        <div className="flex min-w-0 flex-col gap-1">
+          <strong
+            className={cn(
+              dashboardCardTextVariants({ role: 'label' }),
+              'max-w-full truncate',
+            )}
+          >
+            {person.displayName}
+          </strong>
+          <span className={dashboardCardTextVariants({ role: 'metadata' })}>
+            {metadata}
+          </span>
+        </div>
+      </CardFooter>
+    </>
+  )
+}
+
+function WinPercentageCard({
+  personalRecord,
+  personalStatistics,
+  progressPercentage,
+  winPercentage,
+}: {
+  personalRecord: string
+  personalStatistics: DashboardData['personalStatistics']
+  progressPercentage: number
+  winPercentage: number
+}) {
+  return (
+    <DashboardStatCard
+      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-5 xl:row-span-2"
+      tone="lime"
+    >
+      <DashboardCardHeader
+        description={
+          <>
+            {formatCount({
+              count: personalStatistics.wins,
+              singular: 'win',
+            })}{' '}
+            from{' '}
+            {formatCount({
+              count: personalStatistics.gamesPlayed,
+              singular: 'game',
+            })}
+          </>
+        }
+        icon={Target}
+        iconSize="large"
+        iconTone="cream"
+        title="Your win percentage"
+      />
+      <CardContent className="relative z-1 mt-auto gap-5">
+        <strong
+          className={dashboardCardTextVariants({ role: 'heroMetric' })}
+        >
+          {winPercentage}
+          <span className="ml-2 text-[.25em] tracking-[-.03em]">%</span>
+        </strong>
+        <div
+          className="h-4 overflow-hidden rounded-full border-2 border-ink bg-cream"
+          role="progressbar"
+          aria-label="Win percentage"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercentage}
+        >
+          <span
+            className={cn(
+              'block h-full bg-orange',
+              progressPercentage > 0 &&
+                progressPercentage < 100 &&
+                'border-r-2 border-ink',
+            )}
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+      </CardContent>
+      <CardFooter className="relative z-1 justify-end">
+        <span
+          className={cn(
+            dashboardCardTextVariants({ role: 'metadata' }),
+            'text-right',
+          )}
+        >
+          {personalRecord} all time
+        </span>
+      </CardFooter>
+      <DashboardDecorativeIcon icon={Target} />
+    </DashboardStatCard>
+  )
+}
+
+function RecentGamesCard({
+  recentGameCount,
+  recentGames,
+  recentRecord,
+}: {
+  recentGameCount: number
+  recentGames: DashboardData['recentGames']
+  recentRecord: string
+}) {
+  return (
+    <DashboardStatCard className="sm:col-span-2 xl:col-span-4" tone="cream">
+      <DashboardCardHeader
+        description={
+          recentGameCount === 0
+            ? 'No recent games'
+            : `${recentRecord} · last ${recentGameCount}`
+        }
+        icon={History}
+        iconSize="small"
+        iconTone="orange"
+        tilt="counterclockwise"
+        title="Last 10 games"
+      />
+      <CardContent className="relative z-1">
+        {recentGames.winStreak > 1 ? (
+          <Badge className="w-fit bg-lime text-ink">
+            <Flame data-icon="inline-start" />
+            {recentGames.winStreak}-game win streak
+          </Badge>
+        ) : null}
+        {recentGameCount > 0 ? (
+          <div
+            className="flex flex-wrap gap-2"
+            aria-label={`${formatCount({ count: recentGames.wins, singular: 'win' })} and ${formatCount({ count: recentGames.losses, singular: 'loss', plural: 'losses' })} in the last ${formatCount({ count: recentGameCount, singular: 'game' })}`}
+          >
+            {recentGames.games.map((game) => {
+              const resultLabel = game.result === 'win' ? 'W' : 'L'
+
+              return (
+                <span
+                  className={cn(
+                    'grid size-9 place-items-center rounded-full border-2 border-ink font-mono text-xs font-black shadow-[2px_3px_0_var(--ink)]',
+                    game.result === 'win' ? 'bg-lime' : 'bg-orange',
+                  )}
+                  key={game.gameId}
+                  title={`${game.result === 'win' ? 'Win' : 'Loss'} · ${game.format}`}
+                >
+                  {resultLabel}
+                </span>
+              )
+            })}
+          </div>
+        ) : (
+          <p
+            className={cn(
+              dashboardCardTextVariants({ role: 'body' }),
+              'm-0 text-muted-foreground',
+            )}
+          >
+            Record a game to start your recent form.
+          </p>
+        )}
+      </CardContent>
+      <CardFooter className="relative z-1">
+        <span
+          className={cn(
+            dashboardCardTextVariants({ role: 'metadata' }),
+            'text-muted-foreground',
+          )}
+        >
+          Newest game first
+        </span>
+      </CardFooter>
+      <DashboardDecorativeIcon icon={History} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function NemesisCard({
+  nemesis,
+}: {
+  nemesis: DashboardData['nemesis']['nemesis']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      tone="orange"
+    >
+      <DashboardCardHeader
+        description="The opponent who's handed you the most losses"
+        icon={Skull}
+        iconSize="small"
+        iconTone="cream"
+        tilt="counterclockwise"
+        title="Your nemesis"
+      />
+      {nemesis ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata="They've got your number"
+          metric={nemesis.losses.toLocaleString('en-AU')}
+          metricLabel={`${nemesis.losses === 1 ? 'loss' : 'losses'} to them`}
+          person={nemesis}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games against an active crew member to reveal your nemesis."
+          title="Nobody owns you yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Skull} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function CrewLeaderboardCard({
+  currentUserId,
+  hasLeaderboardGames,
+  leaderboard,
+}: {
+  currentUserId: string
+  hasLeaderboardGames: boolean
+  leaderboard: DashboardData['leaderboard']
+}) {
+  return (
+    <DashboardStatCard
+      className="xl:col-span-7 xl:row-span-2 xl:row-start-1"
+      tone="cream"
+    >
+      <DashboardCardHeader
+        className="border-b-2 border-line pb-8!"
+        description="Ranked by totally indisputable crew score."
+        icon={Trophy}
+        iconSize="large"
+        iconTone="orange"
+        title="Crew leaderboard"
+        titleVariant="heading"
+      />
+      {hasLeaderboardGames ? (
+        <CardContent className="relative z-1 gap-0">
+          <div className="grid grid-cols-[34px_1fr_auto] gap-3 px-3 pb-2 text-[8px] font-black tracking-[.12em] text-muted-foreground uppercase sm:grid-cols-[42px_1fr_78px_72px]">
+            <span>Rank</span>
+            <span>Player</span>
+            <span className="hidden sm:block">Record</span>
+            <span className="text-right">Score</span>
+          </div>
+          <ol className="m-0 flex list-none flex-col gap-2 p-0">
+            {leaderboard.entries.map((member) => (
+              <LeaderboardEntry
+                currentUserId={currentUserId}
+                member={member}
+                key={member.userId}
+              />
+            ))}
+          </ol>
+        </CardContent>
+      ) : (
+        <DashboardCardEmptyState
+          className="[&_p]:max-w-sm"
+          description="Get on the court, record a game, and give the crew something to argue about."
+          title="No leaderboard drama yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Trophy} />
+    </DashboardStatCard>
+  )
+}
+
+function BestDoublesPairingCard({
+  firstPairingPlayer,
+  pairing,
+  secondPairingPlayer,
+}: {
+  firstPairingPlayer: DoublesPairingPlayerHttpResponse | undefined
+  pairing: DashboardData['bestDoublesPairing']['pairing']
+  secondPairingPlayer: DoublesPairingPlayerHttpResponse | undefined
+}) {
+  return (
+    <DashboardStatCard
+      className="dashboard-pair-card min-h-[330px] xl:col-span-6 xl:row-start-3"
+      tone="purple"
+    >
+      <DashboardCardHeader
+        description="The duo nobody wants across the net"
+        icon={UsersRound}
+        iconTone="aqua-on-dark"
+        tilt="none"
+        title="Best doubles pairing"
+      />
+      {pairing && firstPairingPlayer && secondPairingPlayer ? (
+        <>
+          <CardContent className="relative z-1 items-center gap-3 text-center">
+            <div className="flex items-center justify-center">
+              <DashboardAvatar
+                className="z-1 size-20 rotate-[-7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                person={firstPairingPlayer}
+              />
+              <span
+                className={cn(
+                  dashboardCardTextVariants({ role: 'label' }),
+                  'z-2 -mx-2 grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-ink bg-cream text-ink',
+                )}
+                aria-hidden="true"
+              >
+                +
+              </span>
+              <DashboardAvatar
+                className="z-1 size-20 rotate-[7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                person={secondPairingPlayer}
+              />
+            </div>
+            <strong className={dashboardCardTextVariants({ role: 'label' })}>
+              {firstPairingPlayer.displayName} +{' '}
+              {secondPairingPlayer.displayName}
+            </strong>
+            <div className="flex items-baseline gap-2">
+              <strong
+                className={cn(
+                  dashboardCardTextVariants({ role: 'metric' }),
+                  'text-lime',
+                )}
+              >
+                {formatPercentage({ value: pairing.winPercentage })}%
+              </strong>
+              <span
+                className={dashboardCardTextVariants({ role: 'metadata' })}
+              >
+                win rate
+              </span>
+            </div>
+          </CardContent>
+          <CardFooter className="relative z-1 mt-auto justify-center">
+            <Badge
+              className="rotate-[-2deg] border border-white bg-transparent px-3 text-white"
+              variant="outline"
+            >
+              {formatCount({ count: pairing.wins, singular: 'win' })} ·{' '}
+              {formatCount({
+                count: pairing.losses,
+                singular: 'loss',
+                plural: 'losses',
+              })}{' '}
+              ·{' '}
+              {formatCount({
+                count: pairing.gamesPlayed,
+                singular: 'game',
+              })}
+            </Badge>
+          </CardFooter>
+        </>
+      ) : (
+        <DashboardCardEmptyState
+          description="Grab a partner, hit the court, and start proving which duo runs this crew."
+          title="No doubles record yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={UsersRound} />
+    </DashboardStatCard>
+  )
+}
+
+function FriendsOrLoversCard({
+  details: friendsOrLoversDetails,
+}: {
+  details: ReturnType<typeof getFriendsOrLoversCardDetails>
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-3"
+      tone="lime"
+    >
+      <DashboardCardHeader
+        className="relative z-1"
+        description="The pair that keeps choosing each other"
+        icon={Heart}
+        iconTone="orange"
+        tilt="counterclockwise"
+        title="Friends or lovers?"
+      />
+      {friendsOrLoversDetails.type === 'pairing' ? (
+        <>
+          <CardContent className="relative z-1 items-center gap-4 text-center">
+            <div className="flex items-center justify-center">
+              <DashboardAvatar
+                className="z-1 size-20 rotate-[-7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                person={friendsOrLoversDetails.firstPlayer}
+              />
+              <Heart
+                className="z-2 -mx-2 size-10 rotate-[6deg] rounded-full border-2 border-ink bg-cream p-2 fill-orange text-orange"
+                aria-hidden="true"
+              />
+              <DashboardAvatar
+                className="z-1 size-20 rotate-[7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                person={friendsOrLoversDetails.secondPlayer}
+              />
+            </div>
+            <strong className={dashboardCardTextVariants({ role: 'label' })}>
+              {friendsOrLoversDetails.firstPlayer.displayName} +{' '}
+              {friendsOrLoversDetails.secondPlayer.displayName}
+            </strong>
+            <div className="flex flex-col items-center gap-1">
+              <strong className={dashboardCardTextVariants({ role: 'metric' })}>
+                {friendsOrLoversDetails.gamesPlayed.toLocaleString(
+                  'en-AU',
+                )}
+              </strong>
+              <span
+                className={dashboardCardTextVariants({ role: 'metadata' })}
+              >
+                {friendsOrLoversDetails.gamesTogetherLabel}
+              </span>
+            </div>
+          </CardContent>
+        </>
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three doubles games with another crew member to start tracking who keeps showing up together."
+          title="No doubles partners yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Heart} />
+    </DashboardStatCard>
+  )
+}
+
+function BiggestRivalsCard({
+  firstRival,
+  rivalry,
+  secondRival,
+}: {
+  firstRival: RivalPlayerHttpResponse | undefined
+  rivalry: DashboardData['biggestRivals']['rivalry']
+  secondRival: RivalPlayerHttpResponse | undefined
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-4"
+      tone="ink"
+    >
+      <DashboardCardHeader
+        description="The closest all-time head-to-head in the crew"
+        icon={Swords}
+        iconTone="orange-on-dark"
+        title="Biggest rivals"
+      />
+      {rivalry && firstRival && secondRival ? (
+        <>
+          <CardContent className="relative z-1 items-center gap-3 text-center">
+            <div className="flex items-center justify-center">
+              <DashboardAvatar
+                className="relative z-1 size-20 rotate-[-7deg] border-2 border-cream shadow-[4px_5px_0_var(--orange)]"
+                person={firstRival}
+              />
+              <span
+                className={cn(
+                  dashboardCardTextVariants({ role: 'label' }),
+                  'relative z-2 -mx-2 grid size-11 rotate-[6deg] place-items-center rounded-full border-2 border-cream bg-lime text-ink',
+                )}
+                aria-hidden="true"
+              >
+                VS
+              </span>
+              <DashboardAvatar
+                className="relative z-1 size-20 rotate-[7deg] border-2 border-cream shadow-[4px_5px_0_var(--orange)]"
+                person={secondRival}
+              />
+            </div>
+            <strong className={dashboardCardTextVariants({ role: 'label' })}>
+              {firstRival.displayName} vs {secondRival.displayName}
+            </strong>
+            <strong
+              className={cn(
+                dashboardCardTextVariants({ role: 'metric' }),
+                'text-orange',
+              )}
+            >
+              {formatRecord({
+                wins: firstRival.wins,
+                losses: firstRival.losses,
+              })}
+            </strong>
+          </CardContent>
+          <CardFooter className="relative z-1 mt-auto justify-center">
+            <Badge
+              className="rotate-[-2deg] border border-cream bg-transparent px-3 text-cream"
+              variant="outline"
+            >
+              {formatCount({
+                count: rivalry.gamesPlayed,
+                singular: 'game',
+              })}{' '}
+              head-to-head
+            </Badge>
+          </CardFooter>
+        </>
+      ) : (
+        <DashboardCardEmptyState
+          description="Record a game between crew members and let the scorekeeping begin."
+          title="No rivalry yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Swords} />
+    </DashboardStatCard>
+  )
+}
+
+function LongestWinStreakCard({
+  longestWinStreak,
+}: {
+  longestWinStreak: DashboardData['longestWinStreak']['longestWinStreak']
+}) {
+  return (
+    <DashboardStatCard
+      className="dashboard-streak-card min-h-[190px] overflow-hidden xl:col-span-5 xl:col-start-8 xl:row-start-1"
+      tone="orange"
+    >
+      <DashboardCardHeader
+        description="The record to chase"
+        icon={Flame}
+        iconSize="small"
+        iconTone="lime"
+        tilt="counterclockwise"
+        title="Longest crew win streak"
+      />
+      {longestWinStreak ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-cream text-ink"
+          metadata={formatStreakPeriod({
+            startedAtUtc: longestWinStreak.startedAtUtc,
+            endedAtUtc: longestWinStreak.endedAtUtc,
+          })}
+          metric={longestWinStreak.wins}
+          metricLabel={`straight ${longestWinStreak.wins === 1 ? 'win' : 'wins'}`}
+          person={{
+            userId: longestWinStreak.userId,
+            displayName: longestWinStreak.displayName,
+            profilePictureUrl: longestWinStreak.profilePictureUrl ?? null,
+          }}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Get on the court and start proving who runs this crew."
+          title="No win streak yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Flame} layer="raised" />
+    </DashboardStatCard>
+  )
+}
+
+function ChiefPaddlerCard({
+  chiefPaddler,
+}: {
+  chiefPaddler: DashboardData['chiefPaddler']['chiefPaddler']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[190px] overflow-hidden xl:col-span-5 xl:col-start-8 xl:row-start-2"
+      tone="aqua"
+    >
+      <DashboardCardHeader
+        description="Most 11–0 wins in the crew"
+        icon={Crown}
+        iconSize="small"
+        iconTone="purple"
+        tilt="counterclockwise"
+        title="Chief Paddler"
+      />
+      {chiefPaddler ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-lime text-ink"
+          metadata="Reigning Chief"
+          metric={chiefPaddler.thatsAPaddlin.toLocaleString('en-AU')}
+          metricLabel="paddlins delivered"
+          person={{
+            userId: chiefPaddler.userId,
+            displayName: chiefPaddler.displayName,
+            profilePictureUrl: chiefPaddler.profilePictureUrl ?? null,
+          }}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Hand out an 11–0 paddlin and claim it."
+          title="The throne's empty"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Crown} size="large" />
+    </DashboardStatCard>
+  )
+}
+
+function BestPartnerCard({
+  bestPartner,
+}: {
+  bestPartner: BestPartnerPresentation
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      tone="paper"
+    >
+      <DashboardCardHeader
+        description="You two have a special bond. Apparently it wins games."
+        icon={Handshake}
+        iconSize="small"
+        iconTone="purple"
+        tilt="counterclockwise"
+        title="Best partner"
+      />
+      {bestPartner.available ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-aqua text-ink"
+          metadata={
+            <>
+              {formatCount({
+                count: bestPartner.partner.wins,
+                singular: 'win',
+              })}{' '}
+              ·{' '}
+              {formatCount({
+                count: bestPartner.partner.losses,
+                singular: 'loss',
+                plural: 'losses',
+              })}
+            </>
+          }
+          metric={`${bestPartner.winPercentage}%`}
+          metricLabel="win rate"
+          person={bestPartner.partner}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description={bestPartner.description}
+          title={bestPartner.title}
+        />
+      )}
+      <DashboardDecorativeIcon
+        direction="counterclockwise"
+        icon={Handshake}
+        size="small"
+      />
+    </DashboardStatCard>
   )
 }
 
@@ -633,13 +1208,23 @@ function LeaderboardEntry({
       <span className="flex min-w-0 items-center gap-3">
         <DashboardAvatar
           className="size-10 border-2 border-ink"
-          fallbackClassName="font-black"
+          fallbackSize="small"
           person={member}
         />
-        <strong className="truncate font-heading text-sm sm:text-base">
-          {member.displayName}
-          {isCurrentUser ? <span className="sr-only"> (you)</span> : null}
-        </strong>
+        <span className="flex min-w-0 flex-col">
+          <strong className="truncate font-heading text-sm sm:text-base">
+            {member.displayName}
+            {isCurrentUser ? <span className="sr-only"> (you)</span> : null}
+          </strong>
+          <span className="font-mono text-[10px] text-ink-soft sm:hidden">
+            {formatCount({ count: member.wins, singular: 'win' })} -{' '}
+            {formatCount({
+              count: member.losses,
+              singular: 'loss',
+              plural: 'losses',
+            })}
+          </span>
+        </span>
         {member.rank === 1 ? (
           <Crown
             className="hidden size-5 rotate-[-12deg] fill-orange sm:block"
@@ -661,13 +1246,15 @@ function DashboardAvatar({
   person,
   className,
   fallbackClassName,
+  fallbackSize,
 }: {
   person: Pick<
     DoublesPairingPlayerHttpResponse,
     'userId' | 'displayName' | 'profilePictureUrl'
   >
   className: string
-  fallbackClassName: string
+  fallbackClassName?: string
+  fallbackSize?: VariantProps<typeof dashboardAvatarFallbackVariants>['size']
 }) {
   return (
     <Avatar className={className}>
@@ -679,7 +1266,7 @@ function DashboardAvatar({
       ) : null}
       <AvatarFallback
         className={cn(
-          'font-black',
+          dashboardAvatarFallbackVariants({ size: fallbackSize }),
           getAvatarStyle({ userId: person.userId }),
           fallbackClassName,
         )}
@@ -730,6 +1317,98 @@ function SectionHeading({
   )
 }
 
+function CrewRankCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-3"
+      description="Your place on the crew leaderboard"
+      detail={`of ${formatCount({
+        count: statistics.activeCrewMemberCount,
+        singular: 'player',
+      })}`}
+      eyebrow="Crew rank"
+      icon={Medal}
+      iconTone="orange"
+      tone="ink"
+      value={`#${statistics.crewRank}`}
+    />
+  )
+}
+
+function CurrentStreakCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-4"
+      description="Consecutive wins through your latest game"
+      detail={getCurrentStreakDetail({
+        currentWinStreak: statistics.currentWinStreak,
+        longestWinStreak: statistics.longestWinStreak,
+      })}
+      eyebrow="Current streak"
+      icon={Flame}
+      iconTone="lime"
+      tone="orange"
+      value={
+        statistics.currentWinStreak === 0
+          ? 'Your move'
+          : `${statistics.currentWinStreak} W`
+      }
+    />
+  )
+}
+
+function PointDifferentialCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-3"
+      description="Points scored minus points conceded"
+      detail={`${statistics.pointsScored.toLocaleString('en-AU')} for · ${statistics.pointsConceded.toLocaleString('en-AU')} against`}
+      eyebrow="Point differential"
+      icon={
+        statistics.pointDifferential < 0 ? TrendingDown : TrendingUp
+      }
+      iconTone="cream"
+      tone="aqua"
+      value={formatSignedNumber({ value: statistics.pointDifferential })}
+    />
+  )
+}
+
+function ThatsAPaddlinCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-4"
+      description="11–0 wins. Zero points. Zero mercy."
+      emptyState={
+        statistics.thatsAPaddlin === 0
+          ? "No paddlins yet. Court's waiting. Go obliterate somebody."
+          : undefined
+      }
+      eyebrow="That's a Paddlin"
+      icon={Hammer}
+      iconTone="lime"
+      tone="purple"
+      value={statistics.thatsAPaddlin.toLocaleString('en-AU')}
+    />
+  )
+}
+
 function PersonalMetricCard({
   className,
   eyebrow,
@@ -737,61 +1416,60 @@ function PersonalMetricCard({
   value,
   detail,
   emptyState,
-  icon: Icon,
-  iconClassName,
+  icon,
+  iconTone,
+  tone,
 }: {
   className: string
   eyebrow: string
-  description?: string
+  description: string
   value: string
   detail?: string
   emptyState?: string
-  icon: typeof Medal
-  iconClassName: string
+  icon: LucideIcon
+  iconTone: NonNullable<
+    VariantProps<typeof dashboardCardIconVariants>['tone']
+  >
+  tone: NonNullable<VariantProps<typeof dashboardStatCardVariants>['tone']>
 }) {
   return (
-    <Card
-      className={cn(
-        'dashboard-stat-card min-h-[190px] border-2 border-ink',
-        className,
-      )}
-    >
-      <CardHeader>
-        <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
-          {eyebrow}
-        </CardTitle>
-        {description ? (
-          <CardDescription className="font-heading text-[11px] text-current opacity-75">
-            {description}
-          </CardDescription>
-        ) : null}
-        <CardAction
-          className={cn(
-            'grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-current [&_svg]:size-5',
-            iconClassName,
-          )}
-        >
-          <Icon aria-hidden="true" />
-        </CardAction>
-      </CardHeader>
-      <CardContent className="mt-auto gap-1">
+    <DashboardStatCard className={cn('min-h-[190px]', className)} tone={tone}>
+      <DashboardCardHeader
+        description={description}
+        icon={icon}
+        iconSize="small"
+        iconTone={iconTone}
+        title={eyebrow}
+      />
+      <CardContent className="relative z-1 mt-auto gap-1">
         {emptyState ? (
-          <p className="m-0 max-w-xs text-sm leading-relaxed font-medium opacity-80">
+          <p
+            className={cn(
+              dashboardCardTextVariants({ role: 'body' }),
+              'm-0 max-w-xs leading-relaxed font-medium opacity-80',
+            )}
+          >
             {emptyState}
           </p>
         ) : (
           <>
-            <strong className="font-heading text-6xl leading-none font-black tracking-[-.065em]">
+            <strong className={dashboardCardTextVariants({ role: 'metric' })}>
               {value}
             </strong>
             {detail ? (
-              <span className="text-[10px] font-bold tracking-[.05em] uppercase opacity-75">
+              <span
+                className={cn(
+                  dashboardCardTextVariants({ role: 'metadata' }),
+                  'opacity-75',
+                )}
+              >
                 {detail}
               </span>
             ) : null}
           </>
         )}
       </CardContent>
-    </Card>
+      <DashboardDecorativeIcon icon={icon} size="small" />
+    </DashboardStatCard>
   )
 }

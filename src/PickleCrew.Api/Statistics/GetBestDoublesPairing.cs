@@ -54,10 +54,8 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
         ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-        var activeMembersByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
@@ -66,7 +64,7 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)
-                && candidate.Wins + candidate.Losses >= MinimumGamesPlayed
+                && candidate.GamesPlayed >= MinimumGamesPlayed
             )
             .Select(candidate => new DoublesPairingStatisticsTotals
             {
@@ -74,12 +72,11 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
                 Player2Id = candidate.Player2Id,
                 Wins = candidate.Wins,
                 Losses = candidate.Losses,
-                GamesPlayed = candidate.Wins + candidate.Losses,
-                WinPercentage = (decimal)candidate.Wins
-                    / (candidate.Wins + candidate.Losses),
+                GamesPlayed = candidate.GamesPlayed,
+                WinPercentage = candidate.WinPercentage,
                 PointsScored = candidate.PointsScored,
                 PointsConceded = candidate.PointsConceded,
-                PointDifferential = candidate.PointsScored - candidate.PointsConceded,
+                PointDifferential = candidate.PointDifferential,
             })
             .OrderByDescending(candidate => candidate.WinPercentage)
             .ThenByDescending(candidate => candidate.GamesPlayed)

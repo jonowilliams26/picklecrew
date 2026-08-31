@@ -36,7 +36,7 @@ export const getGames = createServerFn({ method: 'GET' })
         return failure({
           type: 'game-history-forbidden-error',
           message:
-            'Your active Crew membership could not be verified. Refresh your Crew and try again.',
+            'Your active crew membership could not be verified. Refresh your crew and try again.',
         })
       }
 
@@ -69,7 +69,7 @@ export const getGameRecordingOptions = createServerFn({ method: 'GET' })
         return failure({
           type: 'game-recording-options-forbidden-error',
           message:
-            'Your active Crew membership could not be verified. Refresh your Crew and try again.',
+            'Your active crew membership could not be verified. Refresh your crew and try again.',
         })
       }
 
@@ -105,7 +105,7 @@ export const recordGame = createServerFn({ method: 'POST' })
       const status = result.response?.status
       const message = getProblemDetailsMessage({
         problemDetails: result.error,
-        fallbackMessage: 'The Game could not be saved.',
+        fallbackMessage: 'The game could not be saved.',
       })
 
       if (status === 400) {
@@ -123,13 +123,13 @@ export const recordGame = createServerFn({ method: 'POST' })
         return failure({
           type: 'game-recording-forbidden-error',
           message:
-            'Your active Crew membership could not be verified. Refresh your Crew and try again.',
+            'Your active crew membership could not be verified. Refresh your crew and try again.',
         })
       }
 
       return failure({
         type: 'game-recording-unavailable-error',
-        message: 'The Game could not be saved because the service is unavailable. Try again.',
+        message: 'The game could not be saved because the service is unavailable. Try again.',
       })
     } catch {
       return failure({

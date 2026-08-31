@@ -1,8 +1,13 @@
 import type {
+  BestPartnerHttpResponse,
   GetBestDoublesPairingHttpResponse,
+  GetBestPartnerHttpResponse,
+  GetBiggestRivalsHttpResponse,
   GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
+  GetFriendsOrLoversHttpResponse,
+  GetNemesisHttpResponse,
   GetPersonalStatisticsHttpResponse,
   GetRecentGamesHttpResponse,
 } from '~/lib/api/generated/types.gen'
@@ -10,11 +15,15 @@ import type { Result } from '~/lib/results'
 
 export type DashboardData = Readonly<{
   personalStatistics: GetPersonalStatisticsHttpResponse
+  nemesis: GetNemesisHttpResponse
   recentGames: GetRecentGamesHttpResponse
   leaderboard: GetCrewLeaderboardHttpResponse
   longestWinStreak: GetCrewLongestWinStreakHttpResponse
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
+  bestPartner: GetBestPartnerHttpResponse
+  biggestRivals: GetBiggestRivalsHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
+  friendsOrLovers: GetFriendsOrLoversHttpResponse
 }>
 
 type DashboardForbiddenError = Readonly<{
@@ -31,6 +40,39 @@ export type DashboardResult = Result<
   DashboardData,
   DashboardForbiddenError | DashboardUnavailableError
 >
+
+export type BestPartnerPresentation =
+  | Readonly<{
+      available: false
+      title: string
+      description: string
+    }>
+  | Readonly<{
+      available: true
+      partner: BestPartnerHttpResponse
+      winPercentage: number
+    }>
+
+export function getBestPartnerPresentation({
+  bestPartner,
+}: {
+  bestPartner: BestPartnerHttpResponse | null
+}): BestPartnerPresentation {
+  if (!bestPartner) {
+    return {
+      available: false,
+      title: 'No best partner yet',
+      description:
+        'Play at least three doubles games with the same crew member to qualify.',
+    }
+  }
+
+  return {
+    available: true,
+    partner: bestPartner,
+    winPercentage: formatPercentage({ value: bestPartner.winPercentage }),
+  }
+}
 
 export function formatPercentage({
   value,
@@ -64,6 +106,34 @@ export function formatCount({
   plural?: string
 }): string {
   return `${count.toLocaleString('en-AU')} ${count === 1 ? singular : plural}`
+}
+
+export function getFriendsOrLoversCardDetails({
+  friendsOrLovers,
+}: {
+  friendsOrLovers: GetFriendsOrLoversHttpResponse
+}) {
+  const pairing = friendsOrLovers.pairing
+
+  if (!pairing) {
+    return { type: 'empty' as const }
+  }
+
+  const firstPlayer = pairing.players[0]
+  const secondPlayer = pairing.players[1]
+
+  if (pairing.players.length !== 2 || !firstPlayer || !secondPlayer) {
+    throw new Error('A Friends or lovers pairing must contain exactly two players.')
+  }
+
+  return {
+    type: 'pairing' as const,
+    firstPlayer,
+    secondPlayer,
+    gamesPlayed: pairing.gamesPlayed,
+    gamesTogetherLabel:
+      pairing.gamesPlayed === 1 ? 'game together' : 'games together',
+  }
 }
 
 export function getInitials({ displayName }: { displayName: string }): string {

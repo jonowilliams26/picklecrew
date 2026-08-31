@@ -8,7 +8,6 @@ import {
 import type { User } from '@workos/authkit-tanstack-react-start'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
-  Check,
   ChevronsUpDown,
   ChevronUp,
   ClipboardList,
@@ -17,6 +16,8 @@ import {
   Plus,
   UsersRound,
 } from 'lucide-react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { LogoMark } from '~/components/picklecrew-brand'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { buttonVariants } from '~/components/ui/button'
@@ -26,9 +27,12 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { Spinner } from '~/components/ui/spinner'
 import {
   Sidebar,
   SidebarContent,
@@ -46,6 +50,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '~/components/ui/sidebar'
+import { toast } from '~/components/ui/toast'
+import type { Crew } from '~/lib/crews/membership-routing'
 
 export const Route = createFileRoute('/_authenticated/_active-crew')({
   component: ActiveCrewLayout,
@@ -74,7 +80,7 @@ function getInitials({ user }: { user: User }): string {
 }
 
 function ActiveCrewLayout() {
-  const { activeCrew } = authenticatedRoute.useLoaderData()
+  const { activeCrew, crews } = authenticatedRoute.useLoaderData()
   const { user } = useAuth()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isRecordingGame = pathname === '/record-game'
@@ -86,7 +92,8 @@ function ActiveCrewLayout() {
   return (
     <SidebarProvider className="min-h-dvh bg-background">
       <ActiveCrewSidebar
-        crewName={activeCrew.name}
+        activeCrew={activeCrew}
+        crews={crews}
         pathname={pathname}
         user={user}
       />
@@ -121,18 +128,97 @@ function ActiveCrewLayout() {
   )
 }
 
-function CrewSwitcher({ crewName }: { crewName: string }) {
+function showCrewSwitchError() {
+  toast.add({
+    type: 'error',
+    title: 'Crew not switched',
+    description: 'The selected crew could not be activated. Try again.',
+  })
+}
+
+function CrewSwitchLoadingPage({ crewName }: { crewName: string }) {
+  return createPortal(
+    <div
+      className="dashboard-shell fixed inset-0 z-[100] flex min-h-dvh items-center justify-center bg-background p-6 font-heading"
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div className="flex max-w-md flex-col items-center text-center">
+        <span className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
+          <UsersRound className="size-8" aria-hidden="true" />
+        </span>
+        <Spinner className="mb-5 size-7 text-primary" aria-hidden="true" />
+        <p className="mb-2 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+          Switching crew
+        </p>
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+          {crewName}
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Loading your crew details...
+        </p>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+function CrewSwitcher({
+  activeCrew,
+  crews,
+}: {
+  activeCrew: Crew
+  crews: ReadonlyArray<Crew>
+}) {
+  const { switchToOrganization } = useAuth()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [switchingCrew, setSwitchingCrew] = useState<Crew>()
   const closeMobileNavigation = () => setOpenMobile(false)
+  const isSwitching = switchingCrew !== undefined
+
+  const handleCrewChange = async (organizationId: string) => {
+    if (organizationId === activeCrew.organizationId) {
+      return
+    }
+
+    const selectedCrew = crews.find(
+      (crew) => crew.organizationId === organizationId,
+    )
+    if (!selectedCrew) {
+      showCrewSwitchError()
+      return
+    }
+
+    setSwitchingCrew(selectedCrew)
+    closeMobileNavigation()
+
+    try {
+      const result = await switchToOrganization(organizationId)
+      if (result) {
+        showCrewSwitchError()
+        setSwitchingCrew(undefined)
+        return
+      }
+
+      window.location.reload()
+    } catch {
+      showCrewSwitchError()
+      setSwitchingCrew(undefined)
+    }
+  }
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
+        {switchingCrew ? (
+          <CrewSwitchLoadingPage crewName={switchingCrew.name} />
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
-                className="hover:bg-sidebar-foreground/5 active:bg-sidebar-foreground/10 data-open:bg-sidebar-foreground/10 data-open:hover:bg-sidebar-foreground/10"
+                className="cursor-pointer hover:bg-sidebar-foreground/5 active:bg-sidebar-foreground/10 data-open:bg-sidebar-foreground/10 data-open:hover:bg-sidebar-foreground/10"
                 size="lg"
               />
             }
@@ -142,10 +228,10 @@ function CrewSwitcher({ crewName }: { crewName: string }) {
             </span>
             <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
               <strong className="w-full truncate font-heading text-sm">
-                {crewName}
+                {activeCrew.name}
               </strong>
               <span className="w-full truncate text-[10px] text-muted-foreground">
-                Current crew
+                {isSwitching ? 'Switching crew...' : 'Current crew'}
               </span>
             </span>
             <ChevronsUpDown aria-hidden="true" />
@@ -158,16 +244,29 @@ function CrewSwitcher({ crewName }: { crewName: string }) {
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel>Crews</DropdownMenuLabel>
-              <DropdownMenuItem>
-                <UsersRound aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">{crewName}</span>
-                <Check className="ml-auto" aria-hidden="true" />
-                <span className="sr-only">Current crew</span>
-              </DropdownMenuItem>
+              <DropdownMenuRadioGroup
+                disabled={isSwitching}
+                value={activeCrew.organizationId}
+                onValueChange={(organizationId: string) => {
+                  void handleCrewChange(organizationId)
+                }}
+              >
+                {crews.map((crew) => (
+                  <DropdownMenuRadioItem
+                    className="cursor-pointer"
+                    key={crew.organizationId}
+                    value={crew.organizationId}
+                  >
+                    <UsersRound aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">{crew.name}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
+                className="cursor-pointer"
                 render={
                   <Link
                     to="/create-crew"
@@ -187,11 +286,13 @@ function CrewSwitcher({ crewName }: { crewName: string }) {
 }
 
 function ActiveCrewSidebar({
-  crewName,
+  activeCrew,
+  crews,
   pathname,
   user,
 }: {
-  crewName: string
+  activeCrew: Crew
+  crews: ReadonlyArray<Crew>
   pathname: string
   user: User
 }) {
@@ -212,7 +313,7 @@ function ActiveCrewSidebar({
           <span>PickleCrew</span>
         </Link>
 
-        <CrewSwitcher crewName={crewName} />
+        <CrewSwitcher activeCrew={activeCrew} crews={crews} />
 
         <Link
           className={buttonVariants({

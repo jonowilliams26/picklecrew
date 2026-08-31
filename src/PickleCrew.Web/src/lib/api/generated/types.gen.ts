@@ -4,6 +4,24 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type BestPartnerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointsScored: number;
+    pointsConceded: number;
+    pointDifferential: number;
+};
+
+export type BiggestRivalryHttpResponse = {
+    players: Array<RivalPlayerHttpResponse>;
+    gamesPlayed: number;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -62,6 +80,21 @@ export type DoublesPairingPlayerHttpResponse = {
     profilePictureUrl?: null | string;
 };
 
+export type FriendsOrLoversPairingHttpResponse = {
+    players: Array<FriendsOrLoversPlayerHttpResponse>;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointDifferential: number;
+};
+
+export type FriendsOrLoversPlayerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+};
+
 export type GameFormat = 'singles' | 'doubles';
 
 export type GameHistoryItemHttpResponse = {
@@ -93,6 +126,14 @@ export type GetBestDoublesPairingHttpResponse = {
     pairing: null | DoublesPairingHttpResponse;
 };
 
+export type GetBestPartnerHttpResponse = {
+    bestPartner: null | BestPartnerHttpResponse;
+};
+
+export type GetBiggestRivalsHttpResponse = {
+    rivalry: null | BiggestRivalryHttpResponse;
+};
+
 export type GetChiefPaddlerHttpResponse = {
     chiefPaddler: null | ChiefPaddlerHttpResponse;
 };
@@ -102,16 +143,19 @@ export type GetCrewLeaderboardHttpResponse = {
 };
 
 export type GetCrewLongestWinStreakHttpResponse = {
-    userId: null | string;
-    displayName: null | string;
-    profilePictureUrl?: null | string;
-    longestWinStreak: number;
-    longestWinStreakStartedAtUtc: null | string;
-    longestWinStreakEndedAtUtc: null | string;
+    longestWinStreak: null | LongestWinStreakHttpResponse;
+};
+
+export type GetFriendsOrLoversHttpResponse = {
+    pairing: null | FriendsOrLoversPairingHttpResponse;
 };
 
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
+};
+
+export type GetNemesisHttpResponse = {
+    nemesis: null | NemesisHttpResponse;
 };
 
 export type GetPersonalStatisticsHttpResponse = {
@@ -153,6 +197,22 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type LongestWinStreakHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    wins: number;
+    startedAtUtc: string;
+    endedAtUtc: null | string;
+};
+
+export type NemesisHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    losses: number;
 };
 
 export type PaginatedHttpResponseOfCrewMemberHttpResponse = {
@@ -226,6 +286,15 @@ export type RecordGameParticipantHttpRequest = {
 export type RecordGameSideHttpRequest = {
     score: number;
     participants: Array<RecordGameParticipantHttpRequest>;
+};
+
+export type RivalPlayerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl?: null | string;
+    wins: number;
+    losses: number;
+    winPercentage: number | string;
 };
 
 export type SendCrewInvitationHttpRequest = {
@@ -495,6 +564,72 @@ export type GetBestDoublesPairingResponses = {
 
 export type GetBestDoublesPairingResponse = GetBestDoublesPairingResponses[keyof GetBestDoublesPairingResponses];
 
+export type GetBestPartnerData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/best-partner';
+};
+
+export type GetBestPartnerErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBestPartnerError = GetBestPartnerErrors[keyof GetBestPartnerErrors];
+
+export type GetBestPartnerResponses = {
+    /**
+     * OK
+     */
+    200: GetBestPartnerHttpResponse;
+};
+
+export type GetBestPartnerResponse = GetBestPartnerResponses[keyof GetBestPartnerResponses];
+
+export type GetBiggestRivalsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/biggest-rivals';
+};
+
+export type GetBiggestRivalsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBiggestRivalsError = GetBiggestRivalsErrors[keyof GetBiggestRivalsErrors];
+
+export type GetBiggestRivalsResponses = {
+    /**
+     * OK
+     */
+    200: GetBiggestRivalsHttpResponse;
+};
+
+export type GetBiggestRivalsResponse = GetBiggestRivalsResponses[keyof GetBiggestRivalsResponses];
+
 export type GetChiefPaddlerData = {
     body?: never;
     path?: never;
@@ -527,6 +662,72 @@ export type GetChiefPaddlerResponses = {
 };
 
 export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
+
+export type GetFriendsOrLoversData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/friends-or-lovers';
+};
+
+export type GetFriendsOrLoversErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetFriendsOrLoversError = GetFriendsOrLoversErrors[keyof GetFriendsOrLoversErrors];
+
+export type GetFriendsOrLoversResponses = {
+    /**
+     * OK
+     */
+    200: GetFriendsOrLoversHttpResponse;
+};
+
+export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
+
+export type GetNemesisData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/nemesis';
+};
+
+export type GetNemesisErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetNemesisError = GetNemesisErrors[keyof GetNemesisErrors];
+
+export type GetNemesisResponses = {
+    /**
+     * OK
+     */
+    200: GetNemesisHttpResponse;
+};
+
+export type GetNemesisResponse = GetNemesisResponses[keyof GetNemesisResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;

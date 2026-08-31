@@ -6,7 +6,9 @@ import {
   formatRecord,
   formatSignedNumber,
   formatStreakPeriod,
+  getBestPartnerPresentation,
   getCurrentStreakDetail,
+  getFriendsOrLoversCardDetails,
   getInitials,
 } from './dashboard.ts'
 
@@ -36,6 +38,55 @@ describe('dashboard formatting', () => {
     )
   })
 
+  test('creates Friends or lovers pairing card details', () => {
+    const details = getFriendsOrLoversCardDetails({
+      friendsOrLovers: {
+        pairing: {
+          players: [
+            {
+              userId: 'user-alpha',
+              displayName: 'Alpha Player',
+              profilePictureUrl: null,
+            },
+            {
+              userId: 'user-beta',
+              displayName: 'Beta Player',
+              profilePictureUrl: 'https://example.test/beta.jpg',
+            },
+          ],
+          wins: 7,
+          losses: 5,
+          gamesPlayed: 12,
+          winPercentage: 7 / 12,
+          pointDifferential: 9,
+        },
+      },
+    })
+
+    assert.deepEqual(details, {
+      type: 'pairing',
+      firstPlayer: {
+        userId: 'user-alpha',
+        displayName: 'Alpha Player',
+        profilePictureUrl: null,
+      },
+      secondPlayer: {
+        userId: 'user-beta',
+        displayName: 'Beta Player',
+        profilePictureUrl: 'https://example.test/beta.jpg',
+      },
+      gamesPlayed: 12,
+      gamesTogetherLabel: 'games together',
+    })
+  })
+
+  test('creates empty Friends or lovers card details', () => {
+    assert.deepEqual(
+      getFriendsOrLoversCardDetails({ friendsOrLovers: { pairing: null } }),
+      { type: 'empty' },
+    )
+  })
+
   test('creates initials from up to two display-name words', () => {
     assert.equal(getInitials({ displayName: ' Maya Chen ' }), 'MC')
     assert.equal(getInitials({ displayName: 'Prince' }), 'P')
@@ -59,6 +110,47 @@ describe('dashboard formatting', () => {
       getCurrentStreakDetail({ currentWinStreak: 5, longestWinStreak: 5 }),
       'You’ve got the hot paddle — personal best in progress',
     )
+  })
+
+  test('builds available and empty Best Partner presentations', () => {
+    assert.deepEqual(
+      getBestPartnerPresentation({
+        bestPartner: {
+          userId: 'user_partner',
+          displayName: 'Alex Partner',
+          profilePictureUrl: null,
+          wins: 8,
+          losses: 2,
+          gamesPlayed: 10,
+          winPercentage: '0.8',
+          pointsScored: 110,
+          pointsConceded: 101,
+          pointDifferential: 9,
+        },
+      }),
+      {
+        available: true,
+        partner: {
+          userId: 'user_partner',
+          displayName: 'Alex Partner',
+          profilePictureUrl: null,
+          wins: 8,
+          losses: 2,
+          gamesPlayed: 10,
+          winPercentage: '0.8',
+          pointsScored: 110,
+          pointsConceded: 101,
+          pointDifferential: 9,
+        },
+        winPercentage: 80,
+      },
+    )
+    assert.deepEqual(getBestPartnerPresentation({ bestPartner: null }), {
+      available: false,
+      title: 'No best partner yet',
+      description:
+        'Play at least three doubles games with the same crew member to qualify.',
+    })
   })
 
   test('formats completed, active, and absent streak periods', () => {

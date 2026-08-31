@@ -58,7 +58,7 @@ test('filters inactive and pending memberships', () => {
   )
 })
 
-test('preserves the current organization when its membership is active', () => {
+test('preserves the current organization and lists every active crew', () => {
   assert.deepEqual(
     resolve({
       memberships: [firstMembership, secondMembership],
@@ -67,6 +67,10 @@ test('preserves the current organization when its membership is active', () => {
     {
       type: 'active-crew',
       crew: { organizationId: 'org_second', name: 'Second Crew' },
+      crews: [
+        { organizationId: 'org_first', name: 'First Crew' },
+        { organizationId: 'org_second', name: 'Second Crew' },
+      ],
     },
   )
 })
@@ -77,11 +81,15 @@ test('selects the first active membership when the current organization is missi
     {
       type: 'switch-required',
       crew: { organizationId: 'org_first', name: 'First Crew' },
+      crews: [
+        { organizationId: 'org_first', name: 'First Crew' },
+        { organizationId: 'org_second', name: 'Second Crew' },
+      ],
     },
   )
 })
 
-test('selects the first active membership when the current organization is inactive', () => {
+test('selects and lists only active memberships', () => {
   assert.deepEqual(
     resolve({
       memberships: [
@@ -93,19 +101,27 @@ test('selects the first active membership when the current organization is inact
     {
       type: 'switch-required',
       crew: { organizationId: 'org_first', name: 'First Crew' },
+      crews: [{ organizationId: 'org_first', name: 'First Crew' }],
     },
   )
 })
 
 const signedOut: MembershipResolution = { type: 'signed-out' }
 const noActiveCrew: MembershipResolution = { type: 'no-active-crew' }
+const activeCrewDetails = {
+  organizationId: 'org_first',
+  name: 'First Crew',
+}
+const crews = [activeCrewDetails]
 const activeCrew: MembershipResolution = {
   type: 'active-crew',
-  crew: { organizationId: 'org_first', name: 'First Crew' },
+  crew: activeCrewDetails,
+  crews,
 }
 const switchRequired: MembershipResolution = {
   type: 'switch-required',
-  crew: { organizationId: 'org_first', name: 'First Crew' },
+  crew: activeCrewDetails,
+  crews,
 }
 
 test('routes signed-out protected requests to sign-in', () => {

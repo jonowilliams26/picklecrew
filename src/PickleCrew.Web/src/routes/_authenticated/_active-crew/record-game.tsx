@@ -92,9 +92,9 @@ function RecordGamePage() {
       <main className="flex flex-1 items-start justify-center p-4 md:p-10">
         <Card className="w-full max-w-2xl border-2 border-border shadow-[6px_7px_0_var(--ink)]">
           <CardHeader>
-            <CardTitle>Record a Game</CardTitle>
+            <CardTitle>Record a game</CardTitle>
             <CardDescription>
-              Active Crew membership is required before a Game can be recorded.
+              Active crew membership is required before a game can be recorded.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -322,7 +322,7 @@ function GameRecordingForm({
           <CardHeader className="rounded-t-[10px] border-b-2 border-ink bg-ink p-6 text-cream md:p-8">
             <span className="flex items-center gap-2 text-[10px] font-black tracking-[.14em] text-lime uppercase">
               <Sparkles aria-hidden="true" />
-              Record a Game
+              Record a game
             </span>
             <CardTitle className="max-w-2xl text-3xl font-black leading-none tracking-[-.05em] md:text-5xl">
               Who owned the court?
@@ -430,7 +430,7 @@ function GameRecordingForm({
 
           <CardFooter className="flex-col items-stretch gap-3 border-t border-ink/15 p-4 md:flex-row md:items-center md:justify-between md:p-6">
             <p className="hidden max-w-sm font-heading text-sm font-semibold text-muted-foreground md:block">
-              Give the Sides one last look, then make it official.
+              Give the sides one last look, then make it official.
             </p>
             <Button
               className="w-full md:w-auto md:min-w-64"
@@ -444,7 +444,7 @@ function GameRecordingForm({
               ) : (
                 <Save data-icon="inline-start" />
               )}
-              {isSubmitting ? 'Saving Game…' : 'Lock in the result'}
+              {isSubmitting ? 'Saving game…' : 'Lock in the result'}
             </Button>
           </CardFooter>
         </form>
@@ -643,7 +643,7 @@ function ParticipantFields({
                   id={controlId}
                   aria-invalid={fieldErrors[fieldKey] !== undefined || undefined}
                 >
-                  <SelectValue placeholder="Select a Crew member" />
+                  <SelectValue placeholder="Select a crew member" />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
                   <SelectGroup>
@@ -671,7 +671,7 @@ function ParticipantFields({
                 id={controlId}
                 name={fieldKey}
                 value={participant.guestName}
-                placeholder="Enter Guest name"
+                placeholder="Enter guest name"
                 autoComplete="off"
                 aria-invalid={fieldErrors[fieldKey] !== undefined || undefined}
                 disabled={isSubmitting}
@@ -786,7 +786,7 @@ function GameSavedConfirmation({
             onClick={onRecordAnother}
           >
             <Plus data-icon="inline-start" />
-            Record another Game
+            Record another game
           </Button>
           <Button
             className="w-full"

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -51,13 +52,15 @@ public sealed class GetCrewLongestWinStreakEndpointTests(AppHostFixture fixture)
         var result = await response.Content.ReadFromJsonAsync<GetCrewLongestWinStreakHttpResponse>(
             TestJsonSerializerOptions.Default
         );
-        Assert.NotNull(result);
-        Assert.Equal(recordHolderId, result.UserId);
-        Assert.Equal("Alex Record", result.DisplayName);
-        Assert.Equal("https://example.test/record.jpg", result.ProfilePictureUrl);
-        Assert.Equal(4, result.LongestWinStreak);
-        Assert.Equal(context.Games[0].PlayedAtUtc, result.LongestWinStreakStartedAtUtc);
-        Assert.Equal(context.Games[4].PlayedAtUtc, result.LongestWinStreakEndedAtUtc);
+        var longestWinStreak = Assert.IsType<LongestWinStreakHttpResponse>(
+            result?.LongestWinStreak
+        );
+        Assert.Equal(recordHolderId, longestWinStreak.UserId);
+        Assert.Equal("Alex Record", longestWinStreak.DisplayName);
+        Assert.Equal("https://example.test/record.jpg", longestWinStreak.ProfilePictureUrl);
+        Assert.Equal(4, longestWinStreak.Wins);
+        Assert.Equal(context.Games[0].PlayedAtUtc, longestWinStreak.StartedAtUtc);
+        Assert.Equal(context.Games[4].PlayedAtUtc, longestWinStreak.EndedAtUtc);
     }
 
     [Fact]
@@ -85,12 +88,73 @@ public sealed class GetCrewLongestWinStreakEndpointTests(AppHostFixture fixture)
         var result = await response.Content.ReadFromJsonAsync<GetCrewLongestWinStreakHttpResponse>(
             TestJsonSerializerOptions.Default
         );
-        Assert.NotNull(result);
-        Assert.Equal(recordHolderId, result.UserId);
-        Assert.Equal("Active Record", result.DisplayName);
-        Assert.Equal(3, result.LongestWinStreak);
-        Assert.Equal(context.Games[0].PlayedAtUtc, result.LongestWinStreakStartedAtUtc);
-        Assert.Null(result.LongestWinStreakEndedAtUtc);
+        var longestWinStreak = Assert.IsType<LongestWinStreakHttpResponse>(
+            result?.LongestWinStreak
+        );
+        Assert.Equal(recordHolderId, longestWinStreak.UserId);
+        Assert.Equal("Active Record", longestWinStreak.DisplayName);
+        Assert.Equal(3, longestWinStreak.Wins);
+        Assert.Equal(context.Games[0].PlayedAtUtc, longestWinStreak.StartedAtUtc);
+        Assert.Null(longestWinStreak.EndedAtUtc);
+    }
+
+    [Fact]
+    public async Task GetCrewLongestWinStreak_WhenMembersHaveEqualStreaks_ShouldReturnMostRecentRecordHolder()
+    {
+        var earlierRecordHolderId = $"user_test_{Guid.NewGuid():N}";
+        var laterRecordHolderId = $"user_test_{Guid.NewGuid():N}";
+        var earlierStartedAtUtc = new DateTimeOffset(
+            2026,
+            1,
+            1,
+            12,
+            0,
+            0,
+            TimeSpan.Zero
+        );
+        var laterStartedAtUtc = earlierStartedAtUtc.AddDays(1);
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember(id: earlierRecordHolderId, displayName: "Earlier Record")
+            .WithMember(id: laterRecordHolderId, displayName: "Later Record")
+            .BuildAsync();
+
+        await using (var database = fixture.CreateDbContext())
+        {
+            database.CrewMemberStatistics.AddRange(
+                new CrewMemberStatistics
+                {
+                    CrewId = context.Id,
+                    CrewUuid = context.Uuid,
+                    UserId = earlierRecordHolderId,
+                    LongestWinStreak = 3,
+                    LongestWinStreakStartedAtUtc = earlierStartedAtUtc,
+                },
+                new CrewMemberStatistics
+                {
+                    CrewId = context.Id,
+                    CrewUuid = context.Uuid,
+                    UserId = laterRecordHolderId,
+                    LongestWinStreak = 3,
+                    LongestWinStreakStartedAtUtc = laterStartedAtUtc,
+                }
+            );
+            await database.SaveChangesAsync();
+        }
+
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        using var response = await apiClient.GetAsync("/statistics/longest-win-streak");
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<GetCrewLongestWinStreakHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        var longestWinStreak = Assert.IsType<LongestWinStreakHttpResponse>(
+            result?.LongestWinStreak
+        );
+        Assert.Equal(laterRecordHolderId, longestWinStreak.UserId);
+        Assert.Equal("Later Record", longestWinStreak.DisplayName);
+        Assert.Equal(3, longestWinStreak.Wins);
+        Assert.Equal(laterStartedAtUtc, longestWinStreak.StartedAtUtc);
     }
 
     [Fact]
@@ -106,11 +170,6 @@ public sealed class GetCrewLongestWinStreakEndpointTests(AppHostFixture fixture)
             TestJsonSerializerOptions.Default
         );
         Assert.NotNull(result);
-        Assert.Null(result.UserId);
-        Assert.Null(result.DisplayName);
-        Assert.Null(result.ProfilePictureUrl);
-        Assert.Equal(0, result.LongestWinStreak);
-        Assert.Null(result.LongestWinStreakStartedAtUtc);
-        Assert.Null(result.LongestWinStreakEndedAtUtc);
+        Assert.Null(result.LongestWinStreak);
     }
 }
