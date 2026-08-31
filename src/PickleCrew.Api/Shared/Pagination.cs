@@ -22,8 +22,8 @@ public sealed record PaginatedHttpResponse<T>
 
 internal static class Pagination
 {
-    private const int DefaultPage = 1;
-    private const int DefaultPageSize = 10;
+    internal const int DefaultPage = 1;
+    internal const int DefaultPageSize = 10;
     private const int MaximumPageSize = 100;
 
     public static Dictionary<string, string[]> Validate(PaginatedHttpRequest parameters)

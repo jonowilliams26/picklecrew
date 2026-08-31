@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
@@ -53,25 +55,39 @@ internal sealed class GetGamesEndpoint : IEndpoint
     private static async Task<Ok<PaginatedHttpResponse<GameHistoryItemHttpResponse>>> HandleAsync(
         [AsParameters] GetGamesHttpRequest request,
         ICrewService crewService,
+        CrewUserContext crewUserContext,
         CrewScopedDbContext database,
+        HybridCache cache,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-
-        var games = await database.Games
-            .AsNoTracking()
-            .OrderByDescending(game => game.PlayedAtUtc)
-            .ThenByDescending(game => game.Id)
-            .ToArrayAsync(cancellationToken);
-
-        var activeMemberByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
+        var cacheOption = new GamesHistoryCacheOption(
+            crewUserContext.CrewUuid,
+            request.Page ?? Pagination.DefaultPage,
+            request.PageSize ?? Pagination.DefaultPageSize
         );
+        var paginatedGames = await cache.GetOrCreateAsync(
+            cacheOption,
+            async factoryCancellationToken =>
+            {
+                var activeMembers = await crewService.ListActiveCrewMembersAsync(
+                    factoryCancellationToken
+                );
+                var persistedGames = await database.Games
+                    .AsNoTracking()
+                    .OrderByDescending(game => game.PlayedAtUtc)
+                    .ThenByDescending(game => game.Id)
+                    .ToArrayAsync(factoryCancellationToken);
+                var activeMemberByUserId = activeMembers.ToDictionary(
+                    member => member.WorkOsUserId,
+                    StringComparer.Ordinal
+                );
 
-        var paginatedGames = games
-            .Select(game => ToHttpResponse(game, activeMemberByUserId))
-            .Paginate(request);
+                return persistedGames
+                    .Select(game => ToHttpResponse(game, activeMemberByUserId))
+                    .Paginate(request);
+            },
+            cancellationToken
+        );
 
         return TypedResults.Ok(paginatedGames);
     }

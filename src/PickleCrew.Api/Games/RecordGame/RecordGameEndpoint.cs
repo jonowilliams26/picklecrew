@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
@@ -80,6 +82,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         ICrewService crewService,
         CrewScopedDbContext database,
         GameStatisticsService gameStatisticsService,
+        HybridCache cache,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
@@ -142,6 +145,14 @@ internal sealed class RecordGameEndpoint : IEndpoint
 
         database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
+
+        await cache.RemoveByTagAsync(
+            [
+                new CrewGamesCacheTag(crewUserContext.CrewUuid),
+                new CrewStatisticsCacheTag(crewUserContext.CrewUuid),
+            ],
+            cancellationToken
+        );
 
         return TypedResults.Ok(new RecordGameHttpResponse
         {
