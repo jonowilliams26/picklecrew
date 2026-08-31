@@ -72,15 +72,16 @@ internal sealed class GetGamesEndpoint : IEndpoint
                 var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
                     factoryCancellationToken
                 );
-                var persistedGames = await database.Games
+
+                return await database.Games
                     .AsNoTracking()
                     .OrderByDescending(game => game.PlayedAtUtc)
                     .ThenByDescending(game => game.Id)
-                    .ToArrayAsync(factoryCancellationToken);
-
-                return persistedGames
-                    .Select(game => ToHttpResponse(game, activeMembersByUserId))
-                    .Paginate(request);
+                    .PaginateAsync(
+                        request,
+                        game => ToHttpResponse(game, activeMembersByUserId),
+                        factoryCancellationToken
+                    );
             },
             cancellationToken
         );
