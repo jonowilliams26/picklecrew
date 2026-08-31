@@ -48,10 +48,8 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
         ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-        var activeMembersByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 

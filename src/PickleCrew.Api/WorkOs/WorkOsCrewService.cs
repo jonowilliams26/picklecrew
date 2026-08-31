@@ -16,6 +16,17 @@ internal sealed class WorkOsCrewService(
         );
     }
 
+    public async Task<Dictionary<string, ActiveCrewMember>> GetActiveMembersByIdAsync(
+        CancellationToken cancellationToken)
+    {
+        var activeMembers = await ListActiveCrewMembersAsync(cancellationToken);
+
+        return activeMembers.ToDictionary(
+            member => member.WorkOsUserId,
+            StringComparer.Ordinal
+        );
+    }
+
     public Task<CrewRoster> ListCrewMembersAsync(
         CancellationToken cancellationToken)
     {

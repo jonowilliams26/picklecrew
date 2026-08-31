@@ -50,15 +50,16 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
         ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-        var activePartnersByUserId = activeMembers
-            .Where(member => !string.Equals(
-                member.WorkOsUserId,
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
+        var activePartnerUserIds = activeMembersByUserId.Keys
+            .Where(userId => !string.Equals(
+                userId,
                 crewUserContext.UserId,
                 StringComparison.Ordinal
             ))
-            .ToDictionary(member => member.WorkOsUserId, StringComparer.Ordinal);
-        var activePartnerUserIds = activePartnersByUserId.Keys.ToArray();
+            .ToArray();
 
         var statistics = await database.CrewDoublesPairingStatistics
             .AsNoTracking()
@@ -97,7 +98,7 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
             });
         }
 
-        var partner = activePartnersByUserId[statistics.PartnerUserId];
+        var partner = activeMembersByUserId[statistics.PartnerUserId];
 
         return TypedResults.Ok(new GetBestPartnerHttpResponse
         {

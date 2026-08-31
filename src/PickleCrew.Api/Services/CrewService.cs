@@ -32,6 +32,9 @@ internal interface ICrewService
     Task<ActiveCrewMember[]> ListActiveCrewMembersAsync(
         CancellationToken cancellationToken);
 
+    Task<Dictionary<string, ActiveCrewMember>> GetActiveMembersByIdAsync(
+        CancellationToken cancellationToken);
+
     Task<CrewRoster> ListCrewMembersAsync(
         CancellationToken cancellationToken);
 
