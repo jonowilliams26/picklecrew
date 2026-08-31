@@ -120,6 +120,23 @@ A crew member's all-time cumulative results against one opposing crew member wit
 
 - Each matchup's statistics belong to exactly one crew, exactly one crew member, and exactly one opposing crew member.
 
+## Nemesis
+
+A crew member's active opposing crew member against whom they have the most all-time losses within one crew.
+
+### Business rules
+
+- A Nemesis is calculated separately for each crew from the crew member's directional matchup statistics.
+- An opponent must have played at least three games against the crew member to qualify as their Nemesis.
+- A crew member has no Nemesis until they have lost to a qualifying active opposing crew member.
+- Guests and former crew members cannot be a Nemesis.
+- Tied opponents are resolved by user identifier.
+
+### Relationships
+
+- Each crew member has zero or one Nemesis in each crew.
+- Each Nemesis identifies exactly one opposing crew member.
+
 ## Doubles pairing statistics
 
 A doubles pairing's all-time cumulative results within one crew.

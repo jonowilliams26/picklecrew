@@ -6,6 +6,7 @@ import type {
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
   GetFriendsOrLoversHttpResponse,
+  GetNemesisHttpResponse,
   GetPersonalStatisticsHttpResponse,
   GetRecentGamesHttpResponse,
 } from '~/lib/api/generated/types.gen'
@@ -13,6 +14,7 @@ import type { Result } from '~/lib/results'
 
 export type DashboardData = Readonly<{
   personalStatistics: GetPersonalStatisticsHttpResponse
+  nemesis: GetNemesisHttpResponse
   recentGames: GetRecentGamesHttpResponse
   leaderboard: GetCrewLeaderboardHttpResponse
   longestWinStreak: GetCrewLongestWinStreakHttpResponse
