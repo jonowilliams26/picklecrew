@@ -73,7 +73,7 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, bestPartner.Wins);
         Assert.Equal(1, bestPartner.Losses);
         Assert.Equal(3, bestPartner.GamesPlayed);
-        Assert.Equal(0.66666666666666666667m, bestPartner.WinPercentage);
+        Assert.Equal(2m / 3m, bestPartner.WinPercentage);
         Assert.Equal(31, bestPartner.PointsScored);
         Assert.Equal(25, bestPartner.PointsConceded);
         Assert.Equal(6, bestPartner.PointDifferential);

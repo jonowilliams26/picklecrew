@@ -56,12 +56,10 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
             .Where(matchup =>
                 activeUserIds.Contains(matchup.UserId)
                 && activeUserIds.Contains(matchup.OpponentUserId)
-                && matchup.Wins + matchup.Losses >= 3
+                && matchup.GamesPlayed >= 3
             )
-            .OrderBy(matchup => Math.Abs(
-                (decimal)matchup.Wins / (matchup.Wins + matchup.Losses) - 0.5m
-            ))
-            .ThenByDescending(matchup => matchup.Wins + matchup.Losses)
+            .OrderBy(matchup => Math.Abs(matchup.WinPercentage - 0.5m))
+            .ThenByDescending(matchup => matchup.GamesPlayed)
             .ThenBy(matchup => matchup.UserId)
             .ThenBy(matchup => matchup.OpponentUserId)
             .Select(matchup => new RivalryCandidate
@@ -70,6 +68,8 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
                 OpponentUserId = matchup.OpponentUserId,
                 Wins = matchup.Wins,
                 Losses = matchup.Losses,
+                GamesPlayed = matchup.GamesPlayed,
+                WinPercentage = matchup.WinPercentage,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -86,12 +86,14 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
             CreatePlayer(
                 activeMembersByUserId[rivalry.UserId],
                 rivalry.Wins,
-                rivalry.Losses
+                rivalry.Losses,
+                rivalry.WinPercentage
             ),
             CreatePlayer(
                 activeMembersByUserId[rivalry.OpponentUserId],
                 rivalry.Losses,
-                rivalry.Wins
+                rivalry.Wins,
+                1 - rivalry.WinPercentage
             ),
         }
             .OrderBy(player => player.DisplayName, StringComparer.OrdinalIgnoreCase)
@@ -103,7 +105,7 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
             Rivalry = new BiggestRivalryHttpResponse
             {
                 Players = players,
-                GamesPlayed = rivalry.Wins + rivalry.Losses,
+                GamesPlayed = rivalry.GamesPlayed,
             },
         });
     }
@@ -111,7 +113,8 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
     private static RivalPlayerHttpResponse CreatePlayer(
         ActiveCrewMember member,
         long wins,
-        long losses)
+        long losses,
+        decimal winPercentage)
     {
         return new RivalPlayerHttpResponse
         {
@@ -120,7 +123,7 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
             ProfilePictureUrl = member.ProfilePictureUrl,
             Wins = wins,
             Losses = losses,
-            WinPercentage = (decimal)wins / (wins + losses),
+            WinPercentage = winPercentage,
         };
     }
 }
@@ -134,4 +137,8 @@ internal sealed record RivalryCandidate
     public required long Wins { get; init; }
 
     public required long Losses { get; init; }
+
+    public required long GamesPlayed { get; init; }
+
+    public required decimal WinPercentage { get; init; }
 }

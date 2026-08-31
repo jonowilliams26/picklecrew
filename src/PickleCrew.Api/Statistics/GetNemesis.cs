@@ -47,7 +47,7 @@ internal sealed class GetNemesisEndpoint : IEndpoint
             .Where(statistics =>
                 statistics.UserId == crewUserContext.UserId
                 && statistics.Losses > 0
-                && statistics.Wins + statistics.Losses >= MinimumGamesPlayed
+                && statistics.GamesPlayed >= MinimumGamesPlayed
                 && activeMemberIds.Contains(statistics.OpponentUserId)
             )
             .OrderByDescending(statistics => statistics.Losses)

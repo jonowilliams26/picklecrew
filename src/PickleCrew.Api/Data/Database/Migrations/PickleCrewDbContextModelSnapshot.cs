@@ -70,7 +70,13 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<Guid>("CrewUuid")
                         .HasColumnType("uuid");
 
+                    b.Property<long>("GamesPlayed")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("Losses")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointDifferential")
                         .HasColumnType("bigint");
 
                     b.Property<long>("PointsConceded")
@@ -84,6 +90,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
+
+                    b.Property<decimal>("WinPercentage")
+                        .HasColumnType("numeric");
 
                     b.Property<long>("Wins")
                         .HasColumnType("bigint");
