@@ -46,10 +46,13 @@ if (!isTesting)
 }
 
 var database = postgres.AddDatabase("picklecrew");
+var cache = builder.AddRedis("cache");
 
 var api = builder.AddProject<Projects.PickleCrew_Api>("api")
     .WithReference(database)
+    .WithReference(cache)
     .WaitFor(database)
+    .WaitFor(cache)
     .WithEnvironment("WorkOS__ClientId", workosClientId)
     .WithEnvironment("WorkOS__ApiKey", workosApiKey)
     .WithHttpHealthCheck("/health", endpointName: "http");

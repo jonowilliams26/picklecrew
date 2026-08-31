@@ -25,6 +25,8 @@ public sealed class AppHostFixture : IAsyncLifetime
         "The API client is not available because the AppHost has not finished starting."
     );
 
+    public string CacheConnectionString { get; private set; } = null!;
+
     public string DatabaseConnectionString { get; private set; } = null!;
 
     public HttpClient CreateApiClient()
@@ -119,6 +121,12 @@ public sealed class AppHostFixture : IAsyncLifetime
             timeout.Token
         ).WaitAsync(DefaultTimeout, timeout.Token);
 
+        CacheConnectionString = await application.GetConnectionStringAsync(
+            "cache",
+            timeout.Token
+        ) ?? throw new InvalidOperationException(
+            "The cache connection string was not available."
+        );
         DatabaseConnectionString = await application.GetConnectionStringAsync(
             "picklecrew",
             timeout.Token

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -17,7 +19,10 @@ using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Testing;
 using PickleCrew.Api.WorkOs;
+using StackExchange.Redis;
 using WorkOS;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
 
 namespace PickleCrew.Api;
 
@@ -40,6 +45,44 @@ internal static class DependencyInjection
         builder.EnrichNpgsqlDbContext<CrewScopedDbContext>(settings =>
             settings.DisableHealthChecks = true
         );
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddCaching(this WebApplicationBuilder builder)
+    {
+        const string connectionName = "cache";
+
+        builder.AddRedisClient(connectionName);
+        builder.Services.AddSingleton<IDistributedCache>(services =>
+        {
+            var connection = services.GetRequiredService<IConnectionMultiplexer>();
+            var options = Options.Create(new RedisCacheOptions
+            {
+                ConnectionMultiplexerFactory = () => Task.FromResult(connection),
+                InstanceName = "picklecrew:",
+            });
+
+            return new RedisCache(options);
+        });
+        builder.Services.AddFusionCache()
+            .WithDefaultEntryOptions(options =>
+                options.Duration = TimeSpan.FromMinutes(5)
+            )
+            .WithSystemTextJsonSerializer()
+            .WithRegisteredDistributedCache()
+            .WithBackplane(services =>
+            {
+                var connection = services.GetRequiredService<IConnectionMultiplexer>();
+                var logger = services.GetRequiredService<ILogger<RedisBackplane>>();
+                var options = Options.Create(new RedisBackplaneOptions
+                {
+                    ConnectionMultiplexerFactory = () => Task.FromResult(connection),
+                });
+
+                return new RedisBackplane(options, logger);
+            })
+            .AsHybridCache();
 
         return builder;
     }

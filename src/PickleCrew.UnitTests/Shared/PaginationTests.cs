@@ -29,18 +29,25 @@ public sealed class PaginationTests
     [Fact]
     public void Paginate_WhenRequestedPageExceedsLastPage_ShouldReturnLastPage()
     {
-        var parameters = new PaginatedHttpRequest
+        IPaginationOptions options = new TestPaginationOptions
         {
             Page = 4,
             PageSize = 2,
         };
 
-        var result = Enumerable.Range(1, 5).Paginate(parameters);
+        var result = Enumerable.Range(1, 5).Paginate(options);
 
         Assert.Equal([5], result.Items);
         Assert.Equal(3, result.Page);
         Assert.Equal(2, result.PageSize);
         Assert.Equal(5, result.TotalCount);
         Assert.Equal(3, result.TotalPages);
+    }
+
+    private sealed record TestPaginationOptions : IPaginationOptions
+    {
+        public int? Page { get; init; }
+
+        public int? PageSize { get; init; }
     }
 }

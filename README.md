@@ -60,11 +60,13 @@ The deployment environments map to WorkOS as follows:
 Configure these values in the [WorkOS Redirects settings](https://dashboard.workos.com/redirects).
 The sign-in endpoints are required for WorkOS-initiated flows such as impersonation.
 
-Configure these values on both the `development` and `production` GitHub environments, using
-credentials from the corresponding WorkOS environment:
+Configure these values on both the `development` and `production` GitHub environments. Use
+credentials from the corresponding WorkOS environment and a connection string for that
+environment's shared Redis instance:
 
 | Name | GitHub type | Value |
 | --- | --- | --- |
+| `CACHE_CONNECTION_STRING` | Environment secret | StackExchange.Redis connection string for the environment's shared Redis instance |
 | `WORKOS_CLIENT_ID` | Environment variable | WorkOS client ID beginning with `client_` |
 | `WORKOS_API_KEY` | Environment secret | WorkOS API key beginning with `sk_` |
 | `WORKOS_COOKIE_PASSWORD` | Environment secret | Independently generated value containing at least 32 characters |
@@ -76,8 +78,10 @@ openssl rand -base64 32
 ```
 
 The API base URL and redirect URIs are non-secret Worker variables in
-`infra/web/wrangler.jsonc`. During deployment, the pipeline stages `WORKOS_CLIENT_ID` and
-`WORKOS_API_KEY` as Fly secrets for the API. It also validates the WorkOS settings and uploads the
+`infra/web/wrangler.jsonc`. During deployment, the pipeline stages the Redis connection string,
+`WORKOS_CLIENT_ID`, and `WORKOS_API_KEY` as Fly secrets for the API. All API Machines in an
+environment must use the same Redis instance so FusionCache cached data and invalidations are
+shared across every node. The pipeline also validates the WorkOS settings and uploads the
 client ID, API key, and cookie password as Cloudflare Worker secrets in the same operation as the
 Worker code. Pushes to `main` deploy development; stable `vMAJOR.MINOR.PATCH` tags deploy
 production.

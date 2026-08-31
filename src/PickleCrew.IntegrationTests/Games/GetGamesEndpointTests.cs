@@ -1,7 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using Microsoft.Extensions.Options;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Games;
+using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Shared;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -37,8 +42,24 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
             .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
-        using var response = await apiClient.GetAsync("/games?page=3&pageSize=5");
+        using var tenItemPageResponse = await apiClient.GetAsync(
+            "/games?page=1&pageSize=10"
+        );
+        tenItemPageResponse.EnsureSuccessStatusCode();
 
+        using var firstPageResponse = await apiClient.GetAsync(
+            "/games?page=1&pageSize=5"
+        );
+        firstPageResponse.EnsureSuccessStatusCode();
+        var firstPage = await firstPageResponse.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(firstPage);
+        Assert.Equal(5, firstPage.Items.Length);
+
+        using var response = await apiClient.GetAsync("/games?page=3&pageSize=5");
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<
             PaginatedHttpResponse<GameHistoryItemHttpResponse>
@@ -148,6 +169,192 @@ public sealed class GetGamesEndpointTests(AppHostFixture fixture)
         var participant = Assert.Single(game.Sides[0].Participants);
         Assert.Equal("Morgan Dink", participant.DisplayName);
         Assert.Equal(profilePictureUrl, participant.ProfilePictureUrl);
+    }
+
+    [Fact]
+    public async Task GetGames_WhenPersistedHistoryChangesWithoutInvalidation_ShouldReturnCachedHistory()
+    {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .WithSinglesGame(
+                side1: (administratorId, 11),
+                side2: ("Guest Player", 7)
+            )
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var initialResponse = await apiClient.GetAsync("/games");
+        initialResponse.EnsureSuccessStatusCode();
+        var initialHistory = await initialResponse.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(initialHistory);
+        Assert.Equal(7, Assert.Single(initialHistory.Items).Sides[1].Score);
+
+        var distributedCacheOptions = Options.Create(new RedisCacheOptions
+        {
+            Configuration = fixture.CacheConnectionString,
+            InstanceName = "picklecrew:",
+        });
+
+        using (var distributedCache = new RedisCache(distributedCacheOptions))
+        {
+            var cachedValue = await distributedCache.GetAsync(
+                $"v2:{new GamesHistoryCacheOption(context.Uuid, 1, 10).Key}"
+            );
+            Assert.NotNull(cachedValue);
+            Assert.NotEmpty(cachedValue);
+        }
+
+        var uncachedGameId = Guid.NewGuid();
+        await using (var database = fixture.CreateDbContext())
+        {
+            database.Games.Add(new Game
+            {
+                Uuid = uncachedGameId,
+                CrewId = context.Id,
+                CrewUuid = context.Uuid,
+                Format = GameFormat.Singles,
+                RecorderUserId = administratorId,
+                PlayedAtUtc = context.Games[0].PlayedAtUtc.AddMinutes(1),
+                Sides =
+                [
+                    new GameSide
+                    {
+                        SideNumber = 1,
+                        Score = 11,
+                        Participants =
+                        [
+                            new GameParticipant
+                            {
+                                SlotNumber = 1,
+                                UserId = administratorId,
+                                MemberDisplayName =
+                                    context.Administrator.EmailAddress,
+                            },
+                        ],
+                    },
+                    new GameSide
+                    {
+                        SideNumber = 2,
+                        Score = 8,
+                        Participants =
+                        [
+                            new GameParticipant
+                            {
+                                SlotNumber = 1,
+                                GuestName = "Second Guest",
+                            },
+                        ],
+                    },
+                ],
+            });
+            await database.SaveChangesAsync();
+        }
+
+        PaginatedHttpResponse<GameHistoryItemHttpResponse>? cachedHistory;
+
+        try
+        {
+            using var cachedResponse = await apiClient.GetAsync("/games");
+            cachedResponse.EnsureSuccessStatusCode();
+            cachedHistory = await cachedResponse.Content.ReadFromJsonAsync<
+                PaginatedHttpResponse<GameHistoryItemHttpResponse>
+            >(
+                TestJsonSerializerOptions.Default
+            );
+        }
+        finally
+        {
+            await using var database = fixture.CreateDbContext();
+            await database.Games
+                .Where(game => game.Uuid == uncachedGameId)
+                .ExecuteDeleteAsync();
+        }
+
+        Assert.NotNull(cachedHistory);
+        Assert.Equal(1, cachedHistory.TotalCount);
+        Assert.Equal(7, Assert.Single(cachedHistory.Items).Sides[1].Score);
+    }
+
+    [Fact]
+    public async Task GetGames_WhenGameIsRecordedAfterHistoryIsCached_ShouldReturnInvalidatedHistory()
+    {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .WithSinglesGame(
+                side1: (administratorId, 11),
+                side2: ("First Guest", 7)
+            )
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var cachedResponse = await apiClient.GetAsync("/games");
+        cachedResponse.EnsureSuccessStatusCode();
+        var cachedHistory = await cachedResponse.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(cachedHistory);
+        Assert.Single(cachedHistory.Items);
+
+        using var recordResponse = await apiClient.PostAsJsonAsync(
+            "/games",
+            new RecordGameHttpRequest
+            {
+                Format = GameFormat.Singles,
+                Sides =
+                [
+                    new RecordGameSideHttpRequest
+                    {
+                        Score = 11,
+                        Participants =
+                        [
+                            new RecordGameParticipantHttpRequest
+                            {
+                                UserId = administratorId,
+                            },
+                        ],
+                    },
+                    new RecordGameSideHttpRequest
+                    {
+                        Score = 8,
+                        Participants =
+                        [
+                            new RecordGameParticipantHttpRequest
+                            {
+                                GuestName = "Second Guest",
+                            },
+                        ],
+                    },
+                ],
+            },
+            TestJsonSerializerOptions.Default
+        );
+        recordResponse.EnsureSuccessStatusCode();
+        var recordedGame = await recordResponse.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(recordedGame);
+
+        using var refreshedResponse = await apiClient.GetAsync("/games");
+        refreshedResponse.EnsureSuccessStatusCode();
+        var refreshedHistory = await refreshedResponse.Content.ReadFromJsonAsync<
+            PaginatedHttpResponse<GameHistoryItemHttpResponse>
+        >(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(refreshedHistory);
+        Assert.Equal(2, refreshedHistory.TotalCount);
+        Assert.Contains(
+            refreshedHistory.Items,
+            game => game.GameId == recordedGame.GameId
+        );
     }
 
     [Fact]

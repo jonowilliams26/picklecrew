@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.EndpointFilters;
@@ -53,22 +55,36 @@ internal sealed class GetGamesEndpoint : IEndpoint
     private static async Task<Ok<PaginatedHttpResponse<GameHistoryItemHttpResponse>>> HandleAsync(
         [AsParameters] GetGamesHttpRequest request,
         ICrewService crewService,
+        CrewUserContext crewUserContext,
         CrewScopedDbContext database,
+        HybridCache cache,
         CancellationToken cancellationToken)
     {
-        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+        var cacheOption = new GamesHistoryCacheOption(
+            crewUserContext.CrewUuid,
+            request.Page ?? Pagination.DefaultPage,
+            request.PageSize ?? Pagination.DefaultPageSize
+        );
+        var paginatedGames = await cache.GetOrCreateAsync(
+            cacheOption,
+            async factoryCancellationToken =>
+            {
+                var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+                    factoryCancellationToken
+                );
+
+                return await database.Games
+                    .AsNoTracking()
+                    .OrderByDescending(game => game.PlayedAtUtc)
+                    .ThenByDescending(game => game.Id)
+                    .PaginateAsync(
+                        request,
+                        game => ToHttpResponse(game, activeMembersByUserId),
+                        factoryCancellationToken
+                    );
+            },
             cancellationToken
         );
-
-        var games = await database.Games
-            .AsNoTracking()
-            .OrderByDescending(game => game.PlayedAtUtc)
-            .ThenByDescending(game => game.Id)
-            .ToArrayAsync(cancellationToken);
-
-        var paginatedGames = games
-            .Select(game => ToHttpResponse(game, activeMembersByUserId))
-            .Paginate(request);
 
         return TypedResults.Ok(paginatedGames);
     }

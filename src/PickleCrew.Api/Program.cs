@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddDatabase();
+builder.AddCaching();
 builder.AddWorkOs();
 builder.Services.AddTimeProvider();
 builder.Services.AddUserContexts();

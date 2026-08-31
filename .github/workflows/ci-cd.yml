@@ -242,6 +242,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+          CACHE_CONNECTION_STRING: ${{ secrets.CACHE_CONNECTION_STRING }}
           WORKOS_CLIENT_ID: ${{ vars.WORKOS_CLIENT_ID }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY }}
         run: |
@@ -249,6 +250,7 @@ jobs:
 
           : "${FLY_API_TOKEN:?FLY_API_TOKEN is required}"
           : "${DATABASE_CONNECTION_STRING:?DATABASE_CONNECTION_STRING is required}"
+          : "${CACHE_CONNECTION_STRING:?CACHE_CONNECTION_STRING is required}"
           : "${WORKOS_CLIENT_ID:?WORKOS_CLIENT_ID is required}"
           : "${WORKOS_API_KEY:?WORKOS_API_KEY is required}"
 
@@ -261,6 +263,7 @@ jobs:
             --stage \
             --config "$FLY_CONFIG" \
             "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}" \
+            "ConnectionStrings__cache=${CACHE_CONNECTION_STRING}" \
             "WorkOS__ClientId=${WORKOS_CLIENT_ID}" \
             "WorkOS__ApiKey=${WORKOS_API_KEY}" \
             "RebuildStatistics=${REBUILD_STATISTICS}"
