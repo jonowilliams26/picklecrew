@@ -46,7 +46,7 @@ aspire stop
 
 ## Rebuild statistics
 
-Set `REBUILD_STATISTICS=true` to rebuild statistics from recorded games during API startup.
+Set `RebuildStatistics=true` to rebuild statistics from recorded games during API startup. For cloud deployments, configure `REBUILD_STATISTICS` as a GitHub environment variable; the deployment pipeline maps it to `RebuildStatistics` and defaults it to `false` when it is unset.
 
 ## Cloud deployment
 
