@@ -3,6 +3,7 @@ import { createApiClient } from '~/lib/api/api.server'
 import {
   getBestDoublesPairing as getBestDoublesPairingRequest,
   getBestPartner as getBestPartnerRequest,
+  getBiggestRivals as getBiggestRivalsRequest,
   getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
@@ -30,6 +31,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         longestWinStreak,
         bestDoublesPairing,
         bestPartner,
+        biggestRivals,
         chiefPaddler,
         friendsOrLovers,
       ] = await Promise.all([
@@ -40,6 +42,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getCrewLongestWinStreakRequest({ client }),
         getBestDoublesPairingRequest({ client }),
         getBestPartnerRequest({ client }),
+        getBiggestRivalsRequest({ client }),
         getChiefPaddlerRequest({ client }),
         getFriendsOrLoversRequest({ client }),
       ])
@@ -51,6 +54,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         longestWinStreak,
         bestDoublesPairing,
         bestPartner,
+        biggestRivals,
         chiefPaddler,
         friendsOrLovers,
       ]
@@ -63,6 +67,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         longestWinStreak.error ||
         bestDoublesPairing.error ||
         bestPartner.error ||
+        biggestRivals.error ||
         chiefPaddler.error ||
         friendsOrLovers.error
       ) {
@@ -89,6 +94,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         longestWinStreak: longestWinStreak.data,
         bestDoublesPairing: bestDoublesPairing.data,
         bestPartner: bestPartner.data,
+        biggestRivals: biggestRivals.data,
         chiefPaddler: chiefPaddler.data,
         friendsOrLovers: friendsOrLovers.data,
       })

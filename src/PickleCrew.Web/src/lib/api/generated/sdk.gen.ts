@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -78,6 +78,11 @@ export const getBestDoublesPairing = <ThrowOnError extends boolean = false>(opti
  * Gets the signed-in user's best doubles partner for the active Crew.
  */
 export const getBestPartner = <ThrowOnError extends boolean = false>(options?: Options<GetBestPartnerData, ThrowOnError>): RequestResult<GetBestPartnerResponses, GetBestPartnerErrors, ThrowOnError> => (options?.client ?? client).get<GetBestPartnerResponses, GetBestPartnerErrors, ThrowOnError>({ url: '/statistics/best-partner', ...options });
+
+/**
+ * Gets the biggest rivals for the active Crew.
+ */
+export const getBiggestRivals = <ThrowOnError extends boolean = false>(options?: Options<GetBiggestRivalsData, ThrowOnError>): RequestResult<GetBiggestRivalsResponses, GetBiggestRivalsErrors, ThrowOnError> => (options?.client ?? client).get<GetBiggestRivalsResponses, GetBiggestRivalsErrors, ThrowOnError>({ url: '/statistics/biggest-rivals', ...options });
 
 /**
  * Gets the Chief Paddler for the active Crew.

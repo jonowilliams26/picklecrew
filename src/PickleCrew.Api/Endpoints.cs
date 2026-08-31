@@ -57,6 +57,7 @@ internal static class Endpoints
             .WithCrewUserContext()
             .MapEndpoint<GetBestDoublesPairingEndpoint>()
             .MapEndpoint<GetBestPartnerEndpoint>()
+            .MapEndpoint<GetBiggestRivalsEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
             .MapEndpoint<GetFriendsOrLoversEndpoint>()
             .MapEndpoint<GetNemesisEndpoint>()
