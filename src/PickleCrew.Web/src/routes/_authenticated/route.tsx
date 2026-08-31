@@ -60,14 +60,13 @@ export const Route = createFileRoute('/_authenticated')({
       throw redirect({ to: decision.destination, replace: true })
     }
 
-    const activeCrew =
+    const hasActiveCrew =
       resolution.type === 'active-crew' ||
       resolution.type === 'switch-required'
-        ? resolution.crew
-        : undefined
 
     return {
-      activeCrew,
+      activeCrew: hasActiveCrew ? resolution.crew : undefined,
+      crews: hasActiveCrew ? resolution.crews : [],
       initialAuth: createInitialAuth(activeAuth),
     }
   },

@@ -17,10 +17,12 @@ export type MembershipResolution =
   | Readonly<{
       type: 'active-crew'
       crew: Crew
+      crews: ReadonlyArray<Crew>
     }>
   | Readonly<{
       type: 'switch-required'
       crew: Crew
+      crews: ReadonlyArray<Crew>
     }>
 
 export type MembershipRouteDecision =
@@ -55,6 +57,10 @@ export function resolveCrewMembership({
     return { type: 'no-active-crew' }
   }
 
+  const crews = activeMemberships.map((membership) => ({
+    organizationId: membership.organizationId,
+    name: membership.organizationName,
+  }))
   const currentMembership = activeMemberships.find(
     (membership) => membership.organizationId === currentOrganizationId,
   )
@@ -70,8 +76,8 @@ export function resolveCrewMembership({
   }
 
   return selectedMembership.organizationId === currentOrganizationId
-    ? { type: 'active-crew', crew }
-    : { type: 'switch-required', crew }
+    ? { type: 'active-crew', crew, crews }
+    : { type: 'switch-required', crew, crews }
 }
 
 export function decideCrewMembershipRoute({
