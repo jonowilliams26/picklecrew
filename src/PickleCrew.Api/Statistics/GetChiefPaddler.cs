@@ -39,47 +39,41 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var candidates = await database.CrewMemberStatistics
+        var chiefPaddlerStatistics = await database.CrewMemberStatistics
             .AsNoTracking()
             .Where(statistics =>
                 activeMemberUserIds.Contains(statistics.UserId)
                 && statistics.ThatsAPaddlin > 0
             )
+            .OrderByDescending(statistics => statistics.ThatsAPaddlin)
+            .ThenByDescending(statistics => statistics.CrewScore)
+            .ThenBy(statistics => statistics.UserId)
             .Select(statistics => new
             {
                 statistics.UserId,
                 statistics.ThatsAPaddlin,
             })
-            .ToArrayAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var chiefPaddler = candidates
-            .Select(candidate => new
+        if (chiefPaddlerStatistics is null)
+        {
+            return TypedResults.Ok(new GetChiefPaddlerHttpResponse
             {
-                Member = activeMembersByUserId[candidate.UserId],
-                candidate.ThatsAPaddlin,
-            })
-            .OrderByDescending(candidate => candidate.ThatsAPaddlin)
-            .ThenBy(
-                candidate => candidate.Member.DisplayName,
-                StringComparer.OrdinalIgnoreCase
-            )
-            .ThenBy(
-                candidate => candidate.Member.WorkOsUserId,
-                StringComparer.Ordinal
-            )
-            .FirstOrDefault();
+                ChiefPaddler = null,
+            });
+        }
+
+        var chiefPaddler = activeMembersByUserId[chiefPaddlerStatistics.UserId];
 
         return TypedResults.Ok(new GetChiefPaddlerHttpResponse
         {
-            ChiefPaddler = chiefPaddler is null
-                ? null
-                : new ChiefPaddlerHttpResponse
-                {
-                    UserId = chiefPaddler.Member.WorkOsUserId,
-                    DisplayName = chiefPaddler.Member.DisplayName,
-                    ProfilePictureUrl = chiefPaddler.Member.ProfilePictureUrl,
-                    ThatsAPaddlin = chiefPaddler.ThatsAPaddlin,
-                },
+            ChiefPaddler = new ChiefPaddlerHttpResponse
+            {
+                UserId = chiefPaddler.WorkOsUserId,
+                DisplayName = chiefPaddler.DisplayName,
+                ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
+                ThatsAPaddlin = chiefPaddlerStatistics.ThatsAPaddlin,
+            },
         });
     }
 }

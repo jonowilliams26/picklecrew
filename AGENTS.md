@@ -40,6 +40,12 @@ Local Development Orchestration:
 
 - Name injected `PickleCrewDbContext` instances `database`.
 
+## Database Queries
+
+- Prefer one database query when EF Core can filter, order, and select the result.
+- Use sensible, deterministic tie-breakers and select with `FirstOrDefaultAsync` when appropriate.
+- Loading all rows for in-memory selection is discouraged and should be a last resort.
+
 ## Authorization
 
 - Do not re-check whether the caller is active in endpoint handlers or services; the authorization pipeline validates this from the access token.
