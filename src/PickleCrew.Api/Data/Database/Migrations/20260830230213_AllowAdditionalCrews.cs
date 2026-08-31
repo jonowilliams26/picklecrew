@@ -24,7 +24,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
             migrationBuilder.Sql(
                 """
                 UPDATE "CrewProvisioningAttempts"
-                SET "RequestId" = "CrewUuid"
+                SET "RequestId" = "CrewUuid";
                 """
             );
 
