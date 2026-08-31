@@ -7,6 +7,7 @@ import {
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
+  getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
   getRecentGames as getRecentGamesRequest,
 } from '~/lib/api/generated/sdk.gen'
@@ -23,6 +24,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
       })
       const [
         personalStatistics,
+        nemesis,
         recentGames,
         leaderboard,
         longestWinStreak,
@@ -32,6 +34,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         friendsOrLovers,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
+        getNemesisRequest({ client }),
         getRecentGamesRequest({ client }),
         getCrewLeaderboardRequest({ client }),
         getCrewLongestWinStreakRequest({ client }),
@@ -42,6 +45,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
       ])
       const results = [
         personalStatistics,
+        nemesis,
         recentGames,
         leaderboard,
         longestWinStreak,
@@ -53,6 +57,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
 
       if (
         personalStatistics.error ||
+        nemesis.error ||
         recentGames.error ||
         leaderboard.error ||
         longestWinStreak.error ||
@@ -78,6 +83,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
 
       return success({
         personalStatistics: personalStatistics.data,
+        nemesis: nemesis.data,
         recentGames: recentGames.data,
         leaderboard: leaderboard.data,
         longestWinStreak: longestWinStreak.data,

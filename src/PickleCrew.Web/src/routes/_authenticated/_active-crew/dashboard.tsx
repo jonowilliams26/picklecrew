@@ -8,6 +8,7 @@ import {
   Handshake,
   Heart,
   Medal,
+  Skull,
   Target,
   Trophy,
   TrendingUp,
@@ -103,6 +104,7 @@ function DashboardPage() {
 
   const {
     personalStatistics,
+    nemesis: nemesisResponse,
     recentGames,
     leaderboard,
     longestWinStreak,
@@ -137,6 +139,7 @@ function DashboardPage() {
   const friendsOrLoversDetails = getFriendsOrLoversCardDetails({
     friendsOrLovers,
   })
+  const nemesis = nemesisResponse.nemesis
 
   if (
     pairing &&
@@ -264,7 +267,7 @@ function DashboardPage() {
                 iconClassName="bg-lime text-ink"
               />
 
-              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-6">
+              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
                 <CardHeader>
                   <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                     Last 10 games
@@ -320,6 +323,62 @@ function DashboardPage() {
               </Card>
 
               <BestPartnerCard bestPartner={bestPartner} />
+
+              <Card className="dashboard-stat-card relative min-h-[190px] overflow-hidden border-2 border-ink bg-orange text-ink shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
+                <CardHeader>
+                  <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
+                    Your nemesis
+                  </CardTitle>
+                  <CardDescription className="font-heading text-[11px] text-ink-soft">
+                    The opponent who&apos;s handed you the most losses
+                  </CardDescription>
+                  <CardAction className="grid size-10 rotate-[-6deg] place-items-center rounded-full border-2 border-ink bg-cream shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
+                    <Skull aria-hidden="true" />
+                  </CardAction>
+                </CardHeader>
+                {nemesis ? (
+                  <>
+                    <CardContent className="relative z-1">
+                      <div>
+                        <strong className="block font-heading text-6xl leading-[.72] font-black tracking-[-.08em]">
+                          {nemesis.losses.toLocaleString('en-AU')}
+                        </strong>
+                        <span className="whitespace-nowrap font-heading text-base font-black">
+                          {nemesis.losses === 1 ? 'loss' : 'losses'} to them
+                        </span>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="relative z-1 mt-auto items-center gap-3">
+                      <DashboardAvatar
+                        className="size-14 rotate-[-5deg] border-2 border-ink shadow-[3px_4px_0_var(--ink)]"
+                        fallbackClassName="bg-purple font-heading text-lg text-white"
+                        person={nemesis}
+                      />
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <strong className="max-w-full truncate font-heading text-base">
+                          {nemesis.displayName}
+                        </strong>
+                        <span className="text-[9px] font-black tracking-[.08em] uppercase">
+                          They&apos;ve got your number
+                        </span>
+                      </div>
+                    </CardFooter>
+                  </>
+                ) : (
+                  <CardContent className="mt-auto gap-1">
+                    <strong className="font-heading text-2xl font-black">
+                      Nobody owns you yet
+                    </strong>
+                    <p className="m-0 text-sm text-ink-soft">
+                      Play at least three games against an active Crew member to reveal your Nemesis.
+                    </p>
+                  </CardContent>
+                )}
+                <Skull
+                  className="pointer-events-none absolute -right-10 -bottom-6 size-52 rotate-[14deg] opacity-10"
+                  aria-hidden="true"
+                />
+              </Card>
             </div>
           ) : (
             <Card className="min-h-[310px] border-2 border-dashed border-ink/30 bg-cream">
@@ -696,7 +755,7 @@ function BestPartnerCard({
   bestPartner: BestPartnerPresentation
 }) {
   return (
-    <Card className="relative min-h-[260px] overflow-hidden border-2 border-ink bg-paper text-ink shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-6">
+    <Card className="relative min-h-[260px] overflow-hidden border-2 border-ink bg-paper text-ink shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
       <CardHeader>
         <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
           Best partner

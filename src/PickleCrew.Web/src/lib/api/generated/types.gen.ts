@@ -150,6 +150,10 @@ export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
 };
 
+export type GetNemesisHttpResponse = {
+    nemesis: null | NemesisHttpResponse;
+};
+
 export type GetPersonalStatisticsHttpResponse = {
     wins: number;
     losses: number;
@@ -189,6 +193,13 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type NemesisHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    losses: number;
 };
 
 export type PaginatedHttpResponseOfCrewMemberHttpResponse = {
@@ -629,6 +640,39 @@ export type GetFriendsOrLoversResponses = {
 };
 
 export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
+
+export type GetNemesisData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/nemesis';
+};
+
+export type GetNemesisErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetNemesisError = GetNemesisErrors[keyof GetNemesisErrors];
+
+export type GetNemesisResponses = {
+    /**
+     * OK
+     */
+    200: GetNemesisHttpResponse;
+};
+
+export type GetNemesisResponse = GetNemesisResponses[keyof GetNemesisResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;
