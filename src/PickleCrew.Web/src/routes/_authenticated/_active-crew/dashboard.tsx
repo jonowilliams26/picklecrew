@@ -854,43 +854,40 @@ function BestPartnerCard({
       </CardHeader>
       {bestPartner.available ? (
         <>
-          <CardContent className="gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-center gap-5">
-              <DashboardAvatar
-                className="size-24 shrink-0 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                fallbackClassName="bg-aqua font-heading text-3xl text-ink"
-                person={bestPartner.partner}
-              />
-              <div className="flex min-w-0 flex-col gap-2">
-                <span className="text-[9px] font-black tracking-[.12em] uppercase">
-                  Your court accomplice
-                </span>
-                <strong className="truncate font-heading text-3xl font-black sm:text-4xl">
-                  {bestPartner.partner.displayName}
-                </strong>
-                <Badge className="w-fit" variant="outline">
-                  {formatCount({
-                    count: bestPartner.partner.wins,
-                    singular: 'win',
-                  })}{' '}
-                  -{' '}
-                  {formatCount({
-                    count: bestPartner.partner.losses,
-                    singular: 'loss',
-                    plural: 'losses',
-                  })}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-baseline gap-2 lg:flex-col lg:items-end lg:gap-0">
-              <strong className="font-heading text-7xl leading-[.75] font-black tracking-[-.08em]">
+          <CardContent className="relative z-1">
+            <div>
+              <strong className="block font-heading text-6xl leading-[.72] font-black tracking-[-.08em]">
                 {bestPartner.winPercentage}%
               </strong>
-              <span className="text-[9px] font-black tracking-[.1em] uppercase">
-                win rate
+              <span className="whitespace-nowrap font-heading text-base font-black">
+                win rate together
               </span>
             </div>
           </CardContent>
+          <CardFooter className="relative z-1 mt-auto items-center gap-3">
+            <DashboardAvatar
+              className="size-14 shrink-0 rotate-[-5deg] border-2 border-ink shadow-[3px_4px_0_var(--ink)]"
+              fallbackClassName="bg-aqua font-heading text-lg text-ink"
+              person={bestPartner.partner}
+            />
+            <div className="flex min-w-0 flex-col gap-1">
+              <strong className="wrap-break-word font-heading text-base leading-tight">
+                {bestPartner.partner.displayName}
+              </strong>
+              <span className="text-[9px] font-black tracking-[.08em] uppercase">
+                {formatCount({
+                  count: bestPartner.partner.wins,
+                  singular: 'win',
+                })}{' '}
+                ·{' '}
+                {formatCount({
+                  count: bestPartner.partner.losses,
+                  singular: 'loss',
+                  plural: 'losses',
+                })}
+              </span>
+            </div>
+          </CardFooter>
         </>
       ) : (
         <CardContent className="my-auto items-center justify-center gap-2 text-center">
