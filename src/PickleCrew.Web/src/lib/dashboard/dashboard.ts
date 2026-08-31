@@ -63,7 +63,7 @@ export function getBestPartnerPresentation({
       available: false,
       title: 'No best partner yet',
       description:
-        'Play at least three doubles Games with the same Crew member to qualify.',
+        'Play at least three doubles games with the same crew member to qualify.',
     }
   }
 

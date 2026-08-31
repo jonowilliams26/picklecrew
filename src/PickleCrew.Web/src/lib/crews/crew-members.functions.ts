@@ -31,7 +31,7 @@ export const getCrewMembers = createServerFn({ method: 'GET' })
         return failure({
           type: 'crew-members-forbidden-error',
           message:
-            'Your active Crew membership could not be verified. Refresh your Crew and try again.',
+            'Your active crew membership could not be verified. Refresh your crew and try again.',
         })
       }
 

@@ -34,6 +34,7 @@ Local Development Orchestration:
 
 ## Frontend Conventions
 
+- Use sentence case for user-facing copy; capitalize domain terms only when grammar requires it.
 - Style TanStack `Link` elements with `buttonVariants`; do not render links through Base UI `Button`.
 
 ## Naming Conventions

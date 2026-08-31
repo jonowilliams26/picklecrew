@@ -133,7 +133,7 @@ function CrewPage() {
           <CardHeader>
             <CardTitle>Crew</CardTitle>
             <CardDescription>
-              Active Crew membership is required to view this roster.
+              Active crew membership is required to view this roster.
             </CardDescription>
           </CardHeader>
           <CardContent>
