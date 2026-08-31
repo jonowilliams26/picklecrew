@@ -15,17 +15,17 @@ export const getCrewMembership = createServerFn({ method: 'GET' }).handler(
     }
 
     const workos = createWorkOsClient()
-    const memberships =
+    const membershipPages =
       await workos.userManagement.listOrganizationMemberships({
         userId: auth.user.id,
         statuses: ['active'],
-        limit: 100,
       })
+    const memberships = await membershipPages.autoPagination()
 
     return resolveCrewMembership({
       isSignedIn: true,
       currentOrganizationId: auth.organizationId,
-      memberships: memberships.data.map((membership) => ({
+      memberships: memberships.map((membership) => ({
         organizationId: membership.organizationId,
         organizationName: membership.organizationName,
         status: membership.status,
