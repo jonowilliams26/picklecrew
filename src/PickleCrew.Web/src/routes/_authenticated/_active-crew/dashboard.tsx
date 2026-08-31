@@ -232,6 +232,7 @@ function DashboardPage() {
               <PersonalMetricCard
                 className="bg-ink text-cream shadow-[6px_7px_0_var(--orange)] xl:col-span-3"
                 eyebrow="Crew rank"
+                description="Your place on the crew leaderboard"
                 value={`#${personalStatistics.crewRank}`}
                 detail={`of ${formatCount({
                   count: personalStatistics.activeCrewMemberCount,
@@ -243,6 +244,7 @@ function DashboardPage() {
               <PersonalMetricCard
                 className="bg-orange text-ink shadow-[6px_7px_0_var(--ink)] xl:col-span-4"
                 eyebrow="Current streak"
+                description="Consecutive wins through your latest game"
                 value={
                   personalStatistics.currentWinStreak === 0
                     ? 'Your move'
@@ -258,6 +260,7 @@ function DashboardPage() {
               <PersonalMetricCard
                 className="bg-aqua text-ink shadow-[6px_7px_0_var(--ink)] xl:col-span-3"
                 eyebrow="Point differential"
+                description="Points scored minus points conceded"
                 value={formatSignedNumber({
                   value: personalStatistics.pointDifferential,
                 })}
@@ -362,7 +365,7 @@ function DashboardPage() {
                     </CardContent>
                     <CardFooter className="relative z-1 mt-auto items-center gap-3">
                       <DashboardAvatar
-                        className="size-14 rotate-[-5deg] border-2 border-ink shadow-[3px_4px_0_var(--ink)]"
+                        className="size-20 rotate-[-5deg] border-2 border-ink shadow-[3px_4px_0_var(--ink)]"
                         fallbackClassName="bg-purple font-heading text-lg text-white"
                         person={nemesis}
                       />
@@ -421,7 +424,7 @@ function DashboardPage() {
           />
 
           <div className="grid gap-5 xl:grid-cols-12">
-            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-2 xl:row-start-1">
+            <Card className="dashboard-stat-card border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-2 xl:row-start-1">
               <CardHeader className="border-b-2 border-line pb-8!">
                 <CardTitle className="font-heading text-3xl font-black tracking-[-.045em] sm:text-4xl">
                   Crew leaderboard
@@ -464,7 +467,7 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="dashboard-pair-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
+            <Card className="dashboard-pair-card dashboard-stat-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
               <CardHeader>
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Best doubles pairing
@@ -472,7 +475,7 @@ function DashboardPage() {
                 <CardDescription className="font-heading text-[11px] text-white/70">
                   The duo nobody wants across the net
                 </CardDescription>
-                <CardAction className="grid size-11 place-items-center rounded-full border-2 border-white bg-aqua text-ink [&_svg]:size-5">
+                <CardAction className="grid size-11 place-items-center rounded-full border-2 border-white bg-aqua text-ink shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
                   <UsersRound aria-hidden="true" />
                 </CardAction>
               </CardHeader>
@@ -542,7 +545,7 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="relative min-h-[330px] overflow-hidden border-2 border-ink bg-lime text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
+            <Card className="dashboard-stat-card relative min-h-[330px] overflow-hidden border-2 border-ink bg-lime text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
               <CardHeader className="relative z-1">
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Friends or lovers?
@@ -606,7 +609,7 @@ function DashboardPage() {
               />
             </Card>
 
-            <Card className="relative min-h-[330px] overflow-hidden border-2 border-ink bg-ink text-cream shadow-[7px_8px_0_var(--orange)] xl:col-span-6 xl:row-start-4">
+            <Card className="dashboard-stat-card relative min-h-[330px] overflow-hidden border-2 border-ink bg-ink text-cream shadow-[7px_8px_0_var(--orange)] xl:col-span-6 xl:row-start-4">
               <CardHeader>
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Biggest rivals
@@ -679,7 +682,7 @@ function DashboardPage() {
               />
             </Card>
 
-            <Card className="dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-1">
+            <Card className="dashboard-stat-card dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-1">
               <CardHeader>
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Longest crew win streak
@@ -708,7 +711,7 @@ function DashboardPage() {
                     {longestWinStreak.userId &&
                     longestWinStreak.displayName ? (
                       <DashboardAvatar
-                        className="size-16 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                        className="size-20 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
                         fallbackClassName="bg-cream font-heading text-xl text-ink"
                         person={{
                           userId: longestWinStreak.userId,
@@ -745,7 +748,7 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-2">
+            <Card className="dashboard-stat-card relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-2">
               <CardHeader className="relative z-1">
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Chief Paddler
@@ -762,7 +765,7 @@ function DashboardPage() {
                   <div className="flex min-w-0 items-center gap-5">
                     <div className="relative shrink-0">
                       <DashboardAvatar
-                        className="size-24 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                        className="size-20 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
                         fallbackClassName="bg-lime font-heading text-3xl text-ink"
                         person={{
                           userId: chiefPaddler.userId,
@@ -801,7 +804,7 @@ function DashboardPage() {
                 <CardContent className="relative z-1 mt-auto gap-6 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex min-w-0 items-center gap-5">
                     <div className="relative shrink-0">
-                      <span className="grid size-24 rotate-[-5deg] place-items-center rounded-full border-2 border-dashed border-ink bg-cream shadow-[4px_5px_0_var(--ink)] [&_svg]:size-10">
+                      <span className="grid size-20 rotate-[-5deg] place-items-center rounded-full border-2 border-dashed border-ink bg-cream shadow-[4px_5px_0_var(--ink)] [&_svg]:size-10">
                         <UserRound aria-label="Chief Paddler unclaimed" />
                       </span>
                       <span className="absolute -top-3 -right-3 grid size-10 rotate-[10deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5">
@@ -840,7 +843,7 @@ function BestPartnerCard({
   bestPartner: BestPartnerPresentation
 }) {
   return (
-    <Card className="relative min-h-[260px] overflow-hidden border-2 border-ink bg-paper text-ink shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
+    <Card className="dashboard-stat-card relative min-h-[260px] overflow-hidden border-2 border-ink bg-paper text-ink shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-4">
       <CardHeader>
         <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
           Best partner
@@ -857,7 +860,7 @@ function BestPartnerCard({
           <CardContent className="gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-5">
               <DashboardAvatar
-                className="size-24 shrink-0 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                className="size-20 shrink-0 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
                 fallbackClassName="bg-aqua font-heading text-3xl text-ink"
                 person={bestPartner.partner}
               />
@@ -1076,7 +1079,7 @@ function PersonalMetricCard({
         ) : null}
         <CardAction
           className={cn(
-            'grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-current [&_svg]:size-5',
+            'grid size-10 rotate-[6deg] place-items-center rounded-full border-2 border-current shadow-[2px_3px_0_var(--ink)] [&_svg]:size-5',
             iconClassName,
           )}
         >
