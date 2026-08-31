@@ -20,6 +20,27 @@ public sealed class CrewDoublesPairingStatistics
 
     public long PointsConceded { get; set; }
 
+    // EF Core requires setters to persist these calculated properties.
+    public long GamesPlayed
+    {
+        get => Wins + Losses;
+        private set { }
+    }
+
+    public decimal WinPercentage
+    {
+        get => GamesPlayed == 0
+            ? 0
+            : (decimal)Wins / GamesPlayed;
+        private set { }
+    }
+
+    public long PointDifferential
+    {
+        get => PointsScored - PointsConceded;
+        private set { }
+    }
+
     public uint Version { get; private set; }
 }
 

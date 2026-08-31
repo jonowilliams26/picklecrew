@@ -58,13 +58,11 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)
-                && candidate.Wins + candidate.Losses >= 3
+                && candidate.GamesPlayed >= 3
             )
-            .OrderByDescending(candidate => candidate.Wins + candidate.Losses)
+            .OrderByDescending(candidate => candidate.GamesPlayed)
             .ThenByDescending(candidate => candidate.Wins)
-            .ThenByDescending(
-                candidate => candidate.PointsScored - candidate.PointsConceded
-            )
+            .ThenByDescending(candidate => candidate.PointDifferential)
             .ThenBy(candidate => candidate.Player1Id)
             .ThenBy(candidate => candidate.Player2Id)
             .Select(candidate => new FriendsOrLoversStatisticsTotals
@@ -73,8 +71,9 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
                 Player2Id = candidate.Player2Id,
                 Wins = candidate.Wins,
                 Losses = candidate.Losses,
-                GamesPlayed = candidate.Wins + candidate.Losses,
-                PointDifferential = candidate.PointsScored - candidate.PointsConceded,
+                GamesPlayed = candidate.GamesPlayed,
+                WinPercentage = candidate.WinPercentage,
+                PointDifferential = candidate.PointDifferential,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -103,7 +102,7 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
                 Wins = statistics.Wins,
                 Losses = statistics.Losses,
                 GamesPlayed = statistics.GamesPlayed,
-                WinPercentage = (decimal)statistics.Wins / statistics.GamesPlayed,
+                WinPercentage = statistics.WinPercentage,
                 PointDifferential = statistics.PointDifferential,
             },
         });
@@ -132,6 +131,8 @@ internal sealed record FriendsOrLoversStatisticsTotals
     public required long Losses { get; init; }
 
     public required long GamesPlayed { get; init; }
+
+    public required decimal WinPercentage { get; init; }
 
     public required long PointDifferential { get; init; }
 }
