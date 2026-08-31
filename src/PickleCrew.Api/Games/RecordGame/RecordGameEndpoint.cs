@@ -83,14 +83,11 @@ internal sealed class RecordGameEndpoint : IEndpoint
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
-
-        var activeMemberByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
         );
 
-        var activeUserIds = activeMemberByUserId.Keys
+        var activeUserIds = activeMembersByUserId.Keys
             .ToHashSet(StringComparer.Ordinal);
 
         if (!activeUserIds.Contains(crewUserContext.UserId))
@@ -126,7 +123,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
                             SlotNumber = participantIndex + 1,
                             UserId = participant.UserId,
                             MemberDisplayName = participant.UserId is { } userId
-                                ? activeMemberByUserId[userId].DisplayName
+                                ? activeMembersByUserId[userId].DisplayName
                                 : null,
                             GuestName = participant.GuestName?.Trim(),
                         })

@@ -56,7 +56,9 @@ internal sealed class GetGamesEndpoint : IEndpoint
         CrewScopedDbContext database,
         CancellationToken cancellationToken)
     {
-        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
 
         var games = await database.Games
             .AsNoTracking()
@@ -64,13 +66,8 @@ internal sealed class GetGamesEndpoint : IEndpoint
             .ThenByDescending(game => game.Id)
             .ToArrayAsync(cancellationToken);
 
-        var activeMemberByUserId = activeMembers.ToDictionary(
-            member => member.WorkOsUserId,
-            StringComparer.Ordinal
-        );
-
         var paginatedGames = games
-            .Select(game => ToHttpResponse(game, activeMemberByUserId))
+            .Select(game => ToHttpResponse(game, activeMembersByUserId))
             .Paginate(request);
 
         return TypedResults.Ok(paginatedGames);
@@ -78,7 +75,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static GameHistoryItemHttpResponse ToHttpResponse(
         Game game,
-        Dictionary<string, ActiveCrewMember> activeMemberByUserId)
+        Dictionary<string, ActiveCrewMember> activeMembersByUserId)
     {
         return new GameHistoryItemHttpResponse
         {
@@ -95,7 +92,7 @@ internal sealed class GetGamesEndpoint : IEndpoint
                         .OrderBy(participant => participant.SlotNumber)
                         .Select(participant => ToHttpResponse(
                             participant,
-                            activeMemberByUserId
+                            activeMembersByUserId
                         ))
                         .ToArray(),
                 })
@@ -105,13 +102,13 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static GameHistoryParticipantHttpResponse ToHttpResponse(
         GameParticipant participant,
-        Dictionary<string, ActiveCrewMember> activeMemberByUserId)
+        Dictionary<string, ActiveCrewMember> activeMembersByUserId)
     {
         ActiveCrewMember? activeMember = null;
 
         if (participant.UserId is { } userId)
         {
-            activeMemberByUserId.TryGetValue(userId, out activeMember);
+            activeMembersByUserId.TryGetValue(userId, out activeMember);
         }
 
         return new GameHistoryParticipantHttpResponse
