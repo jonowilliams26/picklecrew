@@ -791,10 +791,20 @@ function LeaderboardEntry({
           fallbackClassName="font-black"
           person={member}
         />
-        <strong className="truncate font-heading text-sm sm:text-base">
-          {member.displayName}
-          {isCurrentUser ? <span className="sr-only"> (you)</span> : null}
-        </strong>
+        <span className="flex min-w-0 flex-col">
+          <strong className="truncate font-heading text-sm sm:text-base">
+            {member.displayName}
+            {isCurrentUser ? <span className="sr-only"> (you)</span> : null}
+          </strong>
+          <span className="font-mono text-[10px] text-ink-soft sm:hidden">
+            {formatCount({ count: member.wins, singular: 'win' })} -{' '}
+            {formatCount({
+              count: member.losses,
+              singular: 'loss',
+              plural: 'losses',
+            })}
+          </span>
+        </span>
         {member.rank === 1 ? (
           <Crown
             className="hidden size-5 rotate-[-12deg] fill-orange sm:block"
