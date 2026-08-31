@@ -191,6 +191,7 @@ jobs:
       FLY_CONFIG: ${{ github.ref_type == 'tag' && 'infra/api/production.toml' || 'infra/api/development.toml' }}
       FLY_HOSTNAME: ${{ github.ref_type == 'tag' && 'https://picklecrew-api-production.fly.dev' || 'https://picklecrew-api-development.fly.dev' }}
       DEPLOYMENT_URL: ${{ github.ref_type == 'tag' && 'https://api.picklecrew.app' || 'https://api.dev.picklecrew.app' }}
+      REBUILD_STATISTICS: ${{ vars.REBUILD_STATISTICS || 'false' }}
 
     steps:
       - name: Validate production release tag
@@ -251,12 +252,18 @@ jobs:
           : "${WORKOS_CLIENT_ID:?WORKOS_CLIENT_ID is required}"
           : "${WORKOS_API_KEY:?WORKOS_API_KEY is required}"
 
+          if [[ "$REBUILD_STATISTICS" != "true" && "$REBUILD_STATISTICS" != "false" ]]; then
+            echo "REBUILD_STATISTICS must be 'true' or 'false'." >&2
+            exit 1
+          fi
+
           flyctl secrets set \
             --stage \
             --config "$FLY_CONFIG" \
             "ConnectionStrings__picklecrew=${DATABASE_CONNECTION_STRING}" \
             "WorkOS__ClientId=${WORKOS_CLIENT_ID}" \
-            "WorkOS__ApiKey=${WORKOS_API_KEY}"
+            "WorkOS__ApiKey=${WORKOS_API_KEY}" \
+            "REBUILD_STATISTICS=${REBUILD_STATISTICS}"
 
       - name: Deploy API to Fly
         env:
