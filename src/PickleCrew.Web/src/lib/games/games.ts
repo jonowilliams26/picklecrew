@@ -333,7 +333,7 @@ function createParticipantSchema({ sideIndex }: { sideIndex: number }) {
       kind: z.literal('member'),
       userId: z
         .string()
-        .min(1, `Select an active Crew member for Side ${sideIndex + 1}.`),
+        .min(1, `Select an active crew member for side ${sideIndex + 1}.`),
       guestName: z.string(),
     }),
     z.object({
@@ -345,7 +345,7 @@ function createParticipantSchema({ sideIndex }: { sideIndex: number }) {
         .pipe(
           z
             .string()
-            .min(1, `Enter a Guest name for Side ${sideIndex + 1}.`),
+            .min(1, `Enter a guest name for side ${sideIndex + 1}.`),
         ),
     }),
   ])
@@ -387,7 +387,7 @@ const gameFormSchema = z
       context.addIssue({
         code: 'custom',
         path: ['participants'],
-        message: `Each Side must have exactly ${participantCountLabel} for this format.`,
+        message: `Each side must have exactly ${participantCountLabel} for this format.`,
       })
     }
 
@@ -435,19 +435,19 @@ const gameFormSchema = z
         code: 'custom',
         path: ['participants'],
         message:
-          'At least one participant must be an active member of the current Crew.',
+          'At least one participant must be an active member of the current crew.',
       })
     }
 
     addDuplicateIssues({
       context,
       locations: memberLocations,
-      message: 'A Crew member may participate only once in a Game.',
+      message: 'A crew member may participate only once in a game.',
     })
     addDuplicateIssues({
       context,
       locations: guestLocations,
-      message: 'Guest names must be distinct within a Game.',
+      message: 'Guest names must be distinct within a game.',
     })
 
     const [firstSide, secondSide] = values.sides

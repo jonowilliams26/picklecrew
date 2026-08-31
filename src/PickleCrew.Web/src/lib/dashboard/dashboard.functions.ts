@@ -81,7 +81,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
             ? 'dashboard-forbidden-error'
             : 'dashboard-unavailable-error',
           message: isForbidden
-            ? 'Your active Crew membership could not be verified. Refresh your Crew and try again.'
+            ? 'Your active crew membership could not be verified. Refresh your crew and try again.'
             : 'Dashboard statistics could not be loaded. Try again.',
         })
       }

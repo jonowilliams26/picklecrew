@@ -268,7 +268,7 @@ describe('createRecordGameRequest', () => {
           field: 'userId',
         })
       ],
-      'A Crew member may participate only once in a Game.',
+      'A crew member may participate only once in a game.',
     )
   })
 
@@ -305,7 +305,7 @@ describe('createRecordGameRequest', () => {
           field: 'guestName',
         })
       ],
-      'Guest names must be distinct within a Game.',
+      'Guest names must be distinct within a game.',
     )
   })
 
@@ -336,7 +336,7 @@ describe('createRecordGameRequest', () => {
 
     assert.equal(
       result.error.fieldErrors.participants,
-      'At least one participant must be an active member of the current Crew.',
+      'At least one participant must be an active member of the current crew.',
     )
   })
 
@@ -360,7 +360,7 @@ describe('createRecordGameRequest', () => {
           field: 'userId',
         })
       ],
-      'Select an active Crew member for Side 1.',
+      'Select an active crew member for side 1.',
     )
     assert.equal(
       result.error.fieldErrors['sides.1.score'],
@@ -404,7 +404,7 @@ describe('createRecordGameRequest', () => {
 
     assert.equal(
       result.error.fieldErrors.participants,
-      'Each Side must have exactly 2 participants for this format.',
+      'Each side must have exactly 2 participants for this format.',
     )
   })
 })

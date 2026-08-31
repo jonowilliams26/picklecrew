@@ -80,7 +80,7 @@ function DashboardPage() {
           <CardHeader>
             <CardTitle>Dashboard</CardTitle>
             <CardDescription>
-              Statistics for the current Crew appear here.
+              Statistics for the current crew appear here.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -382,7 +382,7 @@ function DashboardPage() {
                       Nobody owns you yet
                     </strong>
                     <p className="m-0 text-sm text-ink-soft">
-                      Play at least three games against an active Crew member to reveal your Nemesis.
+                      Play at least three games against an active crew member to reveal your nemesis.
                     </p>
                   </CardContent>
                 )}
@@ -399,7 +399,7 @@ function DashboardPage() {
                   No personal receipts yet
                 </strong>
                 <p className="m-0 max-w-sm text-sm text-ink-soft">
-                  Get on the court, play a Game, and start building a record
+                  Get on the court, play a game, and start building a record
                   worth bragging about.
                 </p>
               </CardContent>
@@ -457,7 +457,7 @@ function DashboardPage() {
                     No leaderboard drama yet
                   </strong>
                   <p className="m-0 max-w-sm text-sm text-ink-soft">
-                    Get on the court, record a Game, and give the Crew something
+                    Get on the court, record a game, and give the crew something
                     to argue about.
                   </p>
                 </CardContent>
@@ -536,7 +536,7 @@ function DashboardPage() {
                   </strong>
                   <p className="m-0 max-w-xs text-sm text-white/70">
                     Grab a partner, hit the court, and start proving which duo
-                    runs this Crew.
+                    runs this crew.
                   </p>
                 </CardContent>
               )}
@@ -595,7 +595,7 @@ function DashboardPage() {
                     No doubles partners yet
                   </strong>
                   <p className="m-0 max-w-xs text-sm text-ink-soft">
-                    Play at least three doubles Games with another Crew member
+                    Play at least three doubles games with another crew member
                     to start tracking who keeps showing up together.
                   </p>
                 </CardContent>
@@ -612,7 +612,7 @@ function DashboardPage() {
                   Biggest rivals
                 </CardTitle>
                 <CardDescription className="font-heading text-[11px] text-cream/70">
-                  The closest all-time head-to-head in the Crew
+                  The closest all-time head-to-head in the crew
                 </CardDescription>
                 <CardAction className="grid size-11 rotate-[5deg] place-items-center rounded-full border-2 border-cream bg-orange text-ink shadow-[3px_4px_0_var(--cream)] [&_svg]:size-5">
                   <Swords aria-hidden="true" />
@@ -668,7 +668,7 @@ function DashboardPage() {
                     No rivalry yet
                   </strong>
                   <p className="m-0 max-w-xs text-sm text-cream/70">
-                    Record a Game between Crew members and let the scorekeeping
+                    Record a game between crew members and let the scorekeeping
                     begin.
                   </p>
                 </CardContent>
@@ -739,7 +739,7 @@ function DashboardPage() {
                     No win streak yet
                   </strong>
                   <p className="m-0 max-w-xs text-sm text-ink-soft">
-                    Get on the court and start proving who runs this Crew.
+                    Get on the court and start proving who runs this crew.
                   </p>
                 </CardContent>
               )}
@@ -751,7 +751,7 @@ function DashboardPage() {
                   Chief Paddler
                 </CardTitle>
                 <CardDescription className="font-heading text-[11px] text-ink-soft">
-                  Most 11–0 wins in the Crew
+                  Most 11–0 wins in the crew
                 </CardDescription>
                 <CardAction className="grid size-11 rotate-[-7deg] place-items-center rounded-full border-2 border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
                   <Hammer aria-hidden="true" />
@@ -846,7 +846,7 @@ function BestPartnerCard({
           Best partner
         </CardTitle>
         <CardDescription className="font-heading text-[11px] text-ink-soft">
-          You two have a special bond. Apparently it wins Games.
+          You two have a special bond. Apparently it wins games.
         </CardDescription>
         <CardAction className="grid size-11 rotate-[6deg] place-items-center rounded-full border-2 border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
           <Handshake aria-hidden="true" />
