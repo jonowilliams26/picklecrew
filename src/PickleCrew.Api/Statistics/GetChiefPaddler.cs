@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using PickleCrew.Api.Statistics.Services;
+using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
 
 namespace PickleCrew.Api.Statistics;
 
@@ -29,28 +31,49 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetChiefPaddlerHttpResponse>> HandleAsync(
-        CrewStandingsService standingsService,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var standings = await standingsService.GetStandingsAsync(cancellationToken);
-        var chiefPaddler = standings
-            .Where(standing => standing.ThatsAPaddlin > 0)
-            .OrderByDescending(standing => standing.ThatsAPaddlin)
-            .ThenBy(standing => standing.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(standing => standing.UserId, StringComparer.Ordinal)
-            .FirstOrDefault();
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
+        var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
+        var chiefPaddlerStatistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics =>
+                activeMemberUserIds.Contains(statistics.UserId)
+                && statistics.ThatsAPaddlin > 0
+            )
+            .OrderByDescending(statistics => statistics.ThatsAPaddlin)
+            .ThenByDescending(statistics => statistics.CrewScore)
+            .ThenBy(statistics => statistics.UserId)
+            .Select(statistics => new
+            {
+                statistics.UserId,
+                statistics.ThatsAPaddlin,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (chiefPaddlerStatistics is null)
+        {
+            return TypedResults.Ok(new GetChiefPaddlerHttpResponse
+            {
+                ChiefPaddler = null,
+            });
+        }
+
+        var chiefPaddler = activeMembersByUserId[chiefPaddlerStatistics.UserId];
 
         return TypedResults.Ok(new GetChiefPaddlerHttpResponse
         {
-            ChiefPaddler = chiefPaddler is null
-                ? null
-                : new ChiefPaddlerHttpResponse
-                {
-                    UserId = chiefPaddler.UserId,
-                    DisplayName = chiefPaddler.DisplayName,
-                    ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
-                    ThatsAPaddlin = chiefPaddler.ThatsAPaddlin,
-                },
+            ChiefPaddler = new ChiefPaddlerHttpResponse
+            {
+                UserId = chiefPaddler.WorkOsUserId,
+                DisplayName = chiefPaddler.DisplayName,
+                ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
+                ThatsAPaddlin = chiefPaddlerStatistics.ThatsAPaddlin,
+            },
         });
     }
 }

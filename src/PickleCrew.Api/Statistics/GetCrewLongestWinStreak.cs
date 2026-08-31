@@ -1,21 +1,28 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using PickleCrew.Api.Statistics.Services;
+using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
 
 namespace PickleCrew.Api.Statistics;
 
 public sealed record GetCrewLongestWinStreakHttpResponse
 {
-    public required string? UserId { get; init; }
+    public required LongestWinStreakHttpResponse? LongestWinStreak { get; init; }
+}
 
-    public required string? DisplayName { get; init; }
+public sealed record LongestWinStreakHttpResponse
+{
+    public required string UserId { get; init; }
 
-    public string? ProfilePictureUrl { get; init; }
+    public required string DisplayName { get; init; }
 
-    public required long LongestWinStreak { get; init; }
+    public required string? ProfilePictureUrl { get; init; }
 
-    public required DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
+    public required long Wins { get; init; }
 
-    public required DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
+    public required DateTimeOffset StartedAtUtc { get; init; }
+
+    public required DateTimeOffset? EndedAtUtc { get; init; }
 }
 
 internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
@@ -28,28 +35,52 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetCrewLongestWinStreakHttpResponse>> HandleAsync(
-        CrewStandingsService standingsService,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
-        var standings = await standingsService.GetStandingsAsync(cancellationToken);
-        var recordHolder = standings
-            .Where(standing => standing.LongestWinStreak > 0)
-            .OrderByDescending(standing => standing.LongestWinStreak)
-            .ThenBy(standing =>
-                standing.LongestWinStreakStartedAtUtc ?? DateTimeOffset.MaxValue
+        var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
+            cancellationToken
+        );
+        var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
+        var recordHolderStatistics = await database.CrewMemberStatistics
+            .AsNoTracking()
+            .Where(statistics =>
+                activeMemberUserIds.Contains(statistics.UserId)
+                && statistics.LongestWinStreak > 0
             )
-            .ThenBy(standing => standing.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(standing => standing.UserId, StringComparer.Ordinal)
-            .FirstOrDefault();
+            .OrderByDescending(statistics => statistics.LongestWinStreak)
+            .ThenByDescending(statistics => statistics.LongestWinStreakStartedAtUtc)
+            .Select(statistics => new
+            {
+                statistics.UserId,
+                statistics.LongestWinStreak,
+                statistics.LongestWinStreakStartedAtUtc,
+                statistics.LongestWinStreakEndedAtUtc,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (recordHolderStatistics is null)
+        {
+            return TypedResults.Ok(new GetCrewLongestWinStreakHttpResponse
+            {
+                LongestWinStreak = null,
+            });
+        }
+
+        var recordHolder = activeMembersByUserId[recordHolderStatistics.UserId];
 
         return TypedResults.Ok(new GetCrewLongestWinStreakHttpResponse
         {
-            UserId = recordHolder?.UserId,
-            DisplayName = recordHolder?.DisplayName,
-            ProfilePictureUrl = recordHolder?.ProfilePictureUrl,
-            LongestWinStreak = recordHolder?.LongestWinStreak ?? 0,
-            LongestWinStreakStartedAtUtc = recordHolder?.LongestWinStreakStartedAtUtc,
-            LongestWinStreakEndedAtUtc = recordHolder?.LongestWinStreakEndedAtUtc,
+            LongestWinStreak = new LongestWinStreakHttpResponse
+            {
+                UserId = recordHolder.WorkOsUserId,
+                DisplayName = recordHolder.DisplayName,
+                ProfilePictureUrl = recordHolder.ProfilePictureUrl,
+                Wins = recordHolderStatistics.LongestWinStreak,
+                StartedAtUtc = recordHolderStatistics.LongestWinStreakStartedAtUtc!.Value,
+                EndedAtUtc = recordHolderStatistics.LongestWinStreakEndedAtUtc,
+            },
         });
     }
 }

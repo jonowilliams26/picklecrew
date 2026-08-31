@@ -143,12 +143,7 @@ export type GetCrewLeaderboardHttpResponse = {
 };
 
 export type GetCrewLongestWinStreakHttpResponse = {
-    userId: null | string;
-    displayName: null | string;
-    profilePictureUrl?: null | string;
-    longestWinStreak: number;
-    longestWinStreakStartedAtUtc: null | string;
-    longestWinStreakEndedAtUtc: null | string;
+    longestWinStreak: null | LongestWinStreakHttpResponse;
 };
 
 export type GetFriendsOrLoversHttpResponse = {
@@ -202,6 +197,15 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type LongestWinStreakHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    wins: number;
+    startedAtUtc: string;
+    endedAtUtc: null | string;
 };
 
 export type NemesisHttpResponse = {

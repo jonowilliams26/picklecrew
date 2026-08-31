@@ -76,6 +76,7 @@ A crew member's all-time cumulative game results within one crew.
 - A longest win streak is the greatest current win streak the crew member has achieved.
 - A longest win streak records when its first win was played and when the streak ended; its end is absent while that record-setting streak remains active.
 - A crew's longest win streak is the greatest longest win streak held by one of its crew members.
+- When active crew members hold equal longest win streaks, the member whose record-setting streak started most recently holds the crew's longest win streak.
 - Recorded games are the source for date-range and doubles-pairing statistics.
 
 ### Relationships
@@ -90,7 +91,7 @@ The active crew member who holds the Crew's bragging-rights award for the most a
 
 - A Crew has no Chief Paddler when every active member has zero **That's a Paddlin** wins.
 - The active member with the highest positive **That's a Paddlin** count is Chief Paddler.
-- Exactly one Chief Paddler is selected; tied leaders are resolved alphabetically by current display name, then by user identifier.
+- Exactly one Chief Paddler is selected; tied leaders are resolved by highest Crew score, then by user identifier.
 - Former members cannot be the current Chief Paddler, while their historical personal statistics remain preserved.
 - Statistics from another Crew do not affect the award.
 

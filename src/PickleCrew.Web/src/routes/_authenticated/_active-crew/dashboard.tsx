@@ -108,7 +108,7 @@ function DashboardPage() {
     nemesis: nemesisResponse,
     recentGames,
     leaderboard,
-    longestWinStreak,
+    longestWinStreak: longestWinStreakResponse,
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
     biggestRivals,
@@ -138,6 +138,7 @@ function DashboardPage() {
   const firstRival = rivalry?.players[0]
   const secondRival = rivalry?.players[1]
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
   })
@@ -694,44 +695,36 @@ function DashboardPage() {
                   <Flame aria-hidden="true" />
                 </CardAction>
               </CardHeader>
-              {longestWinStreak.longestWinStreak > 0 ? (
+              {longestWinStreak ? (
                 <>
                   <CardContent className="relative z-1 flex-row items-end justify-between gap-5">
                     <div>
                       <strong className="block font-heading text-8xl leading-[.72] font-black tracking-[-.08em]">
-                        {longestWinStreak.longestWinStreak}
+                        {longestWinStreak.wins}
                       </strong>
                       <span className="font-heading text-xl font-black">
-                        straight{' '}
-                        {longestWinStreak.longestWinStreak === 1
-                          ? 'win'
-                          : 'wins'}
+                        straight {longestWinStreak.wins === 1 ? 'win' : 'wins'}
                       </span>
                     </div>
-                    {longestWinStreak.userId &&
-                    longestWinStreak.displayName ? (
-                      <DashboardAvatar
-                        className="size-20 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
-                        fallbackClassName="bg-cream font-heading text-xl text-ink"
-                        person={{
-                          userId: longestWinStreak.userId,
-                          displayName: longestWinStreak.displayName,
-                          profilePictureUrl:
-                            longestWinStreak.profilePictureUrl ?? null,
-                        }}
-                      />
-                    ) : null}
+                    <DashboardAvatar
+                      className="size-20 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                      fallbackClassName="bg-cream font-heading text-xl text-ink"
+                      person={{
+                        userId: longestWinStreak.userId,
+                        displayName: longestWinStreak.displayName,
+                        profilePictureUrl:
+                          longestWinStreak.profilePictureUrl ?? null,
+                      }}
+                    />
                   </CardContent>
                   <CardFooter className="relative z-1 mt-auto flex-col items-start gap-1">
                     <strong className="font-heading text-base">
-                      {longestWinStreak.displayName ?? 'No record holder yet'}
+                      {longestWinStreak.displayName}
                     </strong>
                     <span className="text-[9px] font-black tracking-[.08em] uppercase">
                       {formatStreakPeriod({
-                        startedAtUtc:
-                          longestWinStreak.longestWinStreakStartedAtUtc,
-                        endedAtUtc:
-                          longestWinStreak.longestWinStreakEndedAtUtc,
+                        startedAtUtc: longestWinStreak.startedAtUtc,
+                        endedAtUtc: longestWinStreak.endedAtUtc,
                       })}
                     </span>
                   </CardFooter>
