@@ -64,7 +64,7 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
         var statistics = await database.CrewDoublesPairingStatistics
             .AsNoTracking()
             .Where(candidate =>
-                candidate.Wins + candidate.Losses >= MinimumGamesPlayed
+                candidate.GamesPlayed >= MinimumGamesPlayed
                 && ((candidate.Player1Id == crewUserContext.UserId
                         && activePartnerUserIds.Contains(candidate.Player2Id))
                     || (candidate.Player2Id == crewUserContext.UserId
@@ -77,12 +77,11 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
                     : candidate.Player1Id,
                 Wins = candidate.Wins,
                 Losses = candidate.Losses,
-                GamesPlayed = candidate.Wins + candidate.Losses,
-                WinPercentage = (decimal)candidate.Wins
-                    / (candidate.Wins + candidate.Losses),
+                GamesPlayed = candidate.GamesPlayed,
+                WinPercentage = candidate.WinPercentage,
                 PointsScored = candidate.PointsScored,
                 PointsConceded = candidate.PointsConceded,
-                PointDifferential = candidate.PointsScored - candidate.PointsConceded,
+                PointDifferential = candidate.PointDifferential,
             })
             .OrderByDescending(candidate => candidate.WinPercentage)
             .ThenByDescending(candidate => candidate.GamesPlayed)
