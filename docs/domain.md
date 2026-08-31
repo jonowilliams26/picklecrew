@@ -163,6 +163,25 @@ The currently active Crew member who forms the signed-in member's strongest qual
 
 - A Crew member has zero or one Best Partner in their active Crew.
 
+## Friends or lovers?
+
+The active Crew's doubles pairing that has played the most all-time Games together.
+
+### Business rules
+
+- Only pairings containing two currently active Crew members are eligible.
+- Games played equals the pairing's wins plus losses.
+- A pairing must have played at least three Games together to qualify.
+- The qualifying pairing with the most Games played is selected.
+- Ties are resolved by most wins, then highest point differential, then user identifiers.
+- Exactly one pairing is selected when qualifying pairings exist.
+- A Crew has no **Friends or lovers?** pairing when no pairing qualifies.
+- Statistics from another Crew do not affect the selection.
+
+### Relationships
+
+- A Crew has zero or one **Friends or lovers?** pairing.
+
 ## Crew invitation
 
 A request sent through WorkOS for a person identified by email address to join a crew.

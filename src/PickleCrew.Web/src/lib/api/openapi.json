@@ -578,6 +578,57 @@
         }
       }
     },
+    "/statistics/friends-or-lovers": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the active Crew pairing that has played the most Games together.",
+        "operationId": "GetFriendsOrLovers",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetFriendsOrLoversHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/personal": {
       "get": {
         "tags": [
@@ -1072,6 +1123,71 @@
           }
         }
       },
+      "FriendsOrLoversPairingHttpResponse": {
+        "required": [
+          "players",
+          "wins",
+          "losses",
+          "gamesPlayed",
+          "winPercentage",
+          "pointDifferential"
+        ],
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendsOrLoversPlayerHttpResponse"
+            }
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "winPercentage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "FriendsOrLoversPlayerHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "GameFormat": {
         "enum": [
           "singles",
@@ -1285,6 +1401,24 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "GetFriendsOrLoversHttpResponse": {
+        "required": [
+          "pairing"
+        ],
+        "type": "object",
+        "properties": {
+          "pairing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FriendsOrLoversPairingHttpResponse"
+              }
+            ]
           }
         }
       },
