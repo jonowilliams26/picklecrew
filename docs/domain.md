@@ -144,6 +144,25 @@ A doubles pairing's all-time cumulative results within one crew.
 
 - Each doubles pairing's statistics belong to exactly one crew and exactly two users.
 
+## Best Partner
+
+The currently active Crew member who forms the signed-in member's strongest qualifying doubles pairing in their active Crew.
+
+### Business rules
+
+- Only doubles pairings containing the signed-in member are considered.
+- A pairing must have played at least three Games to qualify.
+- The partner must be a currently active member of the Crew.
+- Best Partner is selected by highest win percentage, then most Games played, then highest point differential, then partner user identifier.
+- Singles Games and sides containing a Guest do not contribute to a pairing.
+- A qualifying Crew-member side receives pairing statistics when the opposing side contains a Guest.
+- Statistics from another Crew do not affect Best Partner.
+- A member has no Best Partner when no pairing qualifies.
+
+### Relationships
+
+- A Crew member has zero or one Best Partner in their active Crew.
+
 ## Crew invitation
 
 A request sent through WorkOS for a person identified by email address to join a crew.

@@ -1,5 +1,7 @@
 import type {
+  BestPartnerHttpResponse,
   GetBestDoublesPairingHttpResponse,
+  GetBestPartnerHttpResponse,
   GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
@@ -14,6 +16,7 @@ export type DashboardData = Readonly<{
   leaderboard: GetCrewLeaderboardHttpResponse
   longestWinStreak: GetCrewLongestWinStreakHttpResponse
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
+  bestPartner: GetBestPartnerHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
 }>
 
@@ -31,6 +34,39 @@ export type DashboardResult = Result<
   DashboardData,
   DashboardForbiddenError | DashboardUnavailableError
 >
+
+export type BestPartnerPresentation =
+  | Readonly<{
+      available: false
+      title: string
+      description: string
+    }>
+  | Readonly<{
+      available: true
+      partner: BestPartnerHttpResponse
+      winPercentage: number
+    }>
+
+export function getBestPartnerPresentation({
+  bestPartner,
+}: {
+  bestPartner: BestPartnerHttpResponse | null
+}): BestPartnerPresentation {
+  if (!bestPartner) {
+    return {
+      available: false,
+      title: 'No best partner yet',
+      description:
+        'Play at least three doubles Games with the same Crew member to qualify.',
+    }
+  }
+
+  return {
+    available: true,
+    partner: bestPartner,
+    winPercentage: formatPercentage({ value: bestPartner.winPercentage }),
+  }
+}
 
 export function formatPercentage({
   value,

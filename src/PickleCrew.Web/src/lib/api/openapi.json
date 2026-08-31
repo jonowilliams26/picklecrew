@@ -476,6 +476,57 @@
         }
       }
     },
+    "/statistics/best-partner": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the signed-in user's best doubles partner for the active Crew.",
+        "operationId": "GetBestPartner",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBestPartnerHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/chief-paddler": {
       "get": {
         "tags": [
@@ -734,6 +785,66 @@
   },
   "components": {
     "schemas": {
+      "BestPartnerHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "wins",
+          "losses",
+          "gamesPlayed",
+          "winPercentage",
+          "pointsScored",
+          "pointsConceded",
+          "pointDifferential"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "winPercentage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "ChiefPaddlerHttpResponse": {
         "required": [
           "userId",
@@ -1074,6 +1185,24 @@
               },
               {
                 "$ref": "#/components/schemas/DoublesPairingHttpResponse"
+              }
+            ]
+          }
+        }
+      },
+      "GetBestPartnerHttpResponse": {
+        "required": [
+          "bestPartner"
+        ],
+        "type": "object",
+        "properties": {
+          "bestPartner": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BestPartnerHttpResponse"
               }
             ]
           }

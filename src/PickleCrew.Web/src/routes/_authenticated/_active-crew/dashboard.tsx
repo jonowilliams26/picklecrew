@@ -5,6 +5,7 @@ import {
   Crown,
   Flame,
   Hammer,
+  Handshake,
   Medal,
   Target,
   Trophy,
@@ -37,8 +38,10 @@ import {
   formatRecord,
   formatSignedNumber,
   formatStreakPeriod,
+  getBestPartnerPresentation,
   getCurrentStreakDetail,
   getInitials,
+  type BestPartnerPresentation,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
 
@@ -102,6 +105,7 @@ function DashboardPage() {
     leaderboard,
     longestWinStreak,
     bestDoublesPairing,
+    bestPartner: bestPartnerResponse,
     chiefPaddler: chiefPaddlerResponse,
   } = result.value
   const winPercentage = formatPercentage({
@@ -124,6 +128,9 @@ function DashboardPage() {
   const firstPairingPlayer = pairing?.players[0]
   const secondPairingPlayer = pairing?.players[1]
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const bestPartner = getBestPartnerPresentation({
+    bestPartner: bestPartnerResponse.bestPartner,
+  })
 
   if (
     pairing &&
@@ -251,7 +258,7 @@ function DashboardPage() {
                 iconClassName="bg-lime text-ink"
               />
 
-              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-12">
+              <Card className="dashboard-stat-card border-2 border-ink bg-cream shadow-[6px_7px_0_var(--ink)] sm:col-span-2 xl:col-span-6">
                 <CardHeader>
                   <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                     Last 10 games
@@ -305,6 +312,8 @@ function DashboardPage() {
                   </span>
                 </CardFooter>
               </Card>
+
+              <BestPartnerCard bestPartner={bestPartner} />
             </div>
           ) : (
             <Card className="min-h-[310px] border-2 border-dashed border-ink/30 bg-cream">
@@ -608,6 +617,82 @@ function DashboardPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+function BestPartnerCard({
+  bestPartner,
+}: {
+  bestPartner: BestPartnerPresentation
+}) {
+  return (
+    <Card className="relative min-h-[260px] overflow-hidden border-2 border-ink bg-paper text-ink shadow-[7px_8px_0_var(--ink)] sm:col-span-2 xl:col-span-6">
+      <CardHeader>
+        <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
+          Best partner
+        </CardTitle>
+        <CardDescription className="font-heading text-[11px] text-ink-soft">
+          You two have a special bond. Apparently it wins Games.
+        </CardDescription>
+        <CardAction className="grid size-11 rotate-[6deg] place-items-center rounded-full border-2 border-ink bg-purple text-white shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
+          <Handshake aria-hidden="true" />
+        </CardAction>
+      </CardHeader>
+      {bestPartner.available ? (
+        <>
+          <CardContent className="gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-5">
+              <DashboardAvatar
+                className="size-24 shrink-0 rotate-[-5deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                fallbackClassName="bg-aqua font-heading text-3xl text-ink"
+                person={bestPartner.partner}
+              />
+              <div className="flex min-w-0 flex-col gap-2">
+                <span className="text-[9px] font-black tracking-[.12em] uppercase">
+                  Your court accomplice
+                </span>
+                <strong className="truncate font-heading text-3xl font-black sm:text-4xl">
+                  {bestPartner.partner.displayName}
+                </strong>
+                <Badge className="w-fit" variant="outline">
+                  {formatCount({
+                    count: bestPartner.partner.wins,
+                    singular: 'win',
+                  })}{' '}
+                  -{' '}
+                  {formatCount({
+                    count: bestPartner.partner.losses,
+                    singular: 'loss',
+                    plural: 'losses',
+                  })}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-baseline gap-2 lg:flex-col lg:items-end lg:gap-0">
+              <strong className="font-heading text-7xl leading-[.75] font-black tracking-[-.08em]">
+                {bestPartner.winPercentage}%
+              </strong>
+              <span className="text-[9px] font-black tracking-[.1em] uppercase">
+                win rate
+              </span>
+            </div>
+          </CardContent>
+        </>
+      ) : (
+        <CardContent className="my-auto items-center justify-center gap-2 text-center">
+          <strong className="font-heading text-3xl font-black">
+            {bestPartner.title}
+          </strong>
+          <p className="m-0 max-w-xs text-sm text-ink-soft">
+            {bestPartner.description}
+          </p>
+        </CardContent>
+      )}
+      <Handshake
+        className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[-14deg] opacity-10"
+        aria-hidden="true"
+      />
+    </Card>
   )
 }
 
