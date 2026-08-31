@@ -6,6 +6,7 @@ import {
   getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
+  getFriendsOrLovers as getFriendsOrLoversRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
   getRecentGames as getRecentGamesRequest,
 } from '~/lib/api/generated/sdk.gen'
@@ -28,6 +29,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing,
         bestPartner,
         chiefPaddler,
+        friendsOrLovers,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
         getRecentGamesRequest({ client }),
@@ -36,6 +38,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBestDoublesPairingRequest({ client }),
         getBestPartnerRequest({ client }),
         getChiefPaddlerRequest({ client }),
+        getFriendsOrLoversRequest({ client }),
       ])
       const results = [
         personalStatistics,
@@ -45,6 +48,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing,
         bestPartner,
         chiefPaddler,
+        friendsOrLovers,
       ]
 
       if (
@@ -54,7 +58,8 @@ export const getDashboard = createServerFn({ method: 'GET' })
         longestWinStreak.error ||
         bestDoublesPairing.error ||
         bestPartner.error ||
-        chiefPaddler.error
+        chiefPaddler.error ||
+        friendsOrLovers.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -79,6 +84,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing: bestDoublesPairing.data,
         bestPartner: bestPartner.data,
         chiefPaddler: chiefPaddler.data,
+        friendsOrLovers: friendsOrLovers.data,
       })
     } catch {
       return failure({

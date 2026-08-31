@@ -75,6 +75,21 @@ export type DoublesPairingPlayerHttpResponse = {
     profilePictureUrl?: null | string;
 };
 
+export type FriendsOrLoversPairingHttpResponse = {
+    players: Array<FriendsOrLoversPlayerHttpResponse>;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
+    pointDifferential: number;
+};
+
+export type FriendsOrLoversPlayerHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+};
+
 export type GameFormat = 'singles' | 'doubles';
 
 export type GameHistoryItemHttpResponse = {
@@ -125,6 +140,10 @@ export type GetCrewLongestWinStreakHttpResponse = {
     longestWinStreak: number;
     longestWinStreakStartedAtUtc: null | string;
     longestWinStreakEndedAtUtc: null | string;
+};
+
+export type GetFriendsOrLoversHttpResponse = {
+    pairing: null | FriendsOrLoversPairingHttpResponse;
 };
 
 export type GetGameRecordingOptionsHttpResponse = {
@@ -577,6 +596,39 @@ export type GetChiefPaddlerResponses = {
 };
 
 export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
+
+export type GetFriendsOrLoversData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/friends-or-lovers';
+};
+
+export type GetFriendsOrLoversErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetFriendsOrLoversError = GetFriendsOrLoversErrors[keyof GetFriendsOrLoversErrors];
+
+export type GetFriendsOrLoversResponses = {
+    /**
+     * OK
+     */
+    200: GetFriendsOrLoversHttpResponse;
+};
+
+export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
 
 export type GetPersonalStatisticsData = {
     body?: never;

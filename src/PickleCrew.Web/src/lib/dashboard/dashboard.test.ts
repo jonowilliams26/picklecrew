@@ -8,6 +8,7 @@ import {
   formatStreakPeriod,
   getBestPartnerPresentation,
   getCurrentStreakDetail,
+  getFriendsOrLoversCardDetails,
   getInitials,
 } from './dashboard.ts'
 
@@ -34,6 +35,55 @@ describe('dashboard formatting', () => {
     assert.equal(
       formatCount({ count: 2, singular: 'person', plural: 'people' }),
       '2 people',
+    )
+  })
+
+  test('creates Friends or lovers pairing card details', () => {
+    const details = getFriendsOrLoversCardDetails({
+      friendsOrLovers: {
+        pairing: {
+          players: [
+            {
+              userId: 'user-alpha',
+              displayName: 'Alpha Player',
+              profilePictureUrl: null,
+            },
+            {
+              userId: 'user-beta',
+              displayName: 'Beta Player',
+              profilePictureUrl: 'https://example.test/beta.jpg',
+            },
+          ],
+          wins: 7,
+          losses: 5,
+          gamesPlayed: 12,
+          winPercentage: 7 / 12,
+          pointDifferential: 9,
+        },
+      },
+    })
+
+    assert.deepEqual(details, {
+      type: 'pairing',
+      firstPlayer: {
+        userId: 'user-alpha',
+        displayName: 'Alpha Player',
+        profilePictureUrl: null,
+      },
+      secondPlayer: {
+        userId: 'user-beta',
+        displayName: 'Beta Player',
+        profilePictureUrl: 'https://example.test/beta.jpg',
+      },
+      gamesPlayed: 12,
+      gamesTogetherLabel: 'games together',
+    })
+  })
+
+  test('creates empty Friends or lovers card details', () => {
+    assert.deepEqual(
+      getFriendsOrLoversCardDetails({ friendsOrLovers: { pairing: null } }),
+      { type: 'empty' },
     )
   })
 

@@ -6,6 +6,7 @@ import {
   Flame,
   Hammer,
   Handshake,
+  Heart,
   Medal,
   Target,
   Trophy,
@@ -40,6 +41,7 @@ import {
   formatStreakPeriod,
   getBestPartnerPresentation,
   getCurrentStreakDetail,
+  getFriendsOrLoversCardDetails,
   getInitials,
   type BestPartnerPresentation,
 } from '~/lib/dashboard/dashboard'
@@ -107,6 +109,7 @@ function DashboardPage() {
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
     chiefPaddler: chiefPaddlerResponse,
+    friendsOrLovers,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -130,6 +133,9 @@ function DashboardPage() {
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
+  })
+  const friendsOrLoversDetails = getFriendsOrLoversCardDetails({
+    friendsOrLovers,
   })
 
   if (
@@ -344,7 +350,7 @@ function DashboardPage() {
           />
 
           <div className="grid gap-5 xl:grid-cols-12">
-            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-3">
+            <Card className="border-2 border-ink bg-cream text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-7 xl:row-span-2 xl:row-start-1">
               <CardHeader className="border-b-2 border-line pb-8!">
                 <CardTitle className="font-heading text-3xl font-black tracking-[-.045em] sm:text-4xl">
                   Crew leaderboard
@@ -387,7 +393,7 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="dashboard-pair-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
+            <Card className="dashboard-pair-card relative min-h-[330px] border-2 border-ink bg-purple text-white shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
               <CardHeader>
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Best doubles pairing
@@ -465,7 +471,71 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
+            <Card className="relative min-h-[330px] overflow-hidden border-2 border-ink bg-lime text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-6 xl:row-start-3">
+              <CardHeader className="relative z-1">
+                <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
+                  Friends or lovers?
+                </CardTitle>
+                <CardDescription className="font-heading text-[11px] text-ink-soft">
+                  The pair that keeps choosing each other
+                </CardDescription>
+                <CardAction className="grid size-11 rotate-[-6deg] place-items-center rounded-full border-2 border-ink bg-orange shadow-[3px_4px_0_var(--ink)] [&_svg]:size-5">
+                  <Heart aria-hidden="true" />
+                </CardAction>
+              </CardHeader>
+              {friendsOrLoversDetails.type === 'pairing' ? (
+                <>
+                  <CardContent className="relative z-1 items-center gap-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <DashboardAvatar
+                        className="z-1 size-20 rotate-[-7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                        fallbackClassName="font-heading text-2xl"
+                        person={friendsOrLoversDetails.firstPlayer}
+                      />
+                      <Heart
+                        className="z-2 -mx-2 size-10 rotate-[6deg] rounded-full border-2 border-ink bg-cream p-2 fill-orange text-orange"
+                        aria-hidden="true"
+                      />
+                      <DashboardAvatar
+                        className="z-1 size-20 rotate-[7deg] border-2 border-ink shadow-[4px_5px_0_var(--ink)]"
+                        fallbackClassName="font-heading text-2xl"
+                        person={friendsOrLoversDetails.secondPlayer}
+                      />
+                    </div>
+                    <CardTitle className="font-heading text-3xl font-black">
+                      {friendsOrLoversDetails.firstPlayer.displayName} +{' '}
+                      {friendsOrLoversDetails.secondPlayer.displayName}
+                    </CardTitle>
+                    <div className="flex flex-col items-center gap-1">
+                      <strong className="font-heading text-6xl leading-none font-black tracking-[-.065em]">
+                        {friendsOrLoversDetails.gamesPlayed.toLocaleString(
+                          'en-AU',
+                        )}
+                      </strong>
+                      <span className="text-[9px] font-black tracking-[.08em] uppercase">
+                        {friendsOrLoversDetails.gamesTogetherLabel}
+                      </span>
+                    </div>
+                  </CardContent>
+                </>
+              ) : (
+                <CardContent className="relative z-1 my-auto items-center justify-center gap-2 text-center">
+                  <strong className="font-heading text-3xl font-black">
+                    No doubles partners yet
+                  </strong>
+                  <p className="m-0 max-w-xs text-sm text-ink-soft">
+                    Play at least three doubles Games with another Crew member
+                    to start tracking who keeps showing up together.
+                  </p>
+                </CardContent>
+              )}
+              <Heart
+                className="pointer-events-none absolute -right-8 -bottom-10 size-36 rotate-[14deg] opacity-10"
+                aria-hidden="true"
+              />
+            </Card>
+
+            <Card className="dashboard-streak-card relative min-h-[290px] border-2 border-ink bg-orange text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-1">
               <CardHeader>
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Longest crew win streak
@@ -531,7 +601,7 @@ function DashboardPage() {
               )}
             </Card>
 
-            <Card className="relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5">
+            <Card className="relative min-h-[290px] overflow-hidden border-2 border-ink bg-aqua text-ink shadow-[7px_8px_0_var(--ink)] xl:col-span-5 xl:col-start-8 xl:row-start-2">
               <CardHeader className="relative z-1">
                 <CardTitle className="text-xs font-black tracking-[.14em] uppercase">
                   Chief Paddler

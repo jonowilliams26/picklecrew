@@ -5,6 +5,7 @@ import type {
   GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
+  GetFriendsOrLoversHttpResponse,
   GetPersonalStatisticsHttpResponse,
   GetRecentGamesHttpResponse,
 } from '~/lib/api/generated/types.gen'
@@ -18,6 +19,7 @@ export type DashboardData = Readonly<{
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
   bestPartner: GetBestPartnerHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
+  friendsOrLovers: GetFriendsOrLoversHttpResponse
 }>
 
 type DashboardForbiddenError = Readonly<{
@@ -100,6 +102,34 @@ export function formatCount({
   plural?: string
 }): string {
   return `${count.toLocaleString('en-AU')} ${count === 1 ? singular : plural}`
+}
+
+export function getFriendsOrLoversCardDetails({
+  friendsOrLovers,
+}: {
+  friendsOrLovers: GetFriendsOrLoversHttpResponse
+}) {
+  const pairing = friendsOrLovers.pairing
+
+  if (!pairing) {
+    return { type: 'empty' as const }
+  }
+
+  const firstPlayer = pairing.players[0]
+  const secondPlayer = pairing.players[1]
+
+  if (pairing.players.length !== 2 || !firstPlayer || !secondPlayer) {
+    throw new Error('A Friends or lovers pairing must contain exactly two players.')
+  }
+
+  return {
+    type: 'pairing' as const,
+    firstPlayer,
+    secondPlayer,
+    gamesPlayed: pairing.gamesPlayed,
+    gamesTogetherLabel:
+      pairing.gamesPlayed === 1 ? 'game together' : 'games together',
+  }
 }
 
 export function getInitials({ displayName }: { displayName: string }): string {

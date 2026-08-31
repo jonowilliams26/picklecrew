@@ -1,0 +1,139 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+using PickleCrew.Api.Data.Database;
+using PickleCrew.Api.Services;
+
+namespace PickleCrew.Api.Statistics;
+
+public sealed record GetFriendsOrLoversHttpResponse
+{
+    public required FriendsOrLoversPairingHttpResponse? Pairing { get; init; }
+}
+
+public sealed record FriendsOrLoversPairingHttpResponse
+{
+    public required FriendsOrLoversPlayerHttpResponse[] Players { get; init; }
+
+    public required long Wins { get; init; }
+
+    public required long Losses { get; init; }
+
+    public required long GamesPlayed { get; init; }
+
+    public required decimal WinPercentage { get; init; }
+
+    public required long PointDifferential { get; init; }
+}
+
+public sealed record FriendsOrLoversPlayerHttpResponse
+{
+    public required string UserId { get; init; }
+
+    public required string DisplayName { get; init; }
+
+    public required string? ProfilePictureUrl { get; init; }
+}
+
+internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapGet("/friends-or-lovers", HandleAsync)
+            .WithName("GetFriendsOrLovers")
+            .WithSummary("Gets the active Crew pairing that has played the most Games together.");
+    }
+
+    private static async Task<Ok<GetFriendsOrLoversHttpResponse>> HandleAsync(
+        CrewScopedDbContext database,
+        ICrewService crewService,
+        CancellationToken cancellationToken)
+    {
+        var activeMembers = await crewService.ListActiveCrewMembersAsync(cancellationToken);
+        var activeMembersByUserId = activeMembers.ToDictionary(
+            member => member.WorkOsUserId,
+            StringComparer.Ordinal
+        );
+        var activeUserIds = activeMembersByUserId.Keys.ToArray();
+
+        var statistics = await database.CrewDoublesPairingStatistics
+            .AsNoTracking()
+            .Where(candidate =>
+                activeUserIds.Contains(candidate.Player1Id)
+                && activeUserIds.Contains(candidate.Player2Id)
+                && candidate.Wins + candidate.Losses >= 3
+            )
+            .OrderByDescending(candidate => candidate.Wins + candidate.Losses)
+            .ThenByDescending(candidate => candidate.Wins)
+            .ThenByDescending(
+                candidate => candidate.PointsScored - candidate.PointsConceded
+            )
+            .ThenBy(candidate => candidate.Player1Id)
+            .ThenBy(candidate => candidate.Player2Id)
+            .Select(candidate => new FriendsOrLoversStatisticsTotals
+            {
+                Player1Id = candidate.Player1Id,
+                Player2Id = candidate.Player2Id,
+                Wins = candidate.Wins,
+                Losses = candidate.Losses,
+                GamesPlayed = candidate.Wins + candidate.Losses,
+                PointDifferential = candidate.PointsScored - candidate.PointsConceded,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (statistics is null)
+        {
+            return TypedResults.Ok(new GetFriendsOrLoversHttpResponse
+            {
+                Pairing = null,
+            });
+        }
+
+        var players = new[]
+        {
+            CreatePlayer(activeMembersByUserId[statistics.Player1Id]),
+            CreatePlayer(activeMembersByUserId[statistics.Player2Id]),
+        }
+            .OrderBy(player => player.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(player => player.UserId, StringComparer.Ordinal)
+            .ToArray();
+
+        return TypedResults.Ok(new GetFriendsOrLoversHttpResponse
+        {
+            Pairing = new FriendsOrLoversPairingHttpResponse
+            {
+                Players = players,
+                Wins = statistics.Wins,
+                Losses = statistics.Losses,
+                GamesPlayed = statistics.GamesPlayed,
+                WinPercentage = (decimal)statistics.Wins / statistics.GamesPlayed,
+                PointDifferential = statistics.PointDifferential,
+            },
+        });
+    }
+
+    private static FriendsOrLoversPlayerHttpResponse CreatePlayer(
+        ActiveCrewMember member)
+    {
+        return new FriendsOrLoversPlayerHttpResponse
+        {
+            UserId = member.WorkOsUserId,
+            DisplayName = member.DisplayName,
+            ProfilePictureUrl = member.ProfilePictureUrl,
+        };
+    }
+}
+
+internal sealed record FriendsOrLoversStatisticsTotals
+{
+    public required string Player1Id { get; init; }
+
+    public required string Player2Id { get; init; }
+
+    public required long Wins { get; init; }
+
+    public required long Losses { get; init; }
+
+    public required long GamesPlayed { get; init; }
+
+    public required long PointDifferential { get; init; }
+}

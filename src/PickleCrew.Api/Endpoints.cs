@@ -58,6 +58,7 @@ internal static class Endpoints
             .MapEndpoint<GetBestDoublesPairingEndpoint>()
             .MapEndpoint<GetBestPartnerEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
+            .MapEndpoint<GetFriendsOrLoversEndpoint>()
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()
             .MapEndpoint<GetCrewLongestWinStreakEndpoint>()
