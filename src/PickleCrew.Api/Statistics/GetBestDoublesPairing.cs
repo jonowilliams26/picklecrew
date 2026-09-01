@@ -53,7 +53,8 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
 
     private static async Task<Ok<GetBestDoublesPairingHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -62,11 +63,9 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.BestDoublesPairing
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewScopedDbContext>(),
-                services.GetRequiredService<ICrewService>(),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
                 factoryCancellationToken
             ),
             cancellationToken

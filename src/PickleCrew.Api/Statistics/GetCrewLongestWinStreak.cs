@@ -38,7 +38,8 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
 
     private static async Task<Ok<GetCrewLongestWinStreakHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -47,11 +48,9 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.CrewLongestWinStreak
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewScopedDbContext>(),
-                services.GetRequiredService<ICrewService>(),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
                 factoryCancellationToken
             ),
             cancellationToken

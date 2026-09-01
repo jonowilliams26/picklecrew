@@ -39,7 +39,7 @@ internal sealed class GetCrewLeaderboardEndpoint : IEndpoint
 
     private static async Task<Ok<GetCrewLeaderboardHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewStandingsService standingsService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -48,10 +48,8 @@ internal sealed class GetCrewLeaderboardEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.CrewLeaderboard
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewStandingsService>(),
+            factoryCancellationToken => GetResponseAsync(
+                standingsService,
                 factoryCancellationToken
             ),
             cancellationToken

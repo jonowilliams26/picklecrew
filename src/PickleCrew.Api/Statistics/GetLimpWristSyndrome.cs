@@ -36,7 +36,8 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
 
     private static async Task<Ok<GetLimpWristSyndromeHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -45,11 +46,9 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.LimpWristSyndrome
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewScopedDbContext>(),
-                services.GetRequiredService<ICrewService>(),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
                 factoryCancellationToken
             ),
             cancellationToken

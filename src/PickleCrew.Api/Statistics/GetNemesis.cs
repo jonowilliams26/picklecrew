@@ -36,7 +36,8 @@ internal sealed class GetNemesisEndpoint : IEndpoint
 
     private static async Task<Ok<GetNemesisHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -46,12 +47,10 @@ internal sealed class GetNemesisEndpoint : IEndpoint
                 crewUserContext.UserId,
                 PersonalStatisticsCacheResource.Nemesis
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewUserContext>().UserId,
-                services.GetRequiredService<CrewScopedDbContext>(),
-                services.GetRequiredService<ICrewService>(),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                database,
+                crewService,
                 factoryCancellationToken
             ),
             cancellationToken

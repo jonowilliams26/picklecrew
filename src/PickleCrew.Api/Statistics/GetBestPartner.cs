@@ -48,7 +48,8 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
 
     private static async Task<Ok<GetBestPartnerHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        IServiceScopeFactory scopeFactory,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -58,12 +59,10 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
                 crewUserContext.UserId,
                 PersonalStatisticsCacheResource.BestPartner
             ),
-            crewUserContext,
-            scopeFactory,
-            static (services, factoryCancellationToken) => GetResponseAsync(
-                services.GetRequiredService<CrewUserContext>().UserId,
-                services.GetRequiredService<CrewScopedDbContext>(),
-                services.GetRequiredService<ICrewService>(),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                database,
+                crewService,
                 factoryCancellationToken
             ),
             cancellationToken
