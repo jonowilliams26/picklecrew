@@ -154,6 +154,10 @@ export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
 };
 
+export type GetLimpWristSyndromeHttpResponse = {
+    limpWristSyndrome: null | LimpWristSyndromeHttpResponse;
+};
+
 export type GetNemesisHttpResponse = {
     nemesis: null | NemesisHttpResponse;
 };
@@ -197,6 +201,14 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type LimpWristSyndromeHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    losses: number;
+    pointDifferential: number;
 };
 
 export type LongestWinStreakHttpResponse = {
@@ -739,6 +751,39 @@ export type GetFriendsOrLoversResponses = {
 };
 
 export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
+
+export type GetLimpWristSyndromeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/limp-wrist-syndrome';
+};
+
+export type GetLimpWristSyndromeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetLimpWristSyndromeError = GetLimpWristSyndromeErrors[keyof GetLimpWristSyndromeErrors];
+
+export type GetLimpWristSyndromeResponses = {
+    /**
+     * OK
+     */
+    200: GetLimpWristSyndromeHttpResponse;
+};
+
+export type GetLimpWristSyndromeResponse = GetLimpWristSyndromeResponses[keyof GetLimpWristSyndromeResponses];
 
 export type GetNemesisData = {
     body?: never;

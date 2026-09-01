@@ -7,6 +7,7 @@ import {
   Crown,
   Flame,
   Hammer,
+  Hand,
   Handshake,
   Heart,
   History,
@@ -233,6 +234,7 @@ function DashboardPage() {
     biggestRivals,
     chiefPaddler: chiefPaddlerResponse,
     friendsOrLovers,
+    limpWristSyndrome: limpWristSyndromeResponse,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -265,6 +267,7 @@ function DashboardPage() {
     friendsOrLovers,
   })
   const nemesis = nemesisResponse.nemesis
+  const limpWristSyndrome = limpWristSyndromeResponse.limpWristSyndrome
 
   if (
     pairing &&
@@ -376,6 +379,10 @@ function DashboardPage() {
               firstRival={firstRival}
               rivalry={rivalry}
               secondRival={secondRival}
+            />
+
+            <LimpWristSyndromeCard
+              limpWristSyndrome={limpWristSyndrome}
             />
 
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
@@ -1043,6 +1050,45 @@ function BiggestRivalsCard({
         />
       )}
       <DashboardDecorativeIcon icon={Swords} />
+    </DashboardStatCard>
+  )
+}
+
+function LimpWristSyndromeCard({
+  limpWristSyndrome,
+}: {
+  limpWristSyndrome: DashboardData['limpWristSyndrome']['limpWristSyndrome']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-4"
+      tone="paper"
+    >
+      <DashboardCardHeader
+        description="Most all time losses in the crew. They’ve got a bad case of limp wrist syndrome."
+        icon={Hand}
+        iconTone="orange"
+        tilt="counterclockwise"
+        title="Limp wrist syndrome"
+      />
+      {limpWristSyndrome ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-aqua text-ink"
+          metadata={`Point differential ${formatSignedNumber({ value: limpWristSyndrome.pointDifferential })}`}
+          metric={limpWristSyndrome.losses.toLocaleString('en-AU')}
+          metricLabel={limpWristSyndrome.losses === 1 ? 'loss' : 'losses'}
+          person={limpWristSyndrome}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Record a game and somebody will claim it."
+          title="Nobody has lost yet"
+        />
+      )}
+      <DashboardDecorativeIcon
+        direction="counterclockwise"
+        icon={Hand}
+      />
     </DashboardStatCard>
   )
 }

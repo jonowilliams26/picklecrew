@@ -99,6 +99,22 @@ The active crew member who holds the Crew's bragging-rights award for the most a
 
 - A Crew has zero or one Chief Paddler.
 
+## Limp wrist syndrome
+
+The active crew member who holds the crew's bragging-rights statistic for the most all-time losses.
+
+### Business rules
+
+- A crew has no **limp wrist syndrome** holder when every active member has zero losses.
+- The active member with the highest positive loss count holds **limp wrist syndrome**.
+- Exactly one holder is selected; tied members are resolved by lowest point differential, then by user identifier.
+- Former members cannot be the current holder, while their historical personal statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one **limp wrist syndrome** holder.
+
 ## Matchup statistics
 
 A crew member's all-time cumulative results against one opposing crew member within one crew.
