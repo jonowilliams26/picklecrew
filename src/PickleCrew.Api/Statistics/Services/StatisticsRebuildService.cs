@@ -37,9 +37,19 @@ internal sealed class StatisticsRebuildService(
     public async Task<StatisticsRebuildResult> RebuildAsync(
         CancellationToken cancellationToken)
     {
-        await using var transaction = await database.Database.BeginTransactionAsync(
+        var executionStrategy = database.Database.CreateExecutionStrategy();
+
+        return await executionStrategy.ExecuteInTransactionAsync(
+            RebuildInTransactionAsync,
+            static _ => Task.FromResult(false),
             cancellationToken
         );
+    }
+
+    private async Task<StatisticsRebuildResult> RebuildInTransactionAsync(
+        CancellationToken cancellationToken)
+    {
+        database.ChangeTracker.Clear();
 
         await database.Database.ExecuteSqlRawAsync(
             """
@@ -95,8 +105,6 @@ internal sealed class StatisticsRebuildService(
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
         };
-
-        await transaction.CommitAsync(cancellationToken);
 
         return result;
     }
