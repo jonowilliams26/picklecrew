@@ -328,6 +328,10 @@ export type CreateCrewErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -368,6 +372,10 @@ export type GetCrewMembersErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -405,6 +413,10 @@ export type SendCrewInvitationErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -437,6 +449,10 @@ export type GetGameRecordingOptionsErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -478,6 +494,10 @@ export type GetGamesErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -515,6 +535,10 @@ export type RecordGameErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -547,6 +571,10 @@ export type GetBestDoublesPairingErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -581,6 +609,10 @@ export type GetBestPartnerErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -613,6 +645,10 @@ export type GetBiggestRivalsErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -647,6 +683,10 @@ export type GetChiefPaddlerErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -679,6 +719,10 @@ export type GetFriendsOrLoversErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -713,6 +757,10 @@ export type GetNemesisErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -745,6 +793,10 @@ export type GetPersonalStatisticsErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
@@ -779,6 +831,10 @@ export type GetCrewLeaderboardErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -812,6 +868,10 @@ export type GetCrewLongestWinStreakErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;
@@ -844,6 +904,10 @@ export type GetRecentGamesErrors = {
      * Forbidden
      */
     403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
     /**
      * Internal Server Error
      */
