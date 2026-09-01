@@ -7,6 +7,13 @@ internal interface ICacheOption
     ICacheTag[] Tags { get; }
 }
 
+internal sealed record CrewUserContextCacheOption(string OrganizationId) : ICacheOption
+{
+    public string Key { get; } = $"v1:crew-user-context:{OrganizationId}";
+
+    public ICacheTag[] Tags { get; } = [];
+}
+
 internal sealed record GamesHistoryCacheOption(
     Guid CrewId,
     int Page,
