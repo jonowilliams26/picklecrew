@@ -32,7 +32,10 @@ public sealed class StatisticsRebuildServiceTests(AppHostFixture fixture)
 
         var crewUserContext = new CrewUserContext();
         var options = new DbContextOptionsBuilder<CrewScopedDbContext>()
-            .UseNpgsql(fixture.DatabaseConnectionString)
+            .UseNpgsql(
+                fixture.DatabaseConnectionString,
+                npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()
+            )
             .Options;
         await using var database = new CrewScopedDbContext(options, crewUserContext);
         database.CrewMemberStatistics.Add(new CrewMemberStatistics
