@@ -7,6 +7,7 @@ import type {
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
   GetFriendsOrLoversHttpResponse,
+  GetLimpWristSyndromeHttpResponse,
   GetNemesisHttpResponse,
   GetPersonalStatisticsHttpResponse,
   GetRecentGamesHttpResponse,
@@ -24,6 +25,7 @@ export type DashboardData = Readonly<{
   biggestRivals: GetBiggestRivalsHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
   friendsOrLovers: GetFriendsOrLoversHttpResponse
+  limpWristSyndrome: GetLimpWristSyndromeHttpResponse
 }>
 
 type DashboardForbiddenError = Readonly<{

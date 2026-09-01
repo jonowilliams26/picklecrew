@@ -8,6 +8,7 @@ import {
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
+  getLimpWristSyndrome as getLimpWristSyndromeRequest,
   getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
   getRecentGames as getRecentGamesRequest,
@@ -34,6 +35,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         chiefPaddler,
         friendsOrLovers,
+        limpWristSyndrome,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
         getNemesisRequest({ client }),
@@ -45,6 +47,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBiggestRivalsRequest({ client }),
         getChiefPaddlerRequest({ client }),
         getFriendsOrLoversRequest({ client }),
+        getLimpWristSyndromeRequest({ client }),
       ])
       const results = [
         personalStatistics,
@@ -57,6 +60,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         chiefPaddler,
         friendsOrLovers,
+        limpWristSyndrome,
       ]
 
       if (
@@ -69,7 +73,8 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestPartner.error ||
         biggestRivals.error ||
         chiefPaddler.error ||
-        friendsOrLovers.error
+        friendsOrLovers.error ||
+        limpWristSyndrome.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -97,6 +102,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals: biggestRivals.data,
         chiefPaddler: chiefPaddler.data,
         friendsOrLovers: friendsOrLovers.data,
+        limpWristSyndrome: limpWristSyndrome.data,
       })
     } catch {
       return failure({

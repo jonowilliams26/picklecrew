@@ -680,6 +680,57 @@
         }
       }
     },
+    "/statistics/limp-wrist-syndrome": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the limp wrist syndrome holder for the active Crew.",
+        "operationId": "GetLimpWristSyndrome",
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLimpWristSyndromeHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/nemesis": {
       "get": {
         "tags": [
@@ -1545,6 +1596,24 @@
           }
         }
       },
+      "GetLimpWristSyndromeHttpResponse": {
+        "required": [
+          "limpWristSyndrome"
+        ],
+        "type": "object",
+        "properties": {
+          "limpWristSyndrome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LimpWristSyndromeHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetNemesisHttpResponse": {
         "required": [
           "nemesis"
@@ -1741,6 +1810,38 @@
           "traceId": {
             "type": "string",
             "description": "The trace identifier for the request."
+          }
+        }
+      },
+      "LimpWristSyndromeHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "losses",
+          "pointDifferential"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "losses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pointDifferential": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
