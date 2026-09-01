@@ -73,7 +73,7 @@ internal static class DependencyInjection
             .WithTracing(tracing => tracing.AddFusionCacheInstrumentation());
         builder.Services.AddFusionCache()
             .WithDefaultEntryOptions(options =>
-                options.Duration = TimeSpan.FromMinutes(5)
+                options.Duration = TimeSpan.FromHours(5)
             )
             .WithSystemTextJsonSerializer()
             .WithRegisteredDistributedCache()
