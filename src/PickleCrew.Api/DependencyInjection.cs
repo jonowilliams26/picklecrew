@@ -11,6 +11,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
@@ -66,6 +68,9 @@ internal static class DependencyInjection
 
             return new RedisCache(options);
         });
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics => metrics.AddFusionCacheInstrumentation())
+            .WithTracing(tracing => tracing.AddFusionCacheInstrumentation());
         builder.Services.AddFusionCache()
             .WithDefaultEntryOptions(options =>
                 options.Duration = TimeSpan.FromMinutes(5)
