@@ -15,6 +15,7 @@ using PickleCrew.Api.Authorization;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Extensions;
 using PickleCrew.Api.OpenApi;
+using PickleCrew.Api.RateLimiting;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
 using PickleCrew.Api.Testing;
@@ -90,6 +91,13 @@ internal static class DependencyInjection
     public static IServiceCollection AddTimeProvider(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
+
+        return services;
+    }
+
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(RateLimitingPolicies.Configure);
 
         return services;
     }

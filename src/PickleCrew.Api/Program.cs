@@ -10,6 +10,7 @@ builder.AddDatabase();
 builder.AddCaching();
 builder.AddWorkOs();
 builder.Services.AddTimeProvider();
+builder.Services.AddRateLimiting();
 builder.Services.AddUserContexts();
 builder.Services.AddStatisticsServices(builder.Configuration);
 builder.Services.AddRequestLogging(builder.Environment);
@@ -26,6 +27,7 @@ app.UseRequestTimeouts();
 app.UseDevelopmentApiDelay();
 app.UseOutputCache();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())

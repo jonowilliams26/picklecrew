@@ -2,6 +2,7 @@ using PickleCrew.Api.Crews;
 using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Games;
 using PickleCrew.Api.Games.RecordGame;
+using PickleCrew.Api.RateLimiting;
 using PickleCrew.Api.Statistics;
 using PickleCrew.Api.Testing;
 
@@ -12,6 +13,8 @@ internal static class Endpoints
     public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder app)
     {
         var endpoints = app.MapGroup(string.Empty)
+            .RequireRateLimiting(RateLimitingPolicies.AuthenticatedUser)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return endpoints
