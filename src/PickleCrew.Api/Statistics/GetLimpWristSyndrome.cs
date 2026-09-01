@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -33,6 +35,29 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetLimpWristSyndromeHttpResponse>> HandleAsync(
+        CrewUserContext crewUserContext,
+        CrewScopedDbContext database,
+        ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.LimpWristSyndrome
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetLimpWristSyndromeHttpResponse> GetResponseAsync(
         CrewScopedDbContext database,
         ICrewService crewService,
         CancellationToken cancellationToken)
@@ -59,15 +84,15 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
 
         if (holderStatistics is null)
         {
-            return TypedResults.Ok(new GetLimpWristSyndromeHttpResponse
+            return new GetLimpWristSyndromeHttpResponse
             {
                 LimpWristSyndrome = null,
-            });
+            };
         }
 
         var holder = activeMembersByUserId[holderStatistics.UserId];
 
-        return TypedResults.Ok(new GetLimpWristSyndromeHttpResponse
+        return new GetLimpWristSyndromeHttpResponse
         {
             LimpWristSyndrome = new LimpWristSyndromeHttpResponse
             {
@@ -77,6 +102,6 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
                 Losses = holderStatistics.Losses,
                 PointDifferential = holderStatistics.PointDifferential,
             },
-        });
+        };
     }
 }

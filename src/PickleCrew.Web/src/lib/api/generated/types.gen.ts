@@ -769,6 +769,10 @@ export type GetLimpWristSyndromeErrors = {
      */
     403: ProblemDetails;
     /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
      * Internal Server Error
      */
     500: ProblemDetails;

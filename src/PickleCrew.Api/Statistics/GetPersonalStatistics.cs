@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
 
@@ -51,14 +53,37 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
     private static async Task<Ok<GetPersonalStatisticsHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
         CrewStandingsService standingsService,
+        HybridCache cache,
         CancellationToken cancellationToken)
     {
-        var standing = await standingsService.GetMemberStandingAsync(
-            crewUserContext.UserId,
+        var response = await cache.GetOrCreateAsync(
+            new PersonalStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                crewUserContext.UserId,
+                PersonalStatisticsCacheResource.PersonalStatistics
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                standingsService,
+                factoryCancellationToken
+            ),
             cancellationToken
         );
 
-        return TypedResults.Ok(new GetPersonalStatisticsHttpResponse
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetPersonalStatisticsHttpResponse> GetResponseAsync(
+        string userId,
+        CrewStandingsService standingsService,
+        CancellationToken cancellationToken)
+    {
+        var standing = await standingsService.GetMemberStandingAsync(
+            userId,
+            cancellationToken
+        );
+
+        return new GetPersonalStatisticsHttpResponse
         {
             Wins = standing.Wins,
             Losses = standing.Losses,
@@ -76,6 +101,6 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
             CrewScore = standing.CrewScore,
             CrewRank = standing.Rank,
             ActiveCrewMemberCount = standing.ActiveCrewMemberCount,
-        });
+        };
     }
 }

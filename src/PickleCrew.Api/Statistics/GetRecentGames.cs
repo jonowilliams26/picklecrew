@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Games;
@@ -49,10 +51,31 @@ internal sealed class GetRecentGamesEndpoint : IEndpoint
     private static async Task<Ok<GetRecentGamesHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
         CrewScopedDbContext database,
+        HybridCache cache,
         CancellationToken cancellationToken)
     {
-        var userId = crewUserContext.UserId;
+        var response = await cache.GetOrCreateAsync(
+            new PersonalStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                crewUserContext.UserId,
+                PersonalStatisticsCacheResource.RecentGames
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                database,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
 
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetRecentGamesHttpResponse> GetResponseAsync(
+        string userId,
+        CrewScopedDbContext database,
+        CancellationToken cancellationToken)
+    {
         var games = await database.Games
             .AsNoTracking()
             .Where(game => game.Sides.Any(side => side.Participants.Any(participant =>
@@ -73,13 +96,13 @@ internal sealed class GetRecentGamesEndpoint : IEndpoint
 
         var summary = RecentGamesSummaryCalculator.Calculate(results);
 
-        return TypedResults.Ok(new GetRecentGamesHttpResponse
+        return new GetRecentGamesHttpResponse
         {
             Games = recentGames,
             Wins = summary.Wins,
             Losses = summary.Losses,
             WinStreak = summary.WinStreak,
-        });
+        };
     }
 
     private static RecentGameItemHttpResponse ToHttpResponse(

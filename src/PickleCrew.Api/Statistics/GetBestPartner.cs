@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -48,15 +50,40 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
         CrewUserContext crewUserContext,
         CrewScopedDbContext database,
         ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new PersonalStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                crewUserContext.UserId,
+                PersonalStatisticsCacheResource.BestPartner
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetBestPartnerHttpResponse> GetResponseAsync(
+        string userId,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
         var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
             cancellationToken
         );
         var activePartnerUserIds = activeMembersByUserId.Keys
-            .Where(userId => !string.Equals(
+            .Where(candidateUserId => !string.Equals(
+                candidateUserId,
                 userId,
-                crewUserContext.UserId,
                 StringComparison.Ordinal
             ))
             .ToArray();
@@ -65,14 +92,14 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
             .AsNoTracking()
             .Where(candidate =>
                 candidate.GamesPlayed >= MinimumGamesPlayed
-                && ((candidate.Player1Id == crewUserContext.UserId
+                && ((candidate.Player1Id == userId
                         && activePartnerUserIds.Contains(candidate.Player2Id))
-                    || (candidate.Player2Id == crewUserContext.UserId
+                    || (candidate.Player2Id == userId
                         && activePartnerUserIds.Contains(candidate.Player1Id)))
             )
             .Select(candidate => new BestPartnerStatisticsTotals
             {
-                PartnerUserId = candidate.Player1Id == crewUserContext.UserId
+                PartnerUserId = candidate.Player1Id == userId
                     ? candidate.Player2Id
                     : candidate.Player1Id,
                 Wins = candidate.Wins,
@@ -91,15 +118,15 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
 
         if (statistics is null)
         {
-            return TypedResults.Ok(new GetBestPartnerHttpResponse
+            return new GetBestPartnerHttpResponse
             {
                 BestPartner = null,
-            });
+            };
         }
 
         var partner = activeMembersByUserId[statistics.PartnerUserId];
 
-        return TypedResults.Ok(new GetBestPartnerHttpResponse
+        return new GetBestPartnerHttpResponse
         {
             BestPartner = new BestPartnerHttpResponse
             {
@@ -114,7 +141,7 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
                 PointsConceded = statistics.PointsConceded,
                 PointDifferential = statistics.PointDifferential,
             },
-        });
+        };
     }
 }
 

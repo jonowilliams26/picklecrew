@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -36,6 +38,31 @@ internal sealed class GetNemesisEndpoint : IEndpoint
         CrewUserContext crewUserContext,
         CrewScopedDbContext database,
         ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new PersonalStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                crewUserContext.UserId,
+                PersonalStatisticsCacheResource.Nemesis
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                crewUserContext.UserId,
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetNemesisHttpResponse> GetResponseAsync(
+        string userId,
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
         var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
@@ -45,7 +72,7 @@ internal sealed class GetNemesisEndpoint : IEndpoint
         var matchup = await database.CrewMatchupStatistics
             .AsNoTracking()
             .Where(statistics =>
-                statistics.UserId == crewUserContext.UserId
+                statistics.UserId == userId
                 && statistics.Losses > 0
                 && statistics.GamesPlayed >= MinimumGamesPlayed
                 && activeMemberIds.Contains(statistics.OpponentUserId)
@@ -61,15 +88,15 @@ internal sealed class GetNemesisEndpoint : IEndpoint
 
         if (matchup is null)
         {
-            return TypedResults.Ok(new GetNemesisHttpResponse
+            return new GetNemesisHttpResponse
             {
                 Nemesis = null,
-            });
+            };
         }
 
         var opponent = activeMembersByUserId[matchup.OpponentUserId];
 
-        return TypedResults.Ok(new GetNemesisHttpResponse
+        return new GetNemesisHttpResponse
         {
             Nemesis = new NemesisHttpResponse
             {
@@ -78,6 +105,6 @@ internal sealed class GetNemesisEndpoint : IEndpoint
                 ProfilePictureUrl = opponent.ProfilePictureUrl,
                 Losses = matchup.Losses,
             },
-        });
+        };
     }
 }
