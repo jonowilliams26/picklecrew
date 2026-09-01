@@ -82,6 +82,7 @@ internal sealed class RecordGameEndpoint : IEndpoint
         ICrewService crewService,
         CrewScopedDbContext database,
         GameStatisticsService gameStatisticsService,
+        GameStatisticsServiceV2 gameStatisticsServiceV2,
         HybridCache cache,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
@@ -135,12 +136,16 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 .ToList(),
         };
 
+        database.Games.Add(game);
         await gameStatisticsService.CalculateStatisticsAsync(
             game,
             cancellationToken
         );
+        await gameStatisticsServiceV2.CalculateStatisticsAsync(
+            game,
+            cancellationToken
+        );
 
-        database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync(

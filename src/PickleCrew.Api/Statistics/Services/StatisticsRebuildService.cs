@@ -57,7 +57,11 @@ internal sealed class StatisticsRebuildService(
                 "Games",
                 "CrewMemberStatistics",
                 "CrewDoublesPairingStatistics",
-                "CrewMatchupStatistics"
+                "CrewMatchupStatistics",
+                "CrewMemberGameStatistics",
+                "CrewDoublesPairingGameStatistics",
+                "CrewMatchupGameStatistics",
+                "CrewMemberWinStreaks"
             IN ACCESS EXCLUSIVE MODE;
             """,
             cancellationToken
@@ -70,6 +74,18 @@ internal sealed class StatisticsRebuildService(
             .ThenBy(game => game.Id)
             .ToArrayAsync(cancellationToken);
 
+        await database.CrewMatchupGameStatistics
+            .IgnoreQueryFilters()
+            .ExecuteDeleteAsync(cancellationToken);
+        await database.CrewDoublesPairingGameStatistics
+            .IgnoreQueryFilters()
+            .ExecuteDeleteAsync(cancellationToken);
+        await database.CrewMemberGameStatistics
+            .IgnoreQueryFilters()
+            .ExecuteDeleteAsync(cancellationToken);
+        await database.CrewMemberWinStreaks
+            .IgnoreQueryFilters()
+            .ExecuteDeleteAsync(cancellationToken);
         await database.CrewMatchupStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
@@ -81,13 +97,22 @@ internal sealed class StatisticsRebuildService(
             .ExecuteDeleteAsync(cancellationToken);
 
         var statisticsService = new GameStatisticsService(database);
+        var statisticsServiceV2 = new GameStatisticsServiceV2(database);
 
         foreach (var game in games)
         {
             crewUserContext.CrewId = game.CrewId;
             crewUserContext.CrewUuid = game.CrewUuid;
+            database.Attach(game);
 
-            await statisticsService.CalculateStatisticsAsync(game, cancellationToken);
+            await statisticsService.CalculateStatisticsAsync(
+                game,
+                cancellationToken
+            );
+            await statisticsServiceV2.CalculateStatisticsAsync(
+                game,
+                cancellationToken
+            );
             await database.SaveChangesAsync(cancellationToken);
             database.ChangeTracker.Clear();
         }
