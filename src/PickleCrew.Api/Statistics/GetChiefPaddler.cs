@@ -34,8 +34,7 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
 
     private static async Task<Ok<GetChiefPaddlerHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        CrewScopedDbContext database,
-        ICrewService crewService,
+        IServiceScopeFactory scopeFactory,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -44,9 +43,11 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.ChiefPaddler
             ),
-            factoryCancellationToken => GetResponseAsync(
-                database,
-                crewService,
+            crewUserContext,
+            scopeFactory,
+            static (services, factoryCancellationToken) => GetResponseAsync(
+                services.GetRequiredService<CrewScopedDbContext>(),
+                services.GetRequiredService<ICrewService>(),
                 factoryCancellationToken
             ),
             cancellationToken

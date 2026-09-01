@@ -50,7 +50,7 @@ internal sealed class GetRecentGamesEndpoint : IEndpoint
 
     private static async Task<Ok<GetRecentGamesHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        CrewScopedDbContext database,
+        IServiceScopeFactory scopeFactory,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -60,9 +60,11 @@ internal sealed class GetRecentGamesEndpoint : IEndpoint
                 crewUserContext.UserId,
                 PersonalStatisticsCacheResource.RecentGames
             ),
-            factoryCancellationToken => GetResponseAsync(
-                crewUserContext.UserId,
-                database,
+            crewUserContext,
+            scopeFactory,
+            static (services, factoryCancellationToken) => GetResponseAsync(
+                services.GetRequiredService<CrewUserContext>().UserId,
+                services.GetRequiredService<CrewScopedDbContext>(),
                 factoryCancellationToken
             ),
             cancellationToken

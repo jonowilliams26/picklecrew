@@ -52,7 +52,7 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
 
     private static async Task<Ok<GetPersonalStatisticsHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        CrewStandingsService standingsService,
+        IServiceScopeFactory scopeFactory,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -62,9 +62,11 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
                 crewUserContext.UserId,
                 PersonalStatisticsCacheResource.PersonalStatistics
             ),
-            factoryCancellationToken => GetResponseAsync(
-                crewUserContext.UserId,
-                standingsService,
+            crewUserContext,
+            scopeFactory,
+            static (services, factoryCancellationToken) => GetResponseAsync(
+                services.GetRequiredService<CrewUserContext>().UserId,
+                services.GetRequiredService<CrewStandingsService>(),
                 factoryCancellationToken
             ),
             cancellationToken

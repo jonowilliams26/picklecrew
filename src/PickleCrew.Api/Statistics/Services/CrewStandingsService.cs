@@ -7,10 +7,9 @@ using PickleCrew.Api.Services;
 namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class CrewStandingsService(
-    CrewScopedDbContext database,
-    ICrewService crewService,
     CrewUserContext crewUserContext,
-    HybridCache cache)
+    HybridCache cache,
+    IServiceScopeFactory scopeFactory)
 {
     public async Task<CrewStanding> GetMemberStandingAsync(
         string userId,
@@ -31,12 +30,20 @@ internal sealed class CrewStandingsService(
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.CrewStandings
             ),
-            GetUncachedStandingsAsync,
+            crewUserContext,
+            scopeFactory,
+            static (services, factoryCancellationToken) => GetUncachedStandingsAsync(
+                services.GetRequiredService<CrewScopedDbContext>(),
+                services.GetRequiredService<ICrewService>(),
+                factoryCancellationToken
+            ),
             cancellationToken
         );
     }
 
-    private async ValueTask<CrewStanding[]> GetUncachedStandingsAsync(
+    private static async ValueTask<CrewStanding[]> GetUncachedStandingsAsync(
+        CrewScopedDbContext database,
+        ICrewService crewService,
         CancellationToken cancellationToken)
     {
         var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(

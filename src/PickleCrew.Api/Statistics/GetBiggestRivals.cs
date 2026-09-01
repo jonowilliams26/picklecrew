@@ -45,8 +45,7 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
 
     private static async Task<Ok<GetBiggestRivalsHttpResponse>> HandleAsync(
         CrewUserContext crewUserContext,
-        CrewScopedDbContext database,
-        ICrewService crewService,
+        IServiceScopeFactory scopeFactory,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -55,9 +54,11 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
                 crewUserContext.CrewUuid,
                 CrewStatisticsCacheResource.BiggestRivals
             ),
-            factoryCancellationToken => GetResponseAsync(
-                database,
-                crewService,
+            crewUserContext,
+            scopeFactory,
+            static (services, factoryCancellationToken) => GetResponseAsync(
+                services.GetRequiredService<CrewScopedDbContext>(),
+                services.GetRequiredService<ICrewService>(),
                 factoryCancellationToken
             ),
             cancellationToken

@@ -54,9 +54,8 @@ internal sealed class GetGamesEndpoint : IEndpoint
 
     private static async Task<Ok<PaginatedHttpResponse<GameHistoryItemHttpResponse>>> HandleAsync(
         [AsParameters] GetGamesHttpRequest request,
-        ICrewService crewService,
         CrewUserContext crewUserContext,
-        CrewScopedDbContext database,
+        IServiceScopeFactory scopeFactory,
         HybridCache cache,
         CancellationToken cancellationToken)
     {
@@ -67,18 +66,27 @@ internal sealed class GetGamesEndpoint : IEndpoint
         );
         var paginatedGames = await cache.GetOrCreateAsync(
             cacheOption,
-            async factoryCancellationToken =>
+            crewUserContext,
+            scopeFactory,
+            cacheOption,
+            static async (services, options, factoryCancellationToken) =>
             {
+                var crewService = services.GetRequiredService<ICrewService>();
                 var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
                     factoryCancellationToken
                 );
+                var database = services.GetRequiredService<CrewScopedDbContext>();
 
                 return await database.Games
                     .AsNoTracking()
                     .OrderByDescending(game => game.PlayedAtUtc)
                     .ThenByDescending(game => game.Id)
                     .PaginateAsync(
-                        request,
+                        new PaginatedHttpRequest
+                        {
+                            Page = options.Page,
+                            PageSize = options.PageSize,
+                        },
                         game => ToHttpResponse(game, activeMembersByUserId),
                         factoryCancellationToken
                     );
