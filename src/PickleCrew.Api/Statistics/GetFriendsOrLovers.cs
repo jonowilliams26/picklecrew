@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -44,6 +46,29 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetFriendsOrLoversHttpResponse>> HandleAsync(
+        CrewUserContext crewUserContext,
+        CrewScopedDbContext database,
+        ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.FriendsOrLovers
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetFriendsOrLoversHttpResponse> GetResponseAsync(
         CrewScopedDbContext database,
         ICrewService crewService,
         CancellationToken cancellationToken)
@@ -79,10 +104,10 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
 
         if (statistics is null)
         {
-            return TypedResults.Ok(new GetFriendsOrLoversHttpResponse
+            return new GetFriendsOrLoversHttpResponse
             {
                 Pairing = null,
-            });
+            };
         }
 
         var players = new[]
@@ -94,7 +119,7 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
             .ThenBy(player => player.UserId, StringComparer.Ordinal)
             .ToArray();
 
-        return TypedResults.Ok(new GetFriendsOrLoversHttpResponse
+        return new GetFriendsOrLoversHttpResponse
         {
             Pairing = new FriendsOrLoversPairingHttpResponse
             {
@@ -105,7 +130,7 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
                 WinPercentage = statistics.WinPercentage,
                 PointDifferential = statistics.PointDifferential,
             },
-        });
+        };
     }
 
     private static FriendsOrLoversPlayerHttpResponse CreatePlayer(

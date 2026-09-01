@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -35,6 +37,29 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetCrewLongestWinStreakHttpResponse>> HandleAsync(
+        CrewUserContext crewUserContext,
+        CrewScopedDbContext database,
+        ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.CrewLongestWinStreak
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetCrewLongestWinStreakHttpResponse> GetResponseAsync(
         CrewScopedDbContext database,
         ICrewService crewService,
         CancellationToken cancellationToken)
@@ -62,15 +87,15 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
 
         if (recordHolderStatistics is null)
         {
-            return TypedResults.Ok(new GetCrewLongestWinStreakHttpResponse
+            return new GetCrewLongestWinStreakHttpResponse
             {
                 LongestWinStreak = null,
-            });
+            };
         }
 
         var recordHolder = activeMembersByUserId[recordHolderStatistics.UserId];
 
-        return TypedResults.Ok(new GetCrewLongestWinStreakHttpResponse
+        return new GetCrewLongestWinStreakHttpResponse
         {
             LongestWinStreak = new LongestWinStreakHttpResponse
             {
@@ -81,6 +106,6 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
                 StartedAtUtc = recordHolderStatistics.LongestWinStreakStartedAtUtc!.Value,
                 EndedAtUtc = recordHolderStatistics.LongestWinStreakEndedAtUtc,
             },
-        });
+        };
     }
 }

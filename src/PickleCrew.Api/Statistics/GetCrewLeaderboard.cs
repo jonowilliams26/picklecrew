@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
+using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
 
 namespace PickleCrew.Api.Statistics;
@@ -35,12 +38,33 @@ internal sealed class GetCrewLeaderboardEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetCrewLeaderboardHttpResponse>> HandleAsync(
+        CrewUserContext crewUserContext,
+        CrewStandingsService standingsService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.CrewLeaderboard
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                standingsService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetCrewLeaderboardHttpResponse> GetResponseAsync(
         CrewStandingsService standingsService,
         CancellationToken cancellationToken)
     {
         var standings = await standingsService.GetStandingsAsync(cancellationToken);
 
-        return TypedResults.Ok(new GetCrewLeaderboardHttpResponse
+        return new GetCrewLeaderboardHttpResponse
         {
             Entries = standings
                 .Select(standing => new CrewLeaderboardEntryHttpResponse
@@ -54,6 +78,6 @@ internal sealed class GetCrewLeaderboardEndpoint : IEndpoint
                     CrewScore = standing.CrewScore,
                 })
                 .ToArray(),
-        });
+        };
     }
 }

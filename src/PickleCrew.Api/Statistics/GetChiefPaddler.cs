@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -31,6 +33,29 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
     }
 
     private static async Task<Ok<GetChiefPaddlerHttpResponse>> HandleAsync(
+        CrewUserContext crewUserContext,
+        CrewScopedDbContext database,
+        ICrewService crewService,
+        HybridCache cache,
+        CancellationToken cancellationToken)
+    {
+        var response = await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.ChiefPaddler
+            ),
+            factoryCancellationToken => GetResponseAsync(
+                database,
+                crewService,
+                factoryCancellationToken
+            ),
+            cancellationToken
+        );
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async ValueTask<GetChiefPaddlerHttpResponse> GetResponseAsync(
         CrewScopedDbContext database,
         ICrewService crewService,
         CancellationToken cancellationToken)
@@ -57,15 +82,15 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
 
         if (chiefPaddlerStatistics is null)
         {
-            return TypedResults.Ok(new GetChiefPaddlerHttpResponse
+            return new GetChiefPaddlerHttpResponse
             {
                 ChiefPaddler = null,
-            });
+            };
         }
 
         var chiefPaddler = activeMembersByUserId[chiefPaddlerStatistics.UserId];
 
-        return TypedResults.Ok(new GetChiefPaddlerHttpResponse
+        return new GetChiefPaddlerHttpResponse
         {
             ChiefPaddler = new ChiefPaddlerHttpResponse
             {
@@ -74,6 +99,6 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
                 ProfilePictureUrl = chiefPaddler.ProfilePictureUrl,
                 ThatsAPaddlin = chiefPaddlerStatistics.ThatsAPaddlin,
             },
-        });
+        };
     }
 }

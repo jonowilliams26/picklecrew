@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 
@@ -6,7 +8,9 @@ namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class CrewStandingsService(
     CrewScopedDbContext database,
-    ICrewService crewService)
+    ICrewService crewService,
+    CrewUserContext crewUserContext,
+    HybridCache cache)
 {
     public async Task<CrewStanding> GetMemberStandingAsync(
         string userId,
@@ -20,6 +24,19 @@ internal sealed class CrewStandingsService(
     }
 
     public async Task<CrewStanding[]> GetStandingsAsync(
+        CancellationToken cancellationToken)
+    {
+        return await cache.GetOrCreateAsync(
+            new CrewStatisticsCacheOption(
+                crewUserContext.CrewUuid,
+                CrewStatisticsCacheResource.CrewStandings
+            ),
+            GetUncachedStandingsAsync,
+            cancellationToken
+        );
+    }
+
+    private async ValueTask<CrewStanding[]> GetUncachedStandingsAsync(
         CancellationToken cancellationToken)
     {
         var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
