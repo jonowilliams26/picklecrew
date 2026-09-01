@@ -127,6 +127,18 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         );
     }
 
+    public async Task DeactivateMembershipAsync(
+        string membershipId,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await client.PostAsync(
+            $"/memberships/{Uri.EscapeDataString(membershipId)}/deactivate",
+            content: null,
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
     public Task<FakeInvitation> CreateInvitationAsync(
         string invitationId,
         string organizationId,
@@ -628,6 +640,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
+    DeactivateMembership,
     ListActiveMembers,
     ListPendingInvitations,
     SendInvitation,

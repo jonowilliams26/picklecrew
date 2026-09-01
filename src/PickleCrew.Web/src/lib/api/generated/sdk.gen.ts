@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, RecordGameData, RecordGameErrors, RecordGameResponses, RemoveCrewMemberData, RemoveCrewMemberErrors, RemoveCrewMemberResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -46,6 +46,11 @@ export const sendCrewInvitation = <ThrowOnError extends boolean = false>(options
         ...options.headers
     }
 });
+
+/**
+ * Removes an active member from the active crew.
+ */
+export const removeCrewMember = <ThrowOnError extends boolean = false>(options: Options<RemoveCrewMemberData, ThrowOnError>): RequestResult<RemoveCrewMemberResponses, RemoveCrewMemberErrors, ThrowOnError> => (options.client ?? client).delete<RemoveCrewMemberResponses, RemoveCrewMemberErrors, ThrowOnError>({ url: '/crews/members/{userId}', ...options });
 
 /**
  * Gets active crew members available for game recording.

@@ -192,6 +192,38 @@ internal sealed class TestWorkOsService : IWorkOsService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<bool> DeactivateOrganizationMembershipAsync(
+        string organizationId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var membershipId = await FindActiveMembershipIdAsync(
+            userId,
+            organizationId,
+            cancellationToken
+        );
+
+        if (membershipId is null)
+        {
+            return false;
+        }
+
+        using var response = await client.PostAsync(
+            $"/memberships/{Uri.EscapeDataString(membershipId)}/deactivate",
+            content: null,
+            cancellationToken
+        );
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return true;
+    }
+
     private async Task<string?> FindIdAsync(
         string requestUri,
         CancellationToken cancellationToken)

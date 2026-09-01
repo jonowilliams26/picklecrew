@@ -38,6 +38,11 @@ internal interface IWorkOsService
         string emailAddress,
         string inviterUserId,
         CancellationToken cancellationToken);
+
+    Task<bool> DeactivateOrganizationMembershipAsync(
+        string organizationId,
+        string userId,
+        CancellationToken cancellationToken);
 }
 
 internal sealed class WorkOsService(WorkOSClient client)
@@ -231,5 +236,40 @@ internal sealed class WorkOsService(WorkOSClient client)
             },
             cancellationToken
         );
+    }
+
+    public async Task<bool> DeactivateOrganizationMembershipAsync(
+        string organizationId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var membershipId = await FindActiveMembershipIdAsync(
+            userId,
+            organizationId,
+            cancellationToken
+        );
+
+        if (membershipId is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            await client.OrganizationMembership.DeactivateAsync(
+                membershipId,
+                new RequestOptions
+                {
+                    MaxRetries = 0,
+                },
+                cancellationToken
+            );
+
+            return true;
+        }
+        catch (WorkOS.NotFoundException)
+        {
+            return false;
+        }
     }
 }
