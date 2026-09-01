@@ -73,10 +73,8 @@ internal static class DependencyInjection
             .WithTracing(tracing => tracing.AddFusionCacheInstrumentation());
         builder.Services.AddFusionCache()
             .WithDefaultEntryOptions(options =>
-            {
-                options.Duration = TimeSpan.FromHours(5);
-                options.EagerRefreshThreshold = 0.8f;
-            })
+                options.Duration = TimeSpan.FromHours(5)
+            )
             .WithSystemTextJsonSerializer()
             .WithRegisteredDistributedCache()
             .WithBackplane(services =>
