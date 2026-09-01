@@ -798,6 +798,16 @@
         "summary": "Gets the limp wrist syndrome holder for the active Crew.",
         "operationId": "GetLimpWristSyndrome",
         "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
