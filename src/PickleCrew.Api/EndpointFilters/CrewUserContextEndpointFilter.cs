@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Authorization;
+using PickleCrew.Api.Caching;
 using PickleCrew.Api.Data.Database;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace PickleCrew.Api.EndpointFilters;
 
@@ -31,7 +33,8 @@ internal static class CrewUserContextEndpointFilterExtensions
 internal sealed class CrewUserContextEndpointFilter(
     UserContext userContext,
     CrewUserContext crewUserContext,
-    PickleCrewDbContext database)
+    PickleCrewDbContext database,
+    IFusionCache cache)
     : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
@@ -52,24 +55,46 @@ internal sealed class CrewUserContextEndpointFilter(
             return TypedResults.Unauthorized();
         }
 
-        var crew = await database.Crews
-            .IgnoreQueryFilters()
-            .Where(candidate => candidate.WorkOsOrganizationId == organizationId)
-            .Select(candidate => new
-            {
-                candidate.Id,
-                candidate.Uuid,
-            })
-            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
-
-        if (crew is null)
-        {
-            return TypedResults.Forbid();
-        }
-
         var requiredUserId = userId!;
         var requiredOrganizationId = organizationId!;
         var requiredRole = role!;
+        var cacheOption = new CrewUserContextCacheOption(requiredOrganizationId);
+        var cachedCrew = await cache.TryGetAsync<CrewUserContextCacheEntry>(
+            cacheOption.Key,
+            token: context.HttpContext.RequestAborted
+        );
+        CrewUserContextCacheEntry crew;
+
+        if (cachedCrew.HasValue)
+        {
+            crew = cachedCrew.Value;
+        }
+        else
+        {
+            var databaseCrew = await database.Crews
+                .IgnoreQueryFilters()
+                .Where(candidate =>
+                    candidate.WorkOsOrganizationId == requiredOrganizationId
+                )
+                .Select(candidate => new CrewUserContextCacheEntry
+                {
+                    CrewId = candidate.Id,
+                    CrewUuid = candidate.Uuid,
+                })
+                .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+
+            if (databaseCrew is null)
+            {
+                return TypedResults.Forbid();
+            }
+
+            crew = databaseCrew;
+            await cache.SetAsync(
+                cacheOption.Key,
+                crew,
+                token: context.HttpContext.RequestAborted
+            );
+        }
 
         userContext.UserId = requiredUserId;
         userContext.OrganizationId = requiredOrganizationId;
@@ -78,9 +103,16 @@ internal sealed class CrewUserContextEndpointFilter(
         crewUserContext.UserId = requiredUserId;
         crewUserContext.OrganizationId = requiredOrganizationId;
         crewUserContext.Role = requiredRole;
-        crewUserContext.CrewId = crew.Id;
-        crewUserContext.CrewUuid = crew.Uuid;
+        crewUserContext.CrewId = crew.CrewId;
+        crewUserContext.CrewUuid = crew.CrewUuid;
 
         return await next(context);
     }
+}
+
+internal sealed record CrewUserContextCacheEntry
+{
+    public required long CrewId { get; init; }
+
+    public required Guid CrewUuid { get; init; }
 }

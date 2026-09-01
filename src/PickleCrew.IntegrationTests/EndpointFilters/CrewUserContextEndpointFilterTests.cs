@@ -6,6 +6,7 @@ using PickleCrew.Api.EndpointFilters;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.WorkOs;
 using Xunit;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace PickleCrew.IntegrationTests.EndpointFilters;
 
@@ -24,10 +25,12 @@ public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var userContext = new UserContext();
         var crewUserContext = new CrewUserContext();
+        using var fusionCache = new FusionCache(new FusionCacheOptions());
         var filter = new CrewUserContextEndpointFilter(
             userContext,
             crewUserContext,
-            dbContext
+            dbContext,
+            fusionCache
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
             CreateHttpContext(userId, organizationId, role)
@@ -53,10 +56,12 @@ public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
         await using var dbContext = fixture.CreateDbContext();
         var userContext = new UserContext();
         var crewUserContext = new CrewUserContext();
+        using var fusionCache = new FusionCache(new FusionCacheOptions());
         var filter = new CrewUserContextEndpointFilter(
             userContext,
             crewUserContext,
-            dbContext
+            dbContext,
+            fusionCache
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
             CreateHttpContext("user_123", $"org_{Guid.NewGuid():N}", "admin")
@@ -105,10 +110,12 @@ public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
 
         var userContext = new UserContext();
         var crewUserContext = new CrewUserContext();
+        using var fusionCache = new FusionCache(new FusionCacheOptions());
         var filter = new CrewUserContextEndpointFilter(
             userContext,
             crewUserContext,
-            dbContext
+            dbContext,
+            fusionCache
         );
         var invocationContext = new TestEndpointFilterInvocationContext(
             CreateHttpContext(userId, crew.WorkOsOrganizationId, role)
@@ -134,6 +141,79 @@ public sealed class CrewUserContextEndpointFilterTests(AppHostFixture fixture)
         );
 
         Assert.Same(handlerResult, result);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenCrewMappingIsCached_ShouldUseCachedCrewIdentifiers()
+    {
+        const string role = "admin";
+        var userId = $"user_{Guid.NewGuid():N}";
+        await using var dbContext = fixture.CreateDbContext();
+        var crew = new Crew
+        {
+            Name = "Cached Crew",
+            WorkOsOrganizationId = $"org_{Guid.NewGuid():N}",
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+        };
+        var provisioningAttempt = new CrewProvisioningAttempt
+        {
+            CrewUuid = crew.Uuid,
+            RequestId = Guid.NewGuid(),
+            CrewName = crew.Name,
+            WorkOsUserId = userId,
+            WorkOsOrganizationId = crew.WorkOsOrganizationId,
+            WorkOsMembershipId = $"om_{Guid.NewGuid():N}",
+            StartedAtUtc = crew.CreatedAtUtc,
+            CompletedAtUtc = crew.CreatedAtUtc,
+        };
+        dbContext.CrewProvisioningAttempts.Add(provisioningAttempt);
+        dbContext.Crews.Add(crew);
+        await dbContext.SaveChangesAsync();
+
+        using var fusionCache = new FusionCache(new FusionCacheOptions());
+        var firstFilter = new CrewUserContextEndpointFilter(
+            new UserContext(),
+            new CrewUserContext(),
+            dbContext,
+            fusionCache
+        );
+        var firstInvocationContext = new TestEndpointFilterInvocationContext(
+            CreateHttpContext(userId, crew.WorkOsOrganizationId, role)
+        );
+
+        await firstFilter.InvokeAsync(
+            firstInvocationContext,
+            _ => ValueTask.FromResult<object?>(null)
+        );
+
+        dbContext.Crews.Remove(crew);
+        await dbContext.SaveChangesAsync();
+
+        var cachedCrewUserContext = new CrewUserContext();
+        var secondFilter = new CrewUserContextEndpointFilter(
+            new UserContext(),
+            cachedCrewUserContext,
+            dbContext,
+            fusionCache
+        );
+        var secondInvocationContext = new TestEndpointFilterInvocationContext(
+            CreateHttpContext(userId, crew.WorkOsOrganizationId, role)
+        );
+        var handlerCalled = false;
+
+        await secondFilter.InvokeAsync(
+            secondInvocationContext,
+            _ =>
+            {
+                handlerCalled = true;
+                Assert.Equal(crew.Id, cachedCrewUserContext.CrewId);
+                Assert.Equal(crew.Uuid, cachedCrewUserContext.CrewUuid);
+
+                return ValueTask.FromResult<object?>(null);
+            }
+        );
+
+        Assert.True(handlerCalled);
     }
 
     private static DefaultHttpContext CreateHttpContext(
