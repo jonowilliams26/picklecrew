@@ -47,4 +47,15 @@ internal sealed class WorkOsCrewService(
             cancellationToken
         );
     }
+
+    public Task<bool> RemoveCrewMemberAsync(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        return workOs.DeactivateOrganizationMembershipAsync(
+            crewUserContext.OrganizationId,
+            userId,
+            cancellationToken
+        );
+    }
 }

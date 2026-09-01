@@ -5,6 +5,7 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
+import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,7 +13,9 @@ import {
   Clock3,
   Crown,
   MailPlus,
+  MoreHorizontal,
   Send,
+  UserRoundX,
   UsersRound,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -40,6 +43,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field'
 import { Input } from '~/components/ui/input'
 import { Spinner } from '~/components/ui/spinner'
@@ -55,6 +65,8 @@ import {
 import { toast } from '~/components/ui/toast'
 import type { CrewMemberHttpResponse } from '~/lib/api/generated/types.gen'
 import { getCrewMembers } from '~/lib/crews/crew-members.functions'
+import { removeCrewMember } from '~/lib/crews/member-removal.functions'
+import { validateMemberRemovalConfirmation } from '~/lib/crews/member-removal'
 import { sendCrewInvitation } from '~/lib/crews/invitations.functions'
 import {
   getCrewInvitationOutcomeMessage,
@@ -120,10 +132,11 @@ function formatRole({ role }: { role: string }): string {
 function CrewPage() {
   const membersResult = Route.useLoaderData()
   const { activeCrew } = authenticatedRoute.useLoaderData()
+  const { user } = useAuth()
   const router = useRouter()
 
-  if (!activeCrew) {
-    throw new Error('Crew page rendered without an active crew.')
+  if (!activeCrew || !user) {
+    throw new Error('Crew page rendered without an active crew or user.')
   }
 
   if (!membersResult.ok) {
@@ -206,11 +219,20 @@ function CrewPage() {
                   <TableHead className="hidden h-12 px-6 text-right text-[10px] font-black tracking-[.12em] uppercase md:table-cell">
                     Role
                   </TableHead>
+                  <Authorized role="admin">
+                    <TableHead className="h-12 w-16 px-4 text-right text-[10px] font-black tracking-[.12em] uppercase md:px-6">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </Authorized>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {roster.items.map((entry) => (
-                  <CrewRosterRow entry={entry} key={entry.id} />
+                  <CrewRosterRow
+                    entry={entry}
+                    currentUserId={user.id}
+                    key={entry.id}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -267,8 +289,15 @@ function CrewPage() {
   )
 }
 
-function CrewRosterRow({ entry }: { entry: CrewMemberHttpResponse }) {
+function CrewRosterRow({
+  entry,
+  currentUserId,
+}: {
+  entry: CrewMemberHttpResponse
+  currentUserId: string
+}) {
   const isPending = entry.status === 'pending'
+  const isCurrentUser = entry.id === currentUserId
 
   return (
     <TableRow className="border-line even:bg-muted/40">
@@ -318,7 +347,207 @@ function CrewRosterRow({ entry }: { entry: CrewMemberHttpResponse }) {
           </Badge>
         ) : null}
       </TableCell>
+      <Authorized role="admin">
+        {isPending || isCurrentUser ? (
+          <TableCell className="px-4 py-4 md:px-6" />
+        ) : (
+          <CrewMemberActions entry={entry} />
+        )}
+      </Authorized>
     </TableRow>
+  )
+}
+
+function CrewMemberActions({ entry }: { entry: CrewMemberHttpResponse }) {
+  const removeCrewMemberServerFn = useServerFn(removeCrewMember)
+  const router = useRouter()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [confirmationError, setConfirmationError] = useState<string>()
+  const [submissionError, setSubmissionError] = useState<string>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const confirmationInputId = `remove-member-confirmation-${entry.id}`
+  const hasValidConfirmation = confirmation === entry.displayName
+
+  const resetForm = () => {
+    setConfirmation('')
+    setConfirmationError(undefined)
+    setSubmissionError(undefined)
+    setIsSubmitting(false)
+  }
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsDialogOpen(nextOpen)
+
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
+  const submitRemoval = async () => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await removeCrewMemberServerFn({
+        data: { userId: entry.id },
+      })
+
+      if (!result.ok) {
+        setSubmissionError(result.error.message)
+        return
+      }
+
+      setIsDialogOpen(false)
+      resetForm()
+      toast.add({
+        type: 'success',
+        title: 'Crew member removed',
+        description: `${entry.displayName} is no longer a member of this crew.`,
+      })
+      void router.invalidate({ forcePending: true }).catch(() => {
+        toast.add({
+          type: 'error',
+          title: 'Roster not refreshed',
+          description: 'Refresh the page to see the updated crew roster.',
+        })
+      })
+    } catch {
+      setSubmissionError('This crew member could not be removed. Try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <TableCell className="px-4 py-4 text-right md:px-6">
+      <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Actions for ${entry.displayName}`}
+              />
+            }
+          >
+            <MoreHorizontal />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <UserRoundX />
+                Remove from crew
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DialogContent>
+          <form
+            className="flex flex-col gap-6"
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault()
+
+              if (isSubmitting) {
+                return
+              }
+
+              setConfirmationError(undefined)
+              setSubmissionError(undefined)
+              const validation = validateMemberRemovalConfirmation({
+                confirmation,
+                displayName: entry.displayName,
+              })
+
+              if (!validation.ok) {
+                setConfirmationError(validation.error.message)
+                return
+              }
+
+              void submitRemoval()
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Remove {entry.displayName}?</DialogTitle>
+              <DialogDescription>
+                This removes their access to the crew. Their historical games
+                and statistics will remain.
+              </DialogDescription>
+            </DialogHeader>
+
+            <FieldGroup>
+              <Field
+                data-invalid={confirmationError !== undefined || undefined}
+                data-disabled={isSubmitting || undefined}
+              >
+                <FieldLabel
+                  className="gap-0.5"
+                  htmlFor={confirmationInputId}
+                >
+                  Enter <strong>{entry.displayName}</strong> to confirm
+                </FieldLabel>
+                <Input
+                  id={confirmationInputId}
+                  name="confirmation"
+                  value={confirmation}
+                  onChange={(event) => {
+                    setConfirmation(event.target.value)
+                    setConfirmationError(undefined)
+                    setSubmissionError(undefined)
+                  }}
+                  autoComplete="off"
+                  autoFocus
+                  required
+                  aria-invalid={confirmationError !== undefined || undefined}
+                  disabled={isSubmitting}
+                />
+                <FieldError>{confirmationError}</FieldError>
+              </Field>
+            </FieldGroup>
+
+            {submissionError ? (
+              <Alert variant="destructive">
+                <CircleAlertIcon />
+                <AlertTitle>Crew member not removed</AlertTitle>
+                <AlertDescription>{submissionError}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            <DialogFooter>
+              <DialogClose
+                render={<Button type="button" variant="outline" />}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={isSubmitting || !hasValidConfirmation}
+              >
+                {isSubmitting ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <UserRoundX data-icon="inline-start" />
+                )}
+                {isSubmitting ? 'Removing…' : 'Remove from crew'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </TableCell>
   )
 }
 

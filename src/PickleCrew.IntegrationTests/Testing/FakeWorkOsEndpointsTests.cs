@@ -76,6 +76,35 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task DeactivateMembership_WhenMembershipIsActive_ShouldMakeMembershipInactive()
+    {
+        var identity = TestIdentity.Create();
+        var membershipId = $"om_test_{Guid.NewGuid():N}";
+        using var client = fixture.CreateFakeWorkOsClient();
+
+        await client.CreateUserAsync(identity.UserId, identity.EmailAddress);
+        await client.CreateOrganizationAsync(
+            identity.OrganizationId!,
+            "Kitchen Legends",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+        await client.CreateMembershipAsync(
+            membershipId,
+            identity.UserId,
+            identity.OrganizationId!,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        await client.DeactivateMembershipAsync(membershipId);
+
+        Assert.Null(await client.FindActiveMembershipAsync(
+            identity.UserId,
+            identity.OrganizationId!
+        ));
+    }
+
+    [Fact]
     public async Task FindActiveMembership_WhenMembershipIsInactive_ShouldReturnNotFound()
     {
         var identity = TestIdentity.Create();

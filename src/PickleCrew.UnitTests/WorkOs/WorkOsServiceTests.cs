@@ -62,6 +62,90 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
+    public async Task DeactivateOrganizationMembershipAsync_WhenMembershipIsActive_ShouldDeactivateMembership()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (
+                HttpStatusCode.OK,
+                CreateMembershipListResponse(
+                    "user_123",
+                    "member@example.com"
+                )
+            ),
+            (
+                HttpStatusCode.OK,
+                CreateMembershipResponse(
+                    "user_123",
+                    "member@example.com",
+                    "inactive"
+                )
+            )
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        var wasDeactivated = await service.DeactivateOrganizationMembershipAsync(
+            "org_123",
+            "user_123",
+            CancellationToken.None
+        );
+
+        Assert.True(wasDeactivated);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Equal(HttpMethod.Put, handler.Requests[1].Method);
+        Assert.Equal(
+            "/user_management/organization_memberships/membership_user_123/deactivate",
+            handler.Requests[1].RequestUri.AbsolutePath
+        );
+    }
+
+    [Fact]
+    public async Task DeactivateOrganizationMembershipAsync_WhenWorkOsReturnsServerError_ShouldNotRetryMutation()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (
+                HttpStatusCode.OK,
+                CreateMembershipListResponse(
+                    "user_123",
+                    "member@example.com"
+                )
+            ),
+            (HttpStatusCode.InternalServerError, "{\"message\":\"WorkOS failed.\"}")
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await Assert.ThrowsAsync<ServerException>(
+            () => service.DeactivateOrganizationMembershipAsync(
+                "org_123",
+                "user_123",
+                CancellationToken.None
+            )
+        );
+
+        Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task DeactivateOrganizationMembershipAsync_WhenMembershipIsNotActive_ShouldReturnFalse()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.OK, CreateEmptyMembershipListResponse())
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        var wasDeactivated = await service.DeactivateOrganizationMembershipAsync(
+            "org_123",
+            "user_123",
+            CancellationToken.None
+        );
+
+        Assert.False(wasDeactivated);
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
     public async Task ListActiveCrewMembersAsync_WhenResultsSpanPages_ShouldReturnIdsNamesPicturesAndEmailFallback()
     {
         var handler = new RecordingHttpMessageHandler(
@@ -263,6 +347,42 @@ public sealed class WorkOsServiceTests
                         profile_picture_url = profilePictureUrl,
                     },
                 },
+            },
+        });
+    }
+
+    private static string CreateEmptyMembershipListResponse()
+    {
+        return JsonSerializer.Serialize(new
+        {
+            list_metadata = new
+            {
+                before = (string?)null,
+                after = (string?)null,
+            },
+            data = Array.Empty<object>(),
+        });
+    }
+
+    private static string CreateMembershipResponse(
+        string userId,
+        string emailAddress,
+        string status)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            id = $"membership_{userId}",
+            user_id = userId,
+            organization_id = "org_123",
+            status,
+            role = new
+            {
+                slug = "member",
+            },
+            user = new
+            {
+                id = userId,
+                email = emailAddress,
             },
         });
     }

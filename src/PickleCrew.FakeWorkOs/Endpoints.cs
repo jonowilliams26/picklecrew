@@ -13,6 +13,7 @@ internal static class Endpoints
         app.MapPut("/users/{userId}", UpdateUser);
         app.MapPost("/organizations", CreateOrganization);
         app.MapPost("/memberships", CreateMembership);
+        app.MapPost("/memberships/{membershipId}/deactivate", DeactivateMembership);
         app.MapPost("/invitations", CreateInvitation);
         app.MapPost("/faults", FailOperation);
 
@@ -154,6 +155,28 @@ internal static class Endpoints
             $"/memberships/{membership.Id}",
             new IdentifierHttpResponse { Id = membership.Id }
         );
+    }
+
+    private static Results<NoContent, NotFound, ProblemHttpResult>
+        DeactivateMembership(
+            string membershipId,
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
+    {
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.DeactivateMembership
+        ))
+        {
+            return CreateFaultProblem(FakeWorkOsOperation.DeactivateMembership);
+        }
+
+        var membership = state.DeactivateMembership(membershipId);
+
+        return membership is null
+            ? TypedResults.NotFound()
+            : TypedResults.NoContent();
     }
 
     private static Results<Created<InvitationHttpResponse>, ProblemHttpResult>
@@ -518,6 +541,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
+    DeactivateMembership,
     ListActiveMembers,
     ListPendingInvitations,
     SendInvitation,

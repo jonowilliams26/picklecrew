@@ -126,6 +126,31 @@ internal sealed class FakeWorkOsState
         );
     }
 
+    public FakeMembership? DeactivateMembership(string membershipId)
+    {
+        foreach (var organization in organizations.Values)
+        {
+            var membership = organization.Memberships.Values.FirstOrDefault(
+                candidate => candidate.Id == membershipId
+            );
+
+            if (membership is null)
+            {
+                continue;
+            }
+
+            var inactiveMembership = membership with
+            {
+                Status = MembershipStatus.Inactive,
+            };
+            organization.Memberships[membership.UserId] = inactiveMembership;
+
+            return inactiveMembership;
+        }
+
+        return null;
+    }
+
     public FakeInvitation CreateInvitation(
         string organizationId,
         string emailAddress,

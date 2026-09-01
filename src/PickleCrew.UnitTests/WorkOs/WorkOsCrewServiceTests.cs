@@ -69,6 +69,22 @@ public sealed class WorkOsCrewServiceTests
         Assert.Equal("friend@example.com", workOs.InvitationEmailAddress);
     }
 
+    [Fact]
+    public async Task RemoveCrewMemberAsync_WhenCalled_ShouldUseActiveCrewOrganization()
+    {
+        var workOs = new RecordingWorkOsService();
+        var service = CreateService(workOs);
+
+        var wasRemoved = await service.RemoveCrewMemberAsync(
+            "user_removed",
+            CancellationToken.None
+        );
+
+        Assert.True(wasRemoved);
+        Assert.Equal("org_active", workOs.DeactivatedMembershipOrganizationId);
+        Assert.Equal("user_removed", workOs.DeactivatedMembershipUserId);
+    }
+
     private static ICrewService CreateService(IWorkOsService workOs)
     {
         var crewUserContext = new CrewUserContext
@@ -93,6 +109,10 @@ public sealed class WorkOsCrewServiceTests
         public string? InvitationEmailAddress { get; private set; }
 
         public string? InviterUserId { get; private set; }
+
+        public string? DeactivatedMembershipOrganizationId { get; private set; }
+
+        public string? DeactivatedMembershipUserId { get; private set; }
 
         public Task<string?> FindOrganizationByExternalIdAsync(
             string externalId,
@@ -158,6 +178,17 @@ public sealed class WorkOsCrewServiceTests
             InviterUserId = inviterUserId;
 
             return Task.CompletedTask;
+        }
+
+        public Task<bool> DeactivateOrganizationMembershipAsync(
+            string organizationId,
+            string userId,
+            CancellationToken cancellationToken)
+        {
+            DeactivatedMembershipOrganizationId = organizationId;
+            DeactivatedMembershipUserId = userId;
+
+            return Task.FromResult(true);
         }
     }
 }

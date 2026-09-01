@@ -47,6 +47,9 @@ A person who uses Picklecrew.
 - Active roster entries display the member's assigned role; pending invitation recipients are identified as pending and are not active crew members.
 - Expired, revoked, accepted, and otherwise non-pending crew invitations do not appear as invitation recipients in the roster.
 - Crew roster entries are ordered alphabetically by display name or invitation email address.
+- A crew administrator may remove another active member from the crew.
+- A crew administrator may not remove themselves from the crew.
+- Removing a crew member makes their membership inactive without deleting their historical games or statistics in that crew.
 
 ## Crew member statistics
 

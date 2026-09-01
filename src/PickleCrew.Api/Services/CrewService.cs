@@ -41,4 +41,8 @@ internal interface ICrewService
     Task SendCrewInvitationAsync(
         string emailAddress,
         CancellationToken cancellationToken);
+
+    Task<bool> RemoveCrewMemberAsync(
+        string userId,
+        CancellationToken cancellationToken);
 }

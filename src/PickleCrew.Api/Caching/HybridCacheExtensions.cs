@@ -20,6 +20,14 @@ internal static class HybridCacheExtensions
 
     public static ValueTask RemoveByTagAsync(
         this HybridCache cache,
+        ICacheTag tag,
+        CancellationToken cancellationToken = default)
+    {
+        return cache.RemoveByTagAsync(tag.Value, cancellationToken);
+    }
+
+    public static ValueTask RemoveByTagAsync(
+        this HybridCache cache,
         ICacheTag[] tags,
         CancellationToken cancellationToken = default)
     {

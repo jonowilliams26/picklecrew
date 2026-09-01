@@ -445,6 +445,59 @@ export type SendCrewInvitationResponses = {
 
 export type SendCrewInvitationResponse = SendCrewInvitationResponses[keyof SendCrewInvitationResponses];
 
+export type RemoveCrewMemberData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/crews/members/{userId}';
+};
+
+export type RemoveCrewMemberErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type RemoveCrewMemberError = RemoveCrewMemberErrors[keyof RemoveCrewMemberErrors];
+
+export type RemoveCrewMemberResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveCrewMemberResponse = RemoveCrewMemberResponses[keyof RemoveCrewMemberResponses];
+
 export type GetGameRecordingOptionsData = {
     body?: never;
     path?: never;
