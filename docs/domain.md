@@ -57,7 +57,8 @@ A crew member's all-time cumulative game results within one crew.
 
 ### Business rules
 
-- Crew member statistics are calculated separately for each crew.
+- Crew member statistics are calculated separately for each crew by aggregating each recorded game's contribution.
+- Each participating crew member has exactly one crew member statistics contribution for a recorded game.
 - A crew member on the winning side of a recorded game gains one win; a crew member on the losing side gains one loss.
 - Each participating crew member gains their side's full score as points scored and the opposing side's full score as points conceded.
 - In doubles, each participating crew member receives the full contribution; scores are not divided between partners.
@@ -76,6 +77,7 @@ A crew member's all-time cumulative game results within one crew.
 - Members with equal Crew scores are ordered alphabetically by display name.
 - Former crew members are excluded from the current leaderboard while their historical statistics are preserved.
 - A current win streak counts consecutive wins through the crew member's newest recorded game and resets to zero when that member loses.
+- Win streaks are calculated by played date and time, then by game identifier when games share the same played date and time.
 - A longest win streak is the greatest current win streak the crew member has achieved.
 - A longest win streak records when its first win was played and when the streak ended; its end is absent while that record-setting streak remains active.
 - A crew's longest win streak is the greatest longest win streak held by one of its crew members.
@@ -125,8 +127,8 @@ A crew member's all-time cumulative results against one opposing crew member wit
 ### Business rules
 
 - Matchup statistics are directional; each opposing pair has one matchup from each crew member's perspective.
-- Matchup statistics are calculated separately for each crew.
-- A matchup is created when two crew members first play on opposing sides and is updated by each subsequent game in which they oppose one another.
+- Matchup statistics are calculated separately for each crew by aggregating each recorded game's directional contributions.
+- Each recorded game contributes one directional matchup result for every pair of opposing crew members.
 - A crew member receives one win or loss and their side's full points scored and points conceded against each opposing crew member.
 - In doubles, every crew member receives the full result against every crew member on the opposing side.
 - Crew members on the same side do not have a matchup against one another.
@@ -184,6 +186,8 @@ A doubles pairing's all-time cumulative results within one crew.
 ### Business rules
 
 - A doubles pairing consists of two crew members playing on the same side of a doubles game.
+- Doubles pairing statistics are calculated by aggregating each qualifying recorded game's contribution.
+- Each qualifying doubles game contributes exactly one result for each qualifying crew-member side.
 - A doubles pairing is unordered.
 - A side containing a guest does not receive doubles pairing statistics.
 - A qualifying crew-member pairing receives its side's full score as points scored and the opposing side's full score as points conceded, including when the opposing side contains a guest.
@@ -281,6 +285,7 @@ A completed pickleball game with a final score between two sides.
 - Games are recorded immediately after they are played.
 - After recording a game, starting a rematch keeps the same format, participants, and sides while leaving both scores empty for the new result.
 - The played date and time are assigned automatically when the game is saved and cannot be changed.
+- Each statistical contribution retains its game's played date and time.
 - Any active member of the owning crew may record a game, including a game they did not participate in.
 - Recording a game does not require participant approval.
 - Possible duplicate games are allowed.
