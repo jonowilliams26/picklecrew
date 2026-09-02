@@ -29,6 +29,8 @@ public sealed record BrickWallHttpResponse
 
 internal sealed class GetBrickWallEndpoint : IEndpoint
 {
+    private const int MinimumGamesPlayed = 3;
+
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/brick-wall", HandleAsync)
@@ -80,6 +82,7 @@ internal sealed class GetBrickWallEndpoint : IEndpoint
                     statistics => statistics.PointsConceded
                 ) / group.Sum(statistics => statistics.Wins + statistics.Losses),
             })
+            .Where(statistics => statistics.GamesPlayed >= MinimumGamesPlayed)
             .OrderBy(statistics => statistics.AveragePointsConceded)
             .ThenBy(statistics => statistics.UserId)
             .FirstOrDefaultAsync(cancellationToken);

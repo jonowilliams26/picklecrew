@@ -27,6 +27,7 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
                 [
                     (11, 4),
                     (11, 5),
+                    (11, 6),
                 ]
             )
             .WithSinglesGames(
@@ -36,6 +37,7 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
                 [
                     (11, 6),
                     (11, 7),
+                    (11, 8),
                 ]
             )
             .BuildAsync();
@@ -51,9 +53,9 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
         Assert.Equal(brickWallId, brickWall.UserId);
         Assert.Equal("Casey Defender", brickWall.DisplayName);
         Assert.Equal("https://example.test/casey.jpg", brickWall.ProfilePictureUrl);
-        Assert.Equal(2, brickWall.GamesPlayed);
-        Assert.Equal(9, brickWall.PointsConceded);
-        Assert.Equal(4.5m, brickWall.AveragePointsConceded);
+        Assert.Equal(3, brickWall.GamesPlayed);
+        Assert.Equal(15, brickWall.PointsConceded);
+        Assert.Equal(5m, brickWall.AveragePointsConceded);
     }
 
     [Fact]
@@ -64,9 +66,15 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
         var context = await fixture.CreateCrewBuilder()
             .WithMember(id: lowerUserId, displayName: "Selected Defender")
             .WithMember(id: higherUserId, displayName: "Other Defender")
-            .WithSinglesGame(
-                side1: (lowerUserId, 11),
-                side2: ("Selected Defender Opponent", 5)
+            .WithSinglesGames(
+                side1: lowerUserId,
+                side2: "Selected Defender Opponent",
+                scores:
+                [
+                    (11, 5),
+                    (11, 5),
+                    (11, 5),
+                ]
             )
             .WithSinglesGames(
                 side1: higherUserId,
@@ -74,6 +82,7 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
                 scores:
                 [
                     (11, 4),
+                    (11, 5),
                     (11, 6),
                 ]
             )
@@ -92,10 +101,20 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task GetBrickWall_WhenNoActiveMemberHasPlayed_ShouldReturnNoHolder()
+    public async Task GetBrickWall_WhenNoActiveMemberHasThreeGames_ShouldReturnNoHolder()
     {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
         var context = await fixture.CreateCrewBuilder()
-            .WithMember()
+            .WithAdministrator(id: administratorId)
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: "Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 8),
+                ]
+            )
             .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
@@ -121,21 +140,39 @@ public sealed class GetBrickWallEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Former Defender"
             )
-            .WithSinglesGame(
-                side1: (activeMemberId, 11),
-                side2: ("Active Opponent", 6)
+            .WithSinglesGames(
+                side1: activeMemberId,
+                side2: "Active Opponent",
+                scores:
+                [
+                    (11, 6),
+                    (11, 6),
+                    (11, 6),
+                ]
             )
-            .WithSinglesGame(
-                side1: (inactiveMemberId, 11),
-                side2: ("Former Opponent", 0)
+            .WithSinglesGames(
+                side1: inactiveMemberId,
+                side2: "Former Opponent",
+                scores:
+                [
+                    (11, 0),
+                    (11, 0),
+                    (11, 0),
+                ]
             )
             .BuildAsync();
         var otherCrewAdministratorId = $"user_test_{Guid.NewGuid():N}";
         await fixture.CreateCrewBuilder()
             .WithAdministrator(id: otherCrewAdministratorId)
-            .WithSinglesGame(
-                side1: (otherCrewAdministratorId, 11),
-                side2: ("Other Crew Opponent", 0)
+            .WithSinglesGames(
+                side1: otherCrewAdministratorId,
+                side2: "Other Crew Opponent",
+                scores:
+                [
+                    (11, 0),
+                    (11, 0),
+                    (11, 0),
+                ]
             )
             .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);

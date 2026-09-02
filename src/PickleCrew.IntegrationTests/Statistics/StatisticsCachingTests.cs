@@ -89,6 +89,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/point-machine",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.PointMachine
+                )
+            ),
+            (
                 "/statistics/nemesis",
                 new PersonalStatisticsCacheOption(
                     crewId,
