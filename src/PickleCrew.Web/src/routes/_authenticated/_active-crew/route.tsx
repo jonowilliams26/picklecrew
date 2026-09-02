@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   Plus,
+  Settings,
   UsersRound,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -406,6 +407,20 @@ function ActiveCrewSidebar({
                     </span>
                     <span className="truncate font-normal">{user.email}</span>
                   </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to="/settings"
+                        onClick={closeMobileNavigation}
+                      />
+                    }
+                  >
+                    <Settings aria-hidden="true" />
+                    Settings
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>

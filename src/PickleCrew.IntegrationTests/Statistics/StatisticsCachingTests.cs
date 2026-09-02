@@ -47,10 +47,32 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/brick-wall",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.BrickWall
+                )
+            ),
+            (
                 "/statistics/chief-paddler",
                 new CrewStatisticsCacheOption(
                     crewId,
                     CrewStatisticsCacheResource.ChiefPaddler
+                )
+            ),
+            (
+                "/statistics/easy-win",
+                new PersonalStatisticsCacheOption(
+                    crewId,
+                    userId,
+                    PersonalStatisticsCacheResource.EasyWin
+                )
+            ),
+            (
+                "/statistics/ice-man",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.IceMan
                 )
             ),
             (
@@ -79,6 +101,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 new CrewStatisticsCacheOption(
                     crewId,
                     CrewStatisticsCacheResource.LimpWristSyndrome
+                )
+            ),
+            (
+                "/statistics/point-machine",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.PointMachine
                 )
             ),
             (

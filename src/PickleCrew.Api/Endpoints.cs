@@ -38,7 +38,8 @@ internal static class Endpoints
             .MapEndpoint<GetCrewMembersEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>()
             .MapEndpoint<ChangeCrewMemberRoleEndpoint>()
-            .MapEndpoint<RemoveCrewMemberEndpoint>();
+            .MapEndpoint<RemoveCrewMemberEndpoint>()
+            .MapEndpoint<LeaveCrewEndpoint>();
 
         return app;
     }
@@ -63,9 +64,14 @@ internal static class Endpoints
             .MapEndpoint<GetBestDoublesPairingEndpoint>()
             .MapEndpoint<GetBestPartnerEndpoint>()
             .MapEndpoint<GetBiggestRivalsEndpoint>()
+            .MapEndpoint<GetBrickWallEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
+            .MapEndpoint<GetCrewHealthEndpoint>()
+            .MapEndpoint<GetEasyWinEndpoint>()
             .MapEndpoint<GetFriendsOrLoversEndpoint>()
+            .MapEndpoint<GetIceManEndpoint>()
             .MapEndpoint<GetLimpWristSyndromeEndpoint>()
+            .MapEndpoint<GetPointMachineEndpoint>()
             .MapEndpoint<GetNemesisEndpoint>()
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()

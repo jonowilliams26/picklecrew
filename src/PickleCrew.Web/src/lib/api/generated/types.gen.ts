@@ -22,6 +22,15 @@ export type BiggestRivalryHttpResponse = {
     gamesPlayed: number;
 };
 
+export type BrickWallHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    gamesPlayed: number;
+    pointsConceded: number;
+    averagePointsConceded: number | string;
+};
+
 export type ChangeCrewMemberRoleHttpRequestBody = {
     role: CrewMemberRole;
 };
@@ -42,6 +51,11 @@ export type CreateCrewHttpResponse = {
     crewId: string;
     name: string;
     organizationId: string;
+};
+
+export type CrewHealthDayHttpResponse = {
+    date: string;
+    gameCount: number;
 };
 
 export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
@@ -84,6 +98,13 @@ export type DoublesPairingPlayerHttpResponse = {
     userId: string;
     displayName: string;
     profilePictureUrl?: null | string;
+};
+
+export type EasyWinHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    wins: number;
 };
 
 export type FriendsOrLoversPairingHttpResponse = {
@@ -140,16 +161,34 @@ export type GetBiggestRivalsHttpResponse = {
     rivalry: null | BiggestRivalryHttpResponse;
 };
 
+export type GetBrickWallHttpResponse = {
+    brickWall: null | BrickWallHttpResponse;
+};
+
 export type GetChiefPaddlerHttpResponse = {
     chiefPaddler: null | ChiefPaddlerHttpResponse;
+};
+
+export type GetCrewHealthHttpResponse = {
+    startDate: string;
+    endDate: string;
+    days: Array<CrewHealthDayHttpResponse>;
 };
 
 export type GetCrewLeaderboardHttpResponse = {
     entries: Array<CrewLeaderboardEntryHttpResponse>;
 };
 
+export type GetCrewLeavingEligibilityHttpResponse = {
+    canLeave: boolean;
+};
+
 export type GetCrewLongestWinStreakHttpResponse = {
     longestWinStreak: null | LongestWinStreakHttpResponse;
+};
+
+export type GetEasyWinHttpResponse = {
+    easyWin: null | EasyWinHttpResponse;
 };
 
 export type GetFriendsOrLoversHttpResponse = {
@@ -158,6 +197,10 @@ export type GetFriendsOrLoversHttpResponse = {
 
 export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
+};
+
+export type GetIceManHttpResponse = {
+    iceMan: null | IceManHttpResponse;
 };
 
 export type GetLimpWristSyndromeHttpResponse = {
@@ -182,9 +225,14 @@ export type GetPersonalStatisticsHttpResponse = {
     pointsScored: number;
     pointsConceded: number;
     pointDifferential: number;
+    averageMargin: number | string;
     crewScore: number;
     crewRank: number;
     activeCrewMemberCount: number;
+};
+
+export type GetPointMachineHttpResponse = {
+    pointMachine: null | PointMachineHttpResponse;
 };
 
 export type GetRecentGamesHttpResponse = {
@@ -207,6 +255,17 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type IceManHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    clutchWins: number;
+};
+
+export type LeaveCrewHttpRequest = {
+    crewName: string;
 };
 
 export type LimpWristSyndromeHttpResponse = {
@@ -247,6 +306,15 @@ export type PaginatedHttpResponseOfGameHistoryItemHttpResponse = {
     pageSize: number;
     totalCount: number;
     totalPages: number;
+};
+
+export type PointMachineHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    pointsScored: number;
+    gamesPlayed: number;
+    averagePointsScored: number | string;
 };
 
 export type ProblemDetails = {
@@ -561,6 +629,126 @@ export type RemoveCrewMemberResponses = {
 
 export type RemoveCrewMemberResponse = RemoveCrewMemberResponses[keyof RemoveCrewMemberResponses];
 
+export type GetCrewLeavingEligibilityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/crews/leave-eligibility';
+};
+
+export type GetCrewLeavingEligibilityErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewLeavingEligibilityError = GetCrewLeavingEligibilityErrors[keyof GetCrewLeavingEligibilityErrors];
+
+export type GetCrewLeavingEligibilityResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewLeavingEligibilityHttpResponse;
+};
+
+export type GetCrewLeavingEligibilityResponse = GetCrewLeavingEligibilityResponses[keyof GetCrewLeavingEligibilityResponses];
+
+export type LeaveCrewData = {
+    body: LeaveCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews/leave';
+};
+
+export type LeaveCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Conflict
+     */
+    409: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type LeaveCrewError = LeaveCrewErrors[keyof LeaveCrewErrors];
+
+export type LeaveCrewResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type LeaveCrewResponse = LeaveCrewResponses[keyof LeaveCrewResponses];
+
 export type GetGameRecordingOptionsData = {
     body?: never;
     path?: never;
@@ -794,6 +982,43 @@ export type GetBiggestRivalsResponses = {
 
 export type GetBiggestRivalsResponse = GetBiggestRivalsResponses[keyof GetBiggestRivalsResponses];
 
+export type GetBrickWallData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/brick-wall';
+};
+
+export type GetBrickWallErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBrickWallError = GetBrickWallErrors[keyof GetBrickWallErrors];
+
+export type GetBrickWallResponses = {
+    /**
+     * OK
+     */
+    200: GetBrickWallHttpResponse;
+};
+
+export type GetBrickWallResponse = GetBrickWallResponses[keyof GetBrickWallResponses];
+
 export type GetChiefPaddlerData = {
     body?: never;
     path?: never;
@@ -830,6 +1055,80 @@ export type GetChiefPaddlerResponses = {
 };
 
 export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
+
+export type GetCrewHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/crew-health';
+};
+
+export type GetCrewHealthErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewHealthError = GetCrewHealthErrors[keyof GetCrewHealthErrors];
+
+export type GetCrewHealthResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewHealthHttpResponse;
+};
+
+export type GetCrewHealthResponse = GetCrewHealthResponses[keyof GetCrewHealthResponses];
+
+export type GetEasyWinData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/easy-win';
+};
+
+export type GetEasyWinErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetEasyWinError = GetEasyWinErrors[keyof GetEasyWinErrors];
+
+export type GetEasyWinResponses = {
+    /**
+     * OK
+     */
+    200: GetEasyWinHttpResponse;
+};
+
+export type GetEasyWinResponse = GetEasyWinResponses[keyof GetEasyWinResponses];
 
 export type GetFriendsOrLoversData = {
     body?: never;
@@ -868,6 +1167,43 @@ export type GetFriendsOrLoversResponses = {
 
 export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
 
+export type GetIceManData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/ice-man';
+};
+
+export type GetIceManErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetIceManError = GetIceManErrors[keyof GetIceManErrors];
+
+export type GetIceManResponses = {
+    /**
+     * OK
+     */
+    200: GetIceManHttpResponse;
+};
+
+export type GetIceManResponse = GetIceManResponses[keyof GetIceManResponses];
+
 export type GetLimpWristSyndromeData = {
     body?: never;
     path?: never;
@@ -904,6 +1240,43 @@ export type GetLimpWristSyndromeResponses = {
 };
 
 export type GetLimpWristSyndromeResponse = GetLimpWristSyndromeResponses[keyof GetLimpWristSyndromeResponses];
+
+export type GetPointMachineData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/point-machine';
+};
+
+export type GetPointMachineErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetPointMachineError = GetPointMachineErrors[keyof GetPointMachineErrors];
+
+export type GetPointMachineResponses = {
+    /**
+     * OK
+     */
+    200: GetPointMachineHttpResponse;
+};
+
+export type GetPointMachineResponse = GetPointMachineResponses[keyof GetPointMachineResponses];
 
 export type GetNemesisData = {
     body?: never;
