@@ -69,6 +69,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/hot-paddle",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.HotPaddle
+                )
+            ),
+            (
                 "/statistics/ice-man",
                 new CrewStatisticsCacheOption(
                     crewId,

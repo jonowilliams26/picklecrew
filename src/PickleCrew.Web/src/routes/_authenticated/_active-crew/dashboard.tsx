@@ -278,6 +278,7 @@ function DashboardPage() {
     chiefPaddler: chiefPaddlerResponse,
     iceMan: iceManResponse,
     friendsOrLovers,
+    hotPaddle: hotPaddleResponse,
     limpWristSyndrome: limpWristSyndromeResponse,
     pointMachine: pointMachineResponse,
   } = result.value
@@ -307,6 +308,7 @@ function DashboardPage() {
   const brickWall = brickWallResponse.brickWall
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
   const iceMan = iceManResponse.iceMan
+  const hotPaddle = hotPaddleResponse.hotPaddle
   const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
@@ -443,6 +445,8 @@ function DashboardPage() {
             <BrickWallCard brickWall={brickWall} />
 
             <IceManCard iceMan={iceMan} />
+
+            <HotPaddleCard hotPaddle={hotPaddle} />
 
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
@@ -1428,6 +1432,42 @@ function IceManCard({
         />
       )}
       <DashboardDecorativeIcon icon={Snowflake} />
+    </DashboardStatCard>
+  )
+}
+
+function HotPaddleCard({
+  hotPaddle,
+}: {
+  hotPaddle: DashboardData['hotPaddle']['hotPaddle']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-6"
+      tone="lime"
+    >
+      <DashboardCardHeader
+        description="Best record over each player’s last five games"
+        icon={Flame}
+        iconTone="orange"
+        tilt="counterclockwise"
+        title="The hot paddle"
+      />
+      {hotPaddle ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={`${formatRecord({ wins: hotPaddle.wins, losses: hotPaddle.losses })} over their last five`}
+          metric={`${formatPercentage({ value: hotPaddle.winPercentage })}%`}
+          metricLabel="win rate"
+          person={hotPaddle}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="A crew member needs five games before the hot paddle can be claimed."
+          title="No hot paddle yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Flame} />
     </DashboardStatCard>
   )
 }
