@@ -136,7 +136,7 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, doublesOpponentStatistics.ThatsAPaddlin);
 
         await using var database = fixture.CreateDbContext();
-        var storedStatistics = await database.CrewMemberGameStatistics
+        var storedStatistics = await database.PlayerStatistics
             .Where(statistics => statistics.CrewUuid == context.Uuid)
             .GroupBy(statistics => statistics.UserId)
             .Select(group => new

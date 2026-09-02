@@ -21,10 +21,10 @@ internal sealed class StatisticsRebuildHostedService(
         logger.LogInformation(
             "Recalculated {GameCount} games into {GameMemberCount} game-based member, {GamePairingCount} game-based pairing, {GameMatchupCount} game-based matchup, and {WinStreakCount} win-streak records.",
             result.GamesRecalculated,
-            result.CrewMemberGameStatisticsCreated,
-            result.DoublesPairingGameStatisticsCreated,
-            result.MatchupGameStatisticsCreated,
-            result.CrewMemberWinStreaksCreated
+            result.PlayerStatisticsCreated,
+            result.DoublesPairingStatisticsCreated,
+            result.MatchupStatisticsCreated,
+            result.PlayerWinStreaksCreated
         );
     }
 
@@ -56,10 +56,10 @@ internal sealed class StatisticsRebuildService(
             """
             LOCK TABLE
                 "Games",
-                "CrewMemberGameStatistics",
-                "CrewDoublesPairingGameStatistics",
-                "CrewMatchupGameStatistics",
-                "CrewMemberWinStreaks"
+                "PlayerStatistics",
+                "DoublesPairingStatistics",
+                "MatchupStatistics",
+                "PlayerWinStreaks"
             IN ACCESS EXCLUSIVE MODE;
             """,
             cancellationToken
@@ -72,16 +72,16 @@ internal sealed class StatisticsRebuildService(
             .ThenBy(game => game.Id)
             .ToArrayAsync(cancellationToken);
 
-        await database.CrewMatchupGameStatistics
+        await database.MatchupStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
-        await database.CrewDoublesPairingGameStatistics
+        await database.DoublesPairingStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
-        await database.CrewMemberGameStatistics
+        await database.PlayerStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
-        await database.CrewMemberWinStreaks
+        await database.PlayerWinStreaks
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
 
@@ -104,16 +104,16 @@ internal sealed class StatisticsRebuildService(
         var result = new StatisticsRebuildResult
         {
             GamesRecalculated = games.Length,
-            CrewMemberGameStatisticsCreated = await database.CrewMemberGameStatistics
+            PlayerStatisticsCreated = await database.PlayerStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
-            DoublesPairingGameStatisticsCreated = await database.CrewDoublesPairingGameStatistics
+            DoublesPairingStatisticsCreated = await database.DoublesPairingStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
-            MatchupGameStatisticsCreated = await database.CrewMatchupGameStatistics
+            MatchupStatisticsCreated = await database.MatchupStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
-            CrewMemberWinStreaksCreated = await database.CrewMemberWinStreaks
+            PlayerWinStreaksCreated = await database.PlayerWinStreaks
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
         };
@@ -126,11 +126,11 @@ internal sealed record StatisticsRebuildResult
 {
     public required int GamesRecalculated { get; init; }
 
-    public required int CrewMemberGameStatisticsCreated { get; init; }
+    public required int PlayerStatisticsCreated { get; init; }
 
-    public required int DoublesPairingGameStatisticsCreated { get; init; }
+    public required int DoublesPairingStatisticsCreated { get; init; }
 
-    public required int MatchupGameStatisticsCreated { get; init; }
+    public required int MatchupStatisticsCreated { get; init; }
 
-    public required int CrewMemberWinStreaksCreated { get; init; }
+    public required int PlayerWinStreaksCreated { get; init; }
 }

@@ -1,47 +1,34 @@
 namespace PickleCrew.Api.Data;
 
-public sealed class CrewDoublesPairingStatistics
+public sealed class DoublesPairingStatistics
 {
-    public long CrewId { get; init; }
+    public required long GameId { get; init; }
 
-    public Guid CrewUuid { get; init; }
+    public required Guid GameUuid { get; init; }
+
+    public required long CrewId { get; init; }
+
+    public required Guid CrewUuid { get; init; }
 
     public required string Player1Id { get; init; }
 
     public required string Player2Id { get; init; }
 
+    public Game Game { get; init; } = null!;
+
     public Crew Crew { get; init; } = null!;
 
-    public long Wins { get; set; }
+    public required DateTimeOffset PlayedAtUtc { get; init; }
 
-    public long Losses { get; set; }
+    public required int Wins { get; init; }
 
-    public long PointsScored { get; set; }
+    public required int Losses { get; init; }
 
-    public long PointsConceded { get; set; }
+    public required int PointsScored { get; init; }
 
-    // EF Core requires setters to persist these calculated properties.
-    public long GamesPlayed
-    {
-        get => Wins + Losses;
-        private set { }
-    }
+    public required int PointsConceded { get; init; }
 
-    public decimal WinPercentage
-    {
-        get => GamesPlayed == 0
-            ? 0
-            : (decimal)Wins / GamesPlayed;
-        private set { }
-    }
-
-    public long PointDifferential
-    {
-        get => PointsScored - PointsConceded;
-        private set { }
-    }
-
-    public uint Version { get; private set; }
+    public required int PointDifferential { get; init; }
 }
 
 internal sealed record CrewDoublesPairingKey

@@ -88,7 +88,7 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
             ))
             .ToArray();
 
-        var statistics = await database.CrewDoublesPairingGameStatistics
+        var statistics = await database.DoublesPairingStatistics
             .Where(candidate =>
                 (candidate.Player1Id == userId
                     && activePartnerUserIds.Contains(candidate.Player2Id))

@@ -66,7 +66,7 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var holderStatistics = await database.CrewMemberGameStatistics
+        var holderStatistics = await database.PlayerStatistics
             .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
             .GroupBy(statistics => statistics.UserId)
             .Select(group => new

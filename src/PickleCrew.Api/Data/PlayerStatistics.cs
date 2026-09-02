@@ -1,6 +1,6 @@
 namespace PickleCrew.Api.Data;
 
-public sealed class CrewMatchupGameStatistics
+public sealed class PlayerStatistics
 {
     public required long GameId { get; init; }
 
@@ -11,8 +11,6 @@ public sealed class CrewMatchupGameStatistics
     public required Guid CrewUuid { get; init; }
 
     public required string UserId { get; init; }
-
-    public required string OpponentUserId { get; init; }
 
     public Game Game { get; init; } = null!;
 
@@ -29,4 +27,8 @@ public sealed class CrewMatchupGameStatistics
     public required int PointsConceded { get; init; }
 
     public required int PointDifferential { get; init; }
+
+    public required int CrewScore { get; init; }
+
+    public required int ThatsAPaddlin { get; init; }
 }

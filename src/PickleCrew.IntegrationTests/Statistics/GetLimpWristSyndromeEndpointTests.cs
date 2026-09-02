@@ -199,7 +199,7 @@ public sealed class GetLimpWristSyndromeEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, holder.Losses);
 
         await using var verificationDatabase = fixture.CreateDbContext();
-        var historicalLosses = await verificationDatabase.CrewMemberGameStatistics
+        var historicalLosses = await verificationDatabase.PlayerStatistics
             .AsNoTracking()
             .Where(statistics =>
                 statistics.CrewId == context.Id

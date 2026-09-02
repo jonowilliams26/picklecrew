@@ -23,7 +23,7 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
                 pairingKey.Player1Id,
                 pairingKey.Player2Id
             ),
-            new CrewMemberWinStreak
+            new PlayerWinStreak
             {
                 CrewId = crew.Id,
                 CrewUuid = crew.Uuid,
@@ -38,25 +38,25 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
         await database.SaveChangesAsync();
         database.ChangeTracker.Clear();
 
-        var memberStatistics = await database.CrewMemberGameStatistics
+        var memberStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .SingleAsync(statistics =>
                 statistics.GameUuid == game.Uuid &&
                 statistics.CrewUuid == crew.Uuid
             );
-        var matchupStatistics = await database.CrewMatchupGameStatistics
+        var matchupStatistics = await database.MatchupStatistics
             .AsNoTracking()
             .SingleAsync(statistics =>
                 statistics.GameUuid == game.Uuid &&
                 statistics.CrewUuid == crew.Uuid
             );
-        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+        var pairingStatistics = await database.DoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync(statistics =>
                 statistics.GameUuid == game.Uuid &&
                 statistics.CrewUuid == crew.Uuid
             );
-        var winStreak = await database.CrewMemberWinStreaks
+        var winStreak = await database.PlayerWinStreaks
             .AsNoTracking()
             .SingleAsync(candidate => candidate.CrewUuid == crew.Uuid);
 
@@ -88,19 +88,19 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task CrewMemberGameStatistics_WhenGameAndUserAreDuplicated_ShouldRejectDuplicate()
+    public async Task PlayerStatistics_WhenGameAndUserAreDuplicated_ShouldRejectDuplicate()
     {
         await using var database = fixture.CreateDbContext();
         var crew = await CreateCrewAsync(database, "Duplicate Member Statistics Crew");
         var game = await CreateGameAsync(database, crew);
 
-        database.CrewMemberGameStatistics.Add(
+        database.PlayerStatistics.Add(
             CreateMemberGameStatistics(game, "user_duplicate")
         );
         await database.SaveChangesAsync();
         database.ChangeTracker.Clear();
 
-        database.CrewMemberGameStatistics.Add(
+        database.PlayerStatistics.Add(
             CreateMemberGameStatistics(game, "user_duplicate")
         );
 
@@ -110,19 +110,19 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task CrewMatchupGameStatistics_WhenDirectionalMatchupIsDuplicated_ShouldRejectDuplicate()
+    public async Task MatchupStatistics_WhenDirectionalMatchupIsDuplicated_ShouldRejectDuplicate()
     {
         await using var database = fixture.CreateDbContext();
         var crew = await CreateCrewAsync(database, "Duplicate Matchup Statistics Crew");
         var game = await CreateGameAsync(database, crew);
 
-        database.CrewMatchupGameStatistics.Add(
+        database.MatchupStatistics.Add(
             CreateMatchupGameStatistics(game, "user_a", "user_b")
         );
         await database.SaveChangesAsync();
         database.ChangeTracker.Clear();
 
-        database.CrewMatchupGameStatistics.Add(
+        database.MatchupStatistics.Add(
             CreateMatchupGameStatistics(game, "user_a", "user_b")
         );
 
@@ -132,19 +132,19 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task CrewDoublesPairingGameStatistics_WhenPairingIsDuplicated_ShouldRejectDuplicate()
+    public async Task DoublesPairingStatistics_WhenPairingIsDuplicated_ShouldRejectDuplicate()
     {
         await using var database = fixture.CreateDbContext();
         var crew = await CreateCrewAsync(database, "Duplicate Pairing Statistics Crew");
         var game = await CreateGameAsync(database, crew);
 
-        database.CrewDoublesPairingGameStatistics.Add(
+        database.DoublesPairingStatistics.Add(
             CreatePairingGameStatistics(game, "user_a", "user_b")
         );
         await database.SaveChangesAsync();
         database.ChangeTracker.Clear();
 
-        database.CrewDoublesPairingGameStatistics.Add(
+        database.DoublesPairingStatistics.Add(
             CreatePairingGameStatistics(game, "user_a", "user_b")
         );
 
@@ -153,11 +153,11 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
         );
     }
 
-    private static CrewMemberGameStatistics CreateMemberGameStatistics(
+    private static PlayerStatistics CreateMemberGameStatistics(
         Game game,
         string userId)
     {
-        return new CrewMemberGameStatistics
+        return new PlayerStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,
@@ -175,12 +175,12 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewMatchupGameStatistics CreateMatchupGameStatistics(
+    private static MatchupStatistics CreateMatchupGameStatistics(
         Game game,
         string userId,
         string opponentUserId)
     {
-        return new CrewMatchupGameStatistics
+        return new MatchupStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,
@@ -197,12 +197,12 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewDoublesPairingGameStatistics CreatePairingGameStatistics(
+    private static DoublesPairingStatistics CreatePairingGameStatistics(
         Game game,
         string player1Id,
         string player2Id)
     {
-        return new CrewDoublesPairingGameStatistics
+        return new DoublesPairingStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,

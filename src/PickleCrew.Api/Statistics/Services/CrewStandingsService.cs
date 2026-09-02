@@ -45,7 +45,7 @@ internal sealed class CrewStandingsService(
 
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var statisticsByUserId = await database.CrewMemberGameStatistics
+        var statisticsByUserId = await database.PlayerStatistics
             .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
             .GroupBy(statistics => statistics.UserId)
             .Select(group => new CrewMemberStatisticsTotals
@@ -65,9 +65,9 @@ internal sealed class CrewStandingsService(
             })
             .ToDictionaryAsync(statistics => statistics.UserId, cancellationToken);
 
-        var winStreaksByUserId = await database.CrewMemberWinStreaks
+        var winStreaksByUserId = await database.PlayerWinStreaks
             .Where(winStreak => activeMemberUserIds.Contains(winStreak.UserId))
-            .Select(winStreak => new CrewMemberWinStreakTotals
+            .Select(winStreak => new PlayerWinStreakTotals
             {
                 UserId = winStreak.UserId,
                 CurrentWinStreak = winStreak.CurrentWinStreak,
@@ -192,7 +192,7 @@ internal sealed record CrewStanding
     public required int ActiveCrewMemberCount { get; init; }
 }
 
-internal sealed record CrewMemberWinStreakTotals
+internal sealed record PlayerWinStreakTotals
 {
     public required string UserId { get; init; }
 

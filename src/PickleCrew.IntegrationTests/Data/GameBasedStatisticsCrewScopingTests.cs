@@ -52,16 +52,16 @@ public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
         CrewScopedDbContext database,
         Crew expectedCrew)
     {
-        var memberStatistics = await database.CrewMemberGameStatistics
+        var memberStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .SingleAsync();
-        var matchupStatistics = await database.CrewMatchupGameStatistics
+        var matchupStatistics = await database.MatchupStatistics
             .AsNoTracking()
             .SingleAsync();
-        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+        var pairingStatistics = await database.DoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync();
-        var winStreak = await database.CrewMemberWinStreaks
+        var winStreak = await database.PlayerWinStreaks
             .AsNoTracking()
             .SingleAsync();
 
@@ -112,9 +112,9 @@ public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewMemberGameStatistics CreateMemberGameStatistics(Game game)
+    private static PlayerStatistics CreateMemberGameStatistics(Game game)
     {
-        return new CrewMemberGameStatistics
+        return new PlayerStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,
@@ -132,9 +132,9 @@ public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewMatchupGameStatistics CreateMatchupGameStatistics(Game game)
+    private static MatchupStatistics CreateMatchupGameStatistics(Game game)
     {
-        return new CrewMatchupGameStatistics
+        return new MatchupStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,
@@ -151,14 +151,14 @@ public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewDoublesPairingGameStatistics CreatePairingGameStatistics(Game game)
+    private static DoublesPairingStatistics CreatePairingGameStatistics(Game game)
     {
         var key = CrewDoublesPairingKey.Create(
             $"user_{Guid.NewGuid():N}",
             $"user_{Guid.NewGuid():N}"
         );
 
-        return new CrewDoublesPairingGameStatistics
+        return new DoublesPairingStatistics
         {
             GameId = game.Id,
             GameUuid = game.Uuid,
@@ -175,9 +175,9 @@ public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
         };
     }
 
-    private static CrewMemberWinStreak CreateWinStreak(Crew crew)
+    private static PlayerWinStreak CreateWinStreak(Crew crew)
     {
-        return new CrewMemberWinStreak
+        return new PlayerWinStreak
         {
             CrewId = crew.Id,
             CrewUuid = crew.Uuid,
