@@ -16,7 +16,7 @@ public sealed record BiggestRivalryHttpResponse
 {
     public required RivalPlayerHttpResponse[] Players { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 }
 
 public sealed record RivalPlayerHttpResponse
@@ -27,15 +27,17 @@ public sealed record RivalPlayerHttpResponse
 
     public string? ProfilePictureUrl { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
     public required decimal WinPercentage { get; init; }
 }
 
 internal sealed class GetBiggestRivalsEndpoint : IEndpoint
 {
+    private const int MinimumGamesPlayed = 3;
+
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/biggest-rivals", HandleAsync)
@@ -74,28 +76,34 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
         var activeMembersByUserId = await crewService.GetActiveMembersByIdAsync(
             cancellationToken
         );
-        var activeUserIds = activeMembersByUserId.Keys;
+        var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var rivalry = await database.CrewMatchupStatistics
-            .AsNoTracking()
-            .Where(matchup =>
-                activeUserIds.Contains(matchup.UserId)
-                && activeUserIds.Contains(matchup.OpponentUserId)
-                && matchup.GamesPlayed >= 3
+        var rivalry = await database.CrewMatchupGameStatistics
+            .Where(statistics =>
+                activeUserIds.Contains(statistics.UserId)
+                && activeUserIds.Contains(statistics.OpponentUserId)
             )
+            .GroupBy(statistics => new
+            {
+                statistics.UserId,
+                statistics.OpponentUserId,
+            })
+            .Select(group => new RivalryCandidate
+            {
+                UserId = group.Key.UserId,
+                OpponentUserId = group.Key.OpponentUserId,
+                Wins = group.Sum(statistics => statistics.Wins),
+                Losses = group.Sum(statistics => statistics.Losses),
+                GamesPlayed = group.Sum(statistics => statistics.Wins + statistics.Losses),
+                WinPercentage = (decimal)group.Sum(statistics => statistics.Wins)
+                    / group.Sum(statistics => statistics.Wins + statistics.Losses),
+                PointDifferential = group.Sum(statistics => statistics.PointDifferential),
+            })
+            .Where(matchup => matchup.GamesPlayed >= MinimumGamesPlayed)
             .OrderBy(matchup => Math.Abs(matchup.WinPercentage - 0.5m))
             .ThenByDescending(matchup => matchup.GamesPlayed)
             .ThenBy(matchup => matchup.UserId)
             .ThenBy(matchup => matchup.OpponentUserId)
-            .Select(matchup => new RivalryCandidate
-            {
-                UserId = matchup.UserId,
-                OpponentUserId = matchup.OpponentUserId,
-                Wins = matchup.Wins,
-                Losses = matchup.Losses,
-                GamesPlayed = matchup.GamesPlayed,
-                WinPercentage = matchup.WinPercentage,
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (rivalry is null)
@@ -137,8 +145,8 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
 
     private static RivalPlayerHttpResponse CreatePlayer(
         ActiveCrewMember member,
-        long wins,
-        long losses,
+        int wins,
+        int losses,
         decimal winPercentage)
     {
         return new RivalPlayerHttpResponse
@@ -159,11 +167,13 @@ internal sealed record RivalryCandidate
 
     public required string OpponentUserId { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
+
+    public required int PointDifferential { get; init; }
 }

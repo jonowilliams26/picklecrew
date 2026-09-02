@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using PickleCrew.Api.Data;
+using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -69,6 +69,39 @@ public sealed class GetNemesisEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task GetNemesis_WhenQualifyingDoublesGamesContainGuests_ShouldReturnMemberOpponent()
+    {
+        const string administratorId = "user_nemesis_guest_admin";
+        const string opponentId = "user_nemesis_guest_opponent";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .WithMember(id: opponentId, displayName: "Member Opponent")
+            .WithDoublesGames(
+                side1: (administratorId, "Guest Partner"),
+                side2: (opponentId, "Guest Opponent"),
+                scores:
+                [
+                    (7, 11),
+                    (11, 8),
+                    (9, 11),
+                ]
+            )
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var response = await apiClient.GetAsync("/statistics/nemesis");
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<GetNemesisHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        var nemesis = Assert.IsType<NemesisHttpResponse>(result?.Nemesis);
+        Assert.Equal(opponentId, nemesis.UserId);
+        Assert.Equal("Member Opponent", nemesis.DisplayName);
+        Assert.Equal(2, nemesis.Losses);
+    }
+
+    [Fact]
     public async Task GetNemesis_WhenOpponentsAreTied_ShouldReturnFirstByUserIdWithCurrentProfile()
     {
         const string administratorId = "user_nemesis_tie_admin";
@@ -119,6 +152,13 @@ public sealed class GetNemesisEndpointTests(AppHostFixture fixture)
             );
         }
 
+        await using (var database = fixture.CreateDbContext())
+        {
+            await database.CrewMatchupStatistics
+                .Where(statistics => statistics.CrewUuid == context.Uuid)
+                .ExecuteDeleteAsync();
+        }
+
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/nemesis");
 
@@ -145,20 +185,17 @@ public sealed class GetNemesisEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Former Opponent"
             )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: formerOpponentId,
+                scores:
+                [
+                    (7, 11),
+                    (8, 11),
+                    (9, 11),
+                ]
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMatchupStatistics.Add(new CrewMatchupStatistics
-            {
-                CrewId = context.Id,
-                CrewUuid = context.Uuid,
-                UserId = administratorId,
-                OpponentUserId = formerOpponentId,
-                Losses = 3,
-            });
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/nemesis");

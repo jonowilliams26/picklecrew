@@ -1348,7 +1348,7 @@
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -2192,7 +2192,7 @@
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -2501,11 +2501,11 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "winPercentage": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
