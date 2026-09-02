@@ -94,7 +94,7 @@ The active crew member with the lowest all-time average points conceded per game
 
 ### Business rules
 
-- A member must have played at least one game to qualify as Brick Wall.
+- A member must have played at least three games to qualify as Brick Wall.
 - Average points conceded equals total points conceded divided by games played.
 - The qualifying active member with the lowest average points conceded is Brick Wall.
 - Exactly one Brick Wall is selected; tied members are resolved by user identifier.
@@ -136,6 +136,23 @@ The active crew member who holds the crew's bragging-rights statistic for the mo
 ### Relationships
 
 - A crew has zero or one **limp wrist syndrome** holder.
+
+## Point Machine
+
+The active crew member with the highest all-time average points scored per game in the crew.
+
+### Business rules
+
+- Average points scored equals a crew member's total points scored divided by their games played.
+- An active crew member qualifies after playing at least three games.
+- The qualifying active member with the highest average points scored is the **Point Machine**.
+- Tied members are resolved by most games played, then by user identifier.
+- Former members cannot be the current Point Machine, while their historical personal statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one Point Machine.
 
 ## Matchup statistics
 

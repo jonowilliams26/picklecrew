@@ -69,6 +69,7 @@ internal enum CrewStatisticsCacheResource
     CrewStandings,
     FriendsOrLovers,
     LimpWristSyndrome,
+    PointMachine,
 }
 
 internal enum PersonalStatisticsCacheResource
@@ -94,6 +95,7 @@ internal static class StatisticsCacheResourceExtensions
             CrewStatisticsCacheResource.CrewStandings => "crew-standings",
             CrewStatisticsCacheResource.FriendsOrLovers => "friends-or-lovers",
             CrewStatisticsCacheResource.LimpWristSyndrome => "limp-wrist-syndrome",
+            CrewStatisticsCacheResource.PointMachine => "point-machine",
             _ => throw new ArgumentOutOfRangeException(nameof(resource), resource, null),
         };
     }

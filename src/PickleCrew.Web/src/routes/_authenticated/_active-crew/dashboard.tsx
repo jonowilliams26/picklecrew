@@ -20,6 +20,7 @@ import {
   TrendingDown,
   TrendingUp,
   UsersRound,
+  Zap,
   type LucideIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -43,6 +44,7 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
+  formatAveragePoints,
   formatAveragePointsConceded,
   formatCount,
   formatPercentage,
@@ -238,6 +240,7 @@ function DashboardPage() {
     chiefPaddler: chiefPaddlerResponse,
     friendsOrLovers,
     limpWristSyndrome: limpWristSyndromeResponse,
+    pointMachine: pointMachineResponse,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -272,6 +275,7 @@ function DashboardPage() {
   })
   const nemesis = nemesisResponse.nemesis
   const limpWristSyndrome = limpWristSyndromeResponse.limpWristSyndrome
+  const pointMachine = pointMachineResponse.pointMachine
 
   if (
     pairing &&
@@ -384,6 +388,8 @@ function DashboardPage() {
               rivalry={rivalry}
               secondRival={secondRival}
             />
+
+            <PointMachineCard pointMachine={pointMachine} />
 
             <LimpWristSyndromeCard
               limpWristSyndrome={limpWristSyndrome}
@@ -1060,6 +1066,44 @@ function BiggestRivalsCard({
   )
 }
 
+function PointMachineCard({
+  pointMachine,
+}: {
+  pointMachine: DashboardData['pointMachine']['pointMachine']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-5"
+      tone="orange"
+    >
+      <DashboardCardHeader
+        description="Highest all-time average points scored per game"
+        icon={Zap}
+        iconTone="lime"
+        tilt="counterclockwise"
+        title="Point Machine"
+      />
+      {pointMachine ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={`${formatCount({ count: pointMachine.pointsScored, singular: 'point' })} across ${formatCount({ count: pointMachine.gamesPlayed, singular: 'game' })}`}
+          metric={formatAveragePoints({
+            value: pointMachine.averagePointsScored,
+          })}
+          metricLabel="points per game"
+          person={pointMachine}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games and somebody will set the pace."
+          title="No Point Machine yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Zap} />
+    </DashboardStatCard>
+  )
+}
+
 function LimpWristSyndromeCard({
   limpWristSyndrome,
 }: {
@@ -1139,7 +1183,7 @@ function BrickWallCard({
         />
       ) : (
         <DashboardCardEmptyState
-          description="Record a game and see who gives away the fewest points."
+          description="Play at least three games and see who gives away the fewest points."
           title="No wall yet"
         />
       )}

@@ -12,6 +12,7 @@ import {
   getLimpWristSyndrome as getLimpWristSyndromeRequest,
   getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
+  getPointMachine as getPointMachineRequest,
   getRecentGames as getRecentGamesRequest,
 } from '~/lib/api/generated/sdk.gen'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
@@ -38,6 +39,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler,
         friendsOrLovers,
         limpWristSyndrome,
+        pointMachine,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
         getNemesisRequest({ client }),
@@ -51,6 +53,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getChiefPaddlerRequest({ client }),
         getFriendsOrLoversRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
+        getPointMachineRequest({ client }),
       ])
       const results = [
         personalStatistics,
@@ -65,6 +68,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler,
         friendsOrLovers,
         limpWristSyndrome,
+        pointMachine,
       ]
 
       if (
@@ -79,7 +83,8 @@ export const getDashboard = createServerFn({ method: 'GET' })
         brickWall.error ||
         chiefPaddler.error ||
         friendsOrLovers.error ||
-        limpWristSyndrome.error
+        limpWristSyndrome.error ||
+        pointMachine.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -109,6 +114,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler: chiefPaddler.data,
         friendsOrLovers: friendsOrLovers.data,
         limpWristSyndrome: limpWristSyndrome.data,
+        pointMachine: pointMachine.data,
       })
     } catch {
       return failure({

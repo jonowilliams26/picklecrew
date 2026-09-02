@@ -1026,6 +1026,67 @@
         }
       }
     },
+    "/statistics/point-machine": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Point Machine for the active Crew.",
+        "operationId": "GetPointMachine",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPointMachineHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/nemesis": {
       "get": {
         "tags": [
@@ -2136,6 +2197,24 @@
           }
         }
       },
+      "GetPointMachineHttpResponse": {
+        "required": [
+          "pointMachine"
+        ],
+        "type": "object",
+        "properties": {
+          "pointMachine": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PointMachineHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetRecentGamesHttpResponse": {
         "required": [
           "games",
@@ -2381,6 +2460,47 @@
           "totalPages": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "PointMachineHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "pointsScored",
+          "gamesPlayed",
+          "averagePointsScored"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsScored": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
