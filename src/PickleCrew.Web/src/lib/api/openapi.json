@@ -904,6 +904,67 @@
         }
       }
     },
+    "/statistics/crew-health": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets daily Game activity for the active Crew over the last year.",
+        "operationId": "GetCrewHealth",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCrewHealthHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/easy-win": {
       "get": {
         "tags": [
@@ -1700,6 +1761,23 @@
           }
         }
       },
+      "CrewHealthDayHttpResponse": {
+        "required": [
+          "date",
+          "gameCount"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "gameCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CrewInvitationOutcomeStatus": {
         "enum": [
           "sent",
@@ -2143,6 +2221,30 @@
                 "$ref": "#/components/schemas/ChiefPaddlerHttpResponse"
               }
             ]
+          }
+        }
+      },
+      "GetCrewHealthHttpResponse": {
+        "required": [
+          "startDate",
+          "endDate",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrewHealthDayHttpResponse"
+            }
           }
         }
       },

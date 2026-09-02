@@ -196,10 +196,10 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CrewId");
-
                     b.HasIndex("Uuid")
                         .IsUnique();
+
+                    b.HasIndex("CrewId", "PlayedAtUtc");
 
                     b.ToTable("Games");
                 });

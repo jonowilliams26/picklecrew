@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import {
+  buildCrewHealthCalendar,
   formatAveragePoints,
   formatAveragePointsConceded,
   formatCount,
+  formatCrewHealthDay,
   formatPercentage,
   formatRecord,
   formatSignedNumber,
@@ -15,6 +17,58 @@ import {
 } from './dashboard.ts'
 
 describe('dashboard formatting', () => {
+  test('builds a week-aligned crew health calendar from sparse daily activity', () => {
+    const calendar = buildCrewHealthCalendar({
+      crewHealth: {
+        startDate: '2026-03-01',
+        endDate: '2026-03-09',
+        days: [
+          { date: '2026-03-01', gameCount: 1 },
+          { date: '2026-03-04', gameCount: 3 },
+          { date: '2026-03-09', gameCount: 7 },
+        ],
+      },
+    })
+
+    assert.equal(calendar.weekCount, 2)
+    assert.equal(calendar.totalGames, 11)
+    assert.equal(calendar.activeDayCount, 3)
+    assert.deepEqual(calendar.monthLabels, [
+      { label: 'Mar', weekIndex: 0 },
+    ])
+    assert.deepEqual(
+      calendar.days.map((day) => ({
+        date: day.date,
+        gameCount: day.gameCount,
+        intensity: day.intensity,
+        weekIndex: day.weekIndex,
+        dayOfWeek: day.dayOfWeek,
+      })),
+      [
+        { date: '2026-03-01', gameCount: 1, intensity: 1, weekIndex: 0, dayOfWeek: 0 },
+        { date: '2026-03-02', gameCount: 0, intensity: 0, weekIndex: 0, dayOfWeek: 1 },
+        { date: '2026-03-03', gameCount: 0, intensity: 0, weekIndex: 0, dayOfWeek: 2 },
+        { date: '2026-03-04', gameCount: 3, intensity: 3, weekIndex: 0, dayOfWeek: 3 },
+        { date: '2026-03-05', gameCount: 0, intensity: 0, weekIndex: 0, dayOfWeek: 4 },
+        { date: '2026-03-06', gameCount: 0, intensity: 0, weekIndex: 0, dayOfWeek: 5 },
+        { date: '2026-03-07', gameCount: 0, intensity: 0, weekIndex: 0, dayOfWeek: 6 },
+        { date: '2026-03-08', gameCount: 0, intensity: 0, weekIndex: 1, dayOfWeek: 0 },
+        { date: '2026-03-09', gameCount: 7, intensity: 4, weekIndex: 1, dayOfWeek: 1 },
+      ],
+    )
+  })
+
+  test('formats crew health day activity', () => {
+    assert.equal(
+      formatCrewHealthDay({ date: '2026-03-09', gameCount: 1 }),
+      '1 game on 9 Mar 2026',
+    )
+    assert.equal(
+      formatCrewHealthDay({ date: '2026-03-10', gameCount: 4 }),
+      '4 games on 10 Mar 2026',
+    )
+  })
+
   test('formats average points with at most two decimal places', () => {
     assert.equal(formatAveragePoints({ value: 10 }), '10')
     assert.equal(formatAveragePoints({ value: '9.666666' }), '9.67')
