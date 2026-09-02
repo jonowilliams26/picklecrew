@@ -19,11 +19,15 @@ internal sealed class StatisticsRebuildHostedService(
         var result = await rebuildService.RebuildAsync(cancellationToken);
 
         logger.LogInformation(
-            "Recalculated {GameCount} games into {MemberCount} member, {PairingCount} pairing, and {MatchupCount} matchup statistics records.",
+            "Recalculated {GameCount} games into {LegacyMemberCount} legacy member, {LegacyPairingCount} legacy pairing, {LegacyMatchupCount} legacy matchup, {GameMemberCount} game-based member, {GamePairingCount} game-based pairing, {GameMatchupCount} game-based matchup, and {WinStreakCount} win-streak records.",
             result.GamesRecalculated,
             result.CrewMemberStatisticsCreated,
             result.DoublesPairingStatisticsCreated,
-            result.MatchupStatisticsCreated
+            result.MatchupStatisticsCreated,
+            result.CrewMemberGameStatisticsCreated,
+            result.DoublesPairingGameStatisticsCreated,
+            result.MatchupGameStatisticsCreated,
+            result.CrewMemberWinStreaksCreated
         );
     }
 
@@ -129,6 +133,18 @@ internal sealed class StatisticsRebuildService(
             MatchupStatisticsCreated = await database.CrewMatchupStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
+            CrewMemberGameStatisticsCreated = await database.CrewMemberGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(cancellationToken),
+            DoublesPairingGameStatisticsCreated = await database.CrewDoublesPairingGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(cancellationToken),
+            MatchupGameStatisticsCreated = await database.CrewMatchupGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(cancellationToken),
+            CrewMemberWinStreaksCreated = await database.CrewMemberWinStreaks
+                .IgnoreQueryFilters()
+                .CountAsync(cancellationToken),
         };
 
         return result;
@@ -144,4 +160,12 @@ internal sealed record StatisticsRebuildResult
     public required int DoublesPairingStatisticsCreated { get; init; }
 
     public required int MatchupStatisticsCreated { get; init; }
+
+    public required int CrewMemberGameStatisticsCreated { get; init; }
+
+    public required int DoublesPairingGameStatisticsCreated { get; init; }
+
+    public required int MatchupGameStatisticsCreated { get; init; }
+
+    public required int CrewMemberWinStreaksCreated { get; init; }
 }

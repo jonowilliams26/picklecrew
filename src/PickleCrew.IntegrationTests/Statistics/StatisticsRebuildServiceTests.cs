@@ -95,6 +95,54 @@ public sealed class StatisticsRebuildServiceTests(AppHostFixture fixture)
                 statistics.CrewId == context.Id
             )
         );
+        Assert.Equal(
+            8,
+            await database.CrewMemberGameStatistics.CountAsync(statistics =>
+                statistics.CrewId == context.Id
+            )
+        );
+        Assert.Equal(
+            4,
+            await database.CrewDoublesPairingGameStatistics.CountAsync(statistics =>
+                statistics.CrewId == context.Id
+            )
+        );
+        Assert.Equal(
+            16,
+            await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+                statistics.CrewId == context.Id
+            )
+        );
+        Assert.Equal(
+            4,
+            await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+                winStreak.CrewId == context.Id
+            )
+        );
+        Assert.Equal(
+            await database.CrewMemberGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(),
+            result.CrewMemberGameStatisticsCreated
+        );
+        Assert.Equal(
+            await database.CrewDoublesPairingGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(),
+            result.DoublesPairingGameStatisticsCreated
+        );
+        Assert.Equal(
+            await database.CrewMatchupGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(),
+            result.MatchupGameStatisticsCreated
+        );
+        Assert.Equal(
+            await database.CrewMemberWinStreaks
+                .IgnoreQueryFilters()
+                .CountAsync(),
+            result.CrewMemberWinStreaksCreated
+        );
     }
 
     private static void AssertMemberStatistics(
