@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import {
+  formatAveragePointsConceded,
   formatCount,
   formatPercentage,
   formatRecord,
@@ -17,6 +18,11 @@ describe('dashboard formatting', () => {
     assert.equal(formatPercentage({ value: 0.676 }), 68)
     assert.equal(formatPercentage({ value: '0.8' }), 80)
     assert.equal(formatPercentage({ value: 0 }), 0)
+  })
+
+  test('formats average points conceded to one decimal place', () => {
+    assert.equal(formatAveragePointsConceded({ value: 4 }), '4.0')
+    assert.equal(formatAveragePointsConceded({ value: '4.56' }), '4.6')
   })
 
   test('formats signed point differentials', () => {

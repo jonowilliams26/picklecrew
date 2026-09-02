@@ -22,6 +22,15 @@ export type BiggestRivalryHttpResponse = {
     gamesPlayed: number;
 };
 
+export type BrickWallHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    gamesPlayed: number;
+    pointsConceded: number;
+    averagePointsConceded: number | string;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -132,6 +141,10 @@ export type GetBestPartnerHttpResponse = {
 
 export type GetBiggestRivalsHttpResponse = {
     rivalry: null | BiggestRivalryHttpResponse;
+};
+
+export type GetBrickWallHttpResponse = {
+    brickWall: null | BrickWallHttpResponse;
 };
 
 export type GetChiefPaddlerHttpResponse = {
@@ -730,6 +743,43 @@ export type GetBiggestRivalsResponses = {
 };
 
 export type GetBiggestRivalsResponse = GetBiggestRivalsResponses[keyof GetBiggestRivalsResponses];
+
+export type GetBrickWallData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/brick-wall';
+};
+
+export type GetBrickWallErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBrickWallError = GetBrickWallErrors[keyof GetBrickWallErrors];
+
+export type GetBrickWallResponses = {
+    /**
+     * OK
+     */
+    200: GetBrickWallHttpResponse;
+};
+
+export type GetBrickWallResponse = GetBrickWallResponses[keyof GetBrickWallResponses];
 
 export type GetChiefPaddlerData = {
     body?: never;

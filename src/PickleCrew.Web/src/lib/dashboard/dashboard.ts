@@ -3,6 +3,7 @@ import type {
   GetBestDoublesPairingHttpResponse,
   GetBestPartnerHttpResponse,
   GetBiggestRivalsHttpResponse,
+  GetBrickWallHttpResponse,
   GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
@@ -23,6 +24,7 @@ export type DashboardData = Readonly<{
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
   bestPartner: GetBestPartnerHttpResponse
   biggestRivals: GetBiggestRivalsHttpResponse
+  brickWall: GetBrickWallHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
   friendsOrLovers: GetFriendsOrLoversHttpResponse
   limpWristSyndrome: GetLimpWristSyndromeHttpResponse
@@ -82,6 +84,17 @@ export function formatPercentage({
   value: number | string
 }): number {
   return Math.round(Number(value) * 100)
+}
+
+export function formatAveragePointsConceded({
+  value,
+}: {
+  value: number | string
+}): string {
+  return Number(value).toLocaleString('en-AU', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })
 }
 
 export function formatSignedNumber({ value }: { value: number }): string {
