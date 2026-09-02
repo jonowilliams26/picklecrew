@@ -4,6 +4,7 @@ import {
   getBestDoublesPairing as getBestDoublesPairingRequest,
   getBestPartner as getBestPartnerRequest,
   getBiggestRivals as getBiggestRivalsRequest,
+  getBrickWall as getBrickWallRequest,
   getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
@@ -33,6 +34,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing,
         bestPartner,
         biggestRivals,
+        brickWall,
         chiefPaddler,
         friendsOrLovers,
         limpWristSyndrome,
@@ -45,6 +47,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBestDoublesPairingRequest({ client }),
         getBestPartnerRequest({ client }),
         getBiggestRivalsRequest({ client }),
+        getBrickWallRequest({ client }),
         getChiefPaddlerRequest({ client }),
         getFriendsOrLoversRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
@@ -58,6 +61,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing,
         bestPartner,
         biggestRivals,
+        brickWall,
         chiefPaddler,
         friendsOrLovers,
         limpWristSyndrome,
@@ -72,6 +76,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing.error ||
         bestPartner.error ||
         biggestRivals.error ||
+        brickWall.error ||
         chiefPaddler.error ||
         friendsOrLovers.error ||
         limpWristSyndrome.error
@@ -100,6 +105,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestDoublesPairing: bestDoublesPairing.data,
         bestPartner: bestPartner.data,
         biggestRivals: biggestRivals.data,
+        brickWall: brickWall.data,
         chiefPaddler: chiefPaddler.data,
         friendsOrLovers: friendsOrLovers.data,
         limpWristSyndrome: limpWristSyndrome.data,

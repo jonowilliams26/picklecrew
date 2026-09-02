@@ -47,6 +47,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/brick-wall",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.BrickWall
+                )
+            ),
+            (
                 "/statistics/chief-paddler",
                 new CrewStatisticsCacheOption(
                     crewId,
