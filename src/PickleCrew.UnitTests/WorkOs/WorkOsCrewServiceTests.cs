@@ -85,6 +85,19 @@ public sealed class WorkOsCrewServiceTests
         Assert.Equal("user_removed", workOs.DeactivatedMembershipUserId);
     }
 
+    [Fact]
+    public async Task LeaveCrewAsync_WhenCalled_ShouldDeactivateCurrentUserMembership()
+    {
+        var workOs = new RecordingWorkOsService();
+        var service = CreateService(workOs);
+
+        var wasRemoved = await service.LeaveCrewAsync(CancellationToken.None);
+
+        Assert.True(wasRemoved);
+        Assert.Equal("org_active", workOs.DeactivatedMembershipOrganizationId);
+        Assert.Equal("user_active", workOs.DeactivatedMembershipUserId);
+    }
+
     private static ICrewService CreateService(IWorkOsService workOs)
     {
         var crewUserContext = new CrewUserContext

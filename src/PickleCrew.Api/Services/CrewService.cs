@@ -45,4 +45,7 @@ internal interface ICrewService
     Task<bool> RemoveCrewMemberAsync(
         string userId,
         CancellationToken cancellationToken);
+
+    Task<bool> LeaveCrewAsync(
+        CancellationToken cancellationToken);
 }

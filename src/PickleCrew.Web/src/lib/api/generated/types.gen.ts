@@ -203,6 +203,10 @@ export type HttpValidationProblemDetails = {
     traceId: string;
 };
 
+export type LeaveCrewHttpRequest = {
+    crewName: string;
+};
+
 export type LimpWristSyndromeHttpResponse = {
     userId: string;
     displayName: string;
@@ -497,6 +501,61 @@ export type RemoveCrewMemberResponses = {
 };
 
 export type RemoveCrewMemberResponse = RemoveCrewMemberResponses[keyof RemoveCrewMemberResponses];
+
+export type LeaveCrewData = {
+    body: LeaveCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews/leave';
+};
+
+export type LeaveCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type LeaveCrewError = LeaveCrewErrors[keyof LeaveCrewErrors];
+
+export type LeaveCrewResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type LeaveCrewResponse = LeaveCrewResponses[keyof LeaveCrewResponses];
 
 export type GetGameRecordingOptionsData = {
     body?: never;

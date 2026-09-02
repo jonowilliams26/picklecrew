@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   Plus,
+  Settings,
   UsersRound,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -63,6 +64,7 @@ const navigationItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Games', icon: ClipboardList, to: '/games' },
   { label: 'Crew', icon: UsersRound, to: '/crew' },
+  { label: 'Settings', icon: Settings, to: '/settings' },
 ] as const
 
 function getDisplayName({ user }: { user: User }): string {

@@ -18,6 +18,7 @@ import { Route as AuthenticatedActiveCrewCrewRouteImport } from './routes/_authe
 import { Route as AuthenticatedActiveCrewDashboardRouteImport } from './routes/_authenticated/_active-crew/dashboard'
 import { Route as AuthenticatedActiveCrewGamesRouteImport } from './routes/_authenticated/_active-crew/games'
 import { Route as AuthenticatedActiveCrewRecordGameRouteImport } from './routes/_authenticated/_active-crew/record-game'
+import { Route as AuthenticatedActiveCrewSettingsRouteImport } from './routes/_authenticated/_active-crew/settings'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
@@ -71,6 +72,12 @@ const AuthenticatedActiveCrewRecordGameRoute =
     path: '/record-game',
     getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
   } as any)
+const AuthenticatedActiveCrewSettingsRoute =
+  AuthenticatedActiveCrewSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedActiveCrewRouteRoute,
+  } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
   path: '/api/auth/callback',
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/games': typeof AuthenticatedActiveCrewGamesRoute
   '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
+  '/settings': typeof AuthenticatedActiveCrewSettingsRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -113,6 +121,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/games': typeof AuthenticatedActiveCrewGamesRoute
   '/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
+  '/settings': typeof AuthenticatedActiveCrewSettingsRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -129,6 +138,7 @@ export interface FileRoutesById {
   '/_authenticated/_active-crew/dashboard': typeof AuthenticatedActiveCrewDashboardRoute
   '/_authenticated/_active-crew/games': typeof AuthenticatedActiveCrewGamesRoute
   '/_authenticated/_active-crew/record-game': typeof AuthenticatedActiveCrewRecordGameRoute
+  '/_authenticated/_active-crew/settings': typeof AuthenticatedActiveCrewSettingsRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-out': typeof ApiAuthSignOutRoute
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/games'
     | '/record-game'
+    | '/settings'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/games'
     | '/record-game'
+    | '/settings'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -172,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-crew/dashboard'
     | '/_authenticated/_active-crew/games'
     | '/_authenticated/_active-crew/record-game'
+    | '/_authenticated/_active-crew/settings'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
     | '/api/auth/sign-out'
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActiveCrewRecordGameRouteImport
       parentRoute: typeof AuthenticatedActiveCrewRouteRoute
     }
+    '/_authenticated/_active-crew/settings': {
+      id: '/_authenticated/_active-crew/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedActiveCrewSettingsRouteImport
+      parentRoute: typeof AuthenticatedActiveCrewRouteRoute
+    }
     '/api/auth/callback': {
       id: '/api/auth/callback'
       path: '/api/auth/callback'
@@ -288,6 +308,7 @@ interface AuthenticatedActiveCrewRouteRouteChildren {
   AuthenticatedActiveCrewDashboardRoute: typeof AuthenticatedActiveCrewDashboardRoute
   AuthenticatedActiveCrewGamesRoute: typeof AuthenticatedActiveCrewGamesRoute
   AuthenticatedActiveCrewRecordGameRoute: typeof AuthenticatedActiveCrewRecordGameRoute
+  AuthenticatedActiveCrewSettingsRoute: typeof AuthenticatedActiveCrewSettingsRoute
 }
 
 const AuthenticatedActiveCrewRouteRouteChildren: AuthenticatedActiveCrewRouteRouteChildren =
@@ -298,6 +319,7 @@ const AuthenticatedActiveCrewRouteRouteChildren: AuthenticatedActiveCrewRouteRou
     AuthenticatedActiveCrewGamesRoute: AuthenticatedActiveCrewGamesRoute,
     AuthenticatedActiveCrewRecordGameRoute:
       AuthenticatedActiveCrewRecordGameRoute,
+    AuthenticatedActiveCrewSettingsRoute: AuthenticatedActiveCrewSettingsRoute,
   }
 
 const AuthenticatedActiveCrewRouteRouteWithChildren =
