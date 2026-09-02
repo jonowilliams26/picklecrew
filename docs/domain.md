@@ -100,6 +100,8 @@ A crew member's all-time cumulative game results within one crew.
 - A crew's longest win streak is the greatest longest win streak held by one of its crew members.
 - When active crew members hold equal longest win streaks, the member whose record-setting streak started most recently holds the crew's longest win streak.
 - Recorded games are the source for date-range and doubles-pairing statistics.
+- A crew administrator may reset the active crew's statistics after entering the exact confirmation phrase `reset statistics`.
+- Resetting crew statistics permanently deletes every recorded game and all statistics for the active crew.
 
 ### Relationships
 
