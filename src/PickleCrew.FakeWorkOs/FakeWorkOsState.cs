@@ -68,6 +68,19 @@ internal sealed class FakeWorkOsState
         );
     }
 
+    public FakeOrganization? DeleteOrganization(string organizationId)
+    {
+        var organization = FindOrganizationById(organizationId);
+        if (organization is null)
+        {
+            return null;
+        }
+
+        return organizations.TryRemove(organization.ExternalId, out var removedOrganization)
+            ? removedOrganization
+            : null;
+    }
+
     public FakeMembership? FindActiveMembership(string userId, string organizationId)
     {
         var organization = FindOrganizationById(organizationId);

@@ -83,6 +83,10 @@ export type CrewMemberRole = 'admin' | 'member';
 
 export type CrewRosterEntryStatus = 'active' | 'pending';
 
+export type DeleteCrewHttpRequest = {
+    crewName: string;
+};
+
 export type DoublesPairingHttpResponse = {
     players: Array<DoublesPairingPlayerHttpResponse>;
     wins: number;
@@ -406,6 +410,47 @@ export type SendCrewInvitationHttpResponse = {
     status: CrewInvitationOutcomeStatus;
     message?: null | string;
 };
+
+export type DeleteCrewData = {
+    body: DeleteCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews';
+};
+
+export type DeleteCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteCrewError = DeleteCrewErrors[keyof DeleteCrewErrors];
+
+export type DeleteCrewResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteCrewResponse = DeleteCrewResponses[keyof DeleteCrewResponses];
 
 export type CreateCrewData = {
     body: CreateCrewHttpRequest;

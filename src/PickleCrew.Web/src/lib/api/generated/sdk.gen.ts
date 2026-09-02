@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeCrewMemberRoleData, ChangeCrewMemberRoleErrors, ChangeCrewMemberRoleResponses, CreateCrewData, CreateCrewErrors, CreateCrewResponses, DeleteGameData, DeleteGameErrors, DeleteGameResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetBrickWallData, GetBrickWallErrors, GetBrickWallResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewHealthData, GetCrewHealthErrors, GetCrewHealthResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLeavingEligibilityData, GetCrewLeavingEligibilityErrors, GetCrewLeavingEligibilityResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetEasyWinData, GetEasyWinErrors, GetEasyWinResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetHotPaddleData, GetHotPaddleErrors, GetHotPaddleResponses, GetIceManData, GetIceManErrors, GetIceManResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetPointMachineData, GetPointMachineErrors, GetPointMachineResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, LeaveCrewData, LeaveCrewErrors, LeaveCrewResponses, RecordGameData, RecordGameErrors, RecordGameResponses, RemoveCrewMemberData, RemoveCrewMemberErrors, RemoveCrewMemberResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { ChangeCrewMemberRoleData, ChangeCrewMemberRoleErrors, ChangeCrewMemberRoleResponses, CreateCrewData, CreateCrewErrors, CreateCrewResponses, DeleteCrewData, DeleteCrewErrors, DeleteCrewResponses, DeleteGameData, DeleteGameErrors, DeleteGameResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetBrickWallData, GetBrickWallErrors, GetBrickWallResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewHealthData, GetCrewHealthErrors, GetCrewHealthResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLeavingEligibilityData, GetCrewLeavingEligibilityErrors, GetCrewLeavingEligibilityResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetEasyWinData, GetEasyWinErrors, GetEasyWinResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetHotPaddleData, GetHotPaddleErrors, GetHotPaddleResponses, GetIceManData, GetIceManErrors, GetIceManResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetPointMachineData, GetPointMachineErrors, GetPointMachineResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, LeaveCrewData, LeaveCrewErrors, LeaveCrewResponses, RecordGameData, RecordGameErrors, RecordGameResponses, RemoveCrewMemberData, RemoveCrewMemberErrors, RemoveCrewMemberResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,18 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Permanently deletes the active crew after confirming its name.
+ */
+export const deleteCrew = <ThrowOnError extends boolean = false>(options: Options<DeleteCrewData, ThrowOnError>): RequestResult<DeleteCrewResponses, DeleteCrewErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCrewResponses, DeleteCrewErrors, ThrowOnError>({
+    url: '/crews',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Creates a crew for the signed-in user.

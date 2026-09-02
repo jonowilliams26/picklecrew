@@ -84,6 +84,78 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Crews"
+        ],
+        "summary": "Permanently deletes the active crew after confirming its name.",
+        "operationId": "DeleteCrew",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCrewHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/crews/members": {
@@ -2479,6 +2551,17 @@
           "active",
           "pending"
         ]
+      },
+      "DeleteCrewHttpRequest": {
+        "required": [
+          "crewName"
+        ],
+        "type": "object",
+        "properties": {
+          "crewName": {
+            "type": "string"
+          }
+        }
       },
       "DoublesPairingHttpResponse": {
         "required": [
