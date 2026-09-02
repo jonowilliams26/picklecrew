@@ -4,6 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
 import {
   BrickWall,
+  CalendarDays,
   CircleAlert,
   Crown,
   Flame,
@@ -38,6 +39,11 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip'
 import type {
   CrewLeaderboardEntryHttpResponse,
   DoublesPairingPlayerHttpResponse,
@@ -45,9 +51,11 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
+  buildCrewHealthCalendar,
   formatAveragePoints,
   formatAveragePointsConceded,
   formatCount,
+  formatCrewHealthDay,
   formatPercentage,
   formatRecord,
   formatSignedNumber,
@@ -57,6 +65,7 @@ import {
   getFriendsOrLoversCardDetails,
   getInitials,
   type BestPartnerPresentation,
+  type CrewHealthCalendar,
   type DashboardData,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
@@ -76,25 +85,27 @@ const avatarStyles = [
   'bg-paper text-ink',
 ] as const
 
-const dashboardStatCardVariants = cva(
-  'dashboard-stat-card relative border-2 border-ink',
-  {
-    variants: {
-      tone: {
-        aqua: 'bg-aqua text-ink shadow-[7px_8px_0_var(--ink)]',
-        cream: 'bg-cream text-ink shadow-[7px_8px_0_var(--ink)]',
-        ink: 'bg-ink text-cream shadow-[7px_8px_0_var(--orange)]',
-        lime: 'bg-lime text-ink shadow-[7px_8px_0_var(--ink)]',
-        orange: 'bg-orange text-ink shadow-[7px_8px_0_var(--ink)]',
-        paper: 'bg-paper text-ink shadow-[7px_8px_0_var(--ink)]',
-        purple: 'bg-purple text-white shadow-[7px_8px_0_var(--ink)]',
-      },
+const dashboardStatCardVariants = cva('relative border-2 border-ink', {
+  variants: {
+    interactive: {
+      true: 'dashboard-stat-card',
+      false: '',
     },
-    defaultVariants: {
-      tone: 'cream',
+    tone: {
+      aqua: 'bg-aqua text-ink shadow-[7px_8px_0_var(--ink)]',
+      cream: 'bg-cream text-ink shadow-[7px_8px_0_var(--ink)]',
+      ink: 'bg-ink text-cream shadow-[7px_8px_0_var(--orange)]',
+      lime: 'bg-lime text-ink shadow-[7px_8px_0_var(--ink)]',
+      orange: 'bg-orange text-ink shadow-[7px_8px_0_var(--ink)]',
+      paper: 'bg-paper text-ink shadow-[7px_8px_0_var(--ink)]',
+      purple: 'bg-purple text-white shadow-[7px_8px_0_var(--ink)]',
     },
   },
-)
+  defaultVariants: {
+    interactive: true,
+    tone: 'cream',
+  },
+})
 
 const dashboardCardIconVariants = cva(
   'grid place-items-center rounded-full border-2 [&_svg]:size-5',
@@ -177,6 +188,30 @@ const dashboardCardTextVariants = cva('', {
   },
 })
 
+const crewHealthIntensities = [0, 1, 2, 3, 4] as const
+
+const crewHealthDayVariants = cva(
+  'block rounded-[3px] border border-ink/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
+  {
+    variants: {
+      intensity: {
+        0: 'bg-ink/10',
+        1: 'bg-lime/30',
+        2: 'bg-lime/55',
+        3: 'bg-lime/80',
+        4: 'bg-ink',
+      },
+      layout: {
+        calendar: 'aspect-square w-full',
+        legend: 'size-3',
+      },
+    },
+    defaultVariants: {
+      layout: 'calendar',
+    },
+  },
+)
+
 const dashboardAvatarFallbackVariants = cva('font-heading font-black', {
   variants: {
     size: {
@@ -233,6 +268,7 @@ function DashboardPage() {
     easyWin: easyWinResponse,
     nemesis: nemesisResponse,
     recentGames,
+    crewHealth,
     leaderboard,
     longestWinStreak: longestWinStreakResponse,
     bestDoublesPairing,
@@ -258,6 +294,7 @@ function DashboardPage() {
     losses: recentGames.losses,
   })
   const recentGameCount = recentGames.games.length
+  const crewHealthCalendar = buildCrewHealthCalendar({ crewHealth })
   const hasLeaderboardGames = leaderboard.entries.some(
     (member) => member.wins + member.losses > 0,
   )
@@ -410,6 +447,8 @@ function DashboardPage() {
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
             <ChiefPaddlerCard chiefPaddler={chiefPaddler} />
+
+            <CrewHealthCard calendar={crewHealthCalendar} />
           </div>
         </section>
       </div>
@@ -419,13 +458,17 @@ function DashboardPage() {
 
 function DashboardStatCard({
   className,
+  interactive,
   tone,
   ...props
 }: ComponentProps<typeof Card> &
   VariantProps<typeof dashboardStatCardVariants>) {
   return (
     <Card
-      className={cn(dashboardStatCardVariants({ tone }), className)}
+      className={cn(
+        dashboardStatCardVariants({ interactive, tone }),
+        className,
+      )}
       {...props}
     />
   )
@@ -817,6 +860,122 @@ function EasyWinCard({
         />
       )}
       <DashboardDecorativeIcon icon={Trophy} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function CrewHealthCard({ calendar }: { calendar: CrewHealthCalendar }) {
+  return (
+    <DashboardStatCard
+      className="min-h-[280px] xl:col-span-12 xl:row-start-7"
+      interactive={false}
+      tone="cream"
+    >
+      <DashboardCardHeader
+        description="Games played across the last 365 days"
+        icon={CalendarDays}
+        iconTone="lime"
+        title="Crew health"
+        titleVariant="heading"
+      />
+      <CardContent className="relative z-1">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex w-full min-w-[52rem] gap-3">
+            <div className="mt-6 grid grid-rows-7 gap-1 text-[8px] font-black text-muted-foreground uppercase">
+              <span>Sun</span>
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div
+                className="grid h-4 gap-1 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
+                style={{
+                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
+                }}
+                aria-hidden="true"
+              >
+                {calendar.monthLabels.map((month) => (
+                  <span
+                    className="col-span-3"
+                    key={`${month.label}-${month.weekIndex}`}
+                    style={{ gridColumnStart: month.weekIndex + 1 }}
+                  >
+                    {month.label}
+                  </span>
+                ))}
+              </div>
+              <div
+                className="grid grid-rows-[repeat(7,auto)] gap-1"
+                style={{
+                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
+                }}
+                role="group"
+                aria-label={`${formatCount({ count: calendar.totalGames, singular: 'game' })} played across ${formatCount({ count: calendar.activeDayCount, singular: 'active day' })} in the last 365 days`}
+              >
+                {calendar.days.map((day) => {
+                  const label = formatCrewHealthDay(day)
+                  const className = crewHealthDayVariants({
+                    intensity: day.intensity,
+                  })
+                  const style = {
+                    gridColumnStart: day.weekIndex + 1,
+                    gridRowStart: day.dayOfWeek + 1,
+                  }
+
+                  return day.gameCount > 0 ? (
+                    <Tooltip key={day.date}>
+                      <TooltipTrigger
+                        aria-label={label}
+                        className={className}
+                        style={style}
+                        type="button"
+                      />
+                      <TooltipContent>{label}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className={className}
+                      key={day.date}
+                      style={style}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="relative z-1 flex-wrap justify-between gap-4">
+        <span className={dashboardCardTextVariants({ role: 'metadata' })}>
+          {formatCount({ count: calendar.totalGames, singular: 'game' })} ·{' '}
+          {formatCount({
+            count: calendar.activeDayCount,
+            singular: 'active day',
+          })}
+        </span>
+        <div
+          className="flex items-center gap-2 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
+          aria-label="Activity intensity from less to more"
+        >
+          <span>Less</span>
+          {crewHealthIntensities.map((intensity) => (
+            <span
+              aria-hidden="true"
+              className={crewHealthDayVariants({
+                intensity,
+                layout: 'legend',
+              })}
+              key={intensity}
+            />
+          ))}
+          <span>More</span>
+        </div>
+      </CardFooter>
     </DashboardStatCard>
   )
 }

@@ -6,6 +6,7 @@ import {
   getBiggestRivals as getBiggestRivalsRequest,
   getBrickWall as getBrickWallRequest,
   getChiefPaddler as getChiefPaddlerRequest,
+  getCrewHealth as getCrewHealthRequest,
   getIceMan as getIceManRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
@@ -33,6 +34,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         easyWin,
         nemesis,
         recentGames,
+        crewHealth,
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
@@ -49,6 +51,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getEasyWinRequest({ client }),
         getNemesisRequest({ client }),
         getRecentGamesRequest({ client }),
+        getCrewHealthRequest({ client }),
         getCrewLeaderboardRequest({ client }),
         getCrewLongestWinStreakRequest({ client }),
         getBestDoublesPairingRequest({ client }),
@@ -66,6 +69,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         easyWin,
         nemesis,
         recentGames,
+        crewHealth,
         leaderboard,
         longestWinStreak,
         bestDoublesPairing,
@@ -84,6 +88,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         easyWin.error ||
         nemesis.error ||
         recentGames.error ||
+        crewHealth.error ||
         leaderboard.error ||
         longestWinStreak.error ||
         bestDoublesPairing.error ||
@@ -116,6 +121,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         easyWin: easyWin.data,
         nemesis: nemesis.data,
         recentGames: recentGames.data,
+        crewHealth: crewHealth.data,
         leaderboard: leaderboard.data,
         longestWinStreak: longestWinStreak.data,
         bestDoublesPairing: bestDoublesPairing.data,
