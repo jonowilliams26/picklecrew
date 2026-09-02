@@ -41,7 +41,7 @@ public sealed class RemoveCrewMemberEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var statistics = await database.CrewMemberStatistics
+        var statistics = await database.CrewMemberGameStatistics
             .AsNoTracking()
             .SingleAsync(candidate =>
                 candidate.CrewId == context.Id

@@ -25,6 +25,14 @@ public class PickleCrewDbContext : DbContext
 
     public DbSet<CrewMatchupStatistics> CrewMatchupStatistics => Set<CrewMatchupStatistics>();
 
+    public DbSet<CrewMemberGameStatistics> CrewMemberGameStatistics => Set<CrewMemberGameStatistics>();
+
+    public DbSet<CrewMatchupGameStatistics> CrewMatchupGameStatistics => Set<CrewMatchupGameStatistics>();
+
+    public DbSet<CrewDoublesPairingGameStatistics> CrewDoublesPairingGameStatistics => Set<CrewDoublesPairingGameStatistics>();
+
+    public DbSet<CrewMemberWinStreak> CrewMemberWinStreaks => Set<CrewMemberWinStreak>();
+
     public DbSet<Game> Games => Set<Game>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -94,6 +102,67 @@ public class PickleCrewDbContext : DbContext
                 .IsRowVersion();
         });
 
+        modelBuilder.Entity<CrewMemberGameStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.GameId,
+                entity.UserId,
+            });
+            statistics.HasOne(entity => entity.Game)
+                .WithMany()
+                .HasForeignKey(entity => entity.GameId);
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+        });
+
+        modelBuilder.Entity<CrewMatchupGameStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.GameId,
+                entity.UserId,
+                entity.OpponentUserId,
+            });
+            statistics.HasOne(entity => entity.Game)
+                .WithMany()
+                .HasForeignKey(entity => entity.GameId);
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+        });
+
+        modelBuilder.Entity<CrewDoublesPairingGameStatistics>(statistics =>
+        {
+            statistics.HasKey(entity => new
+            {
+                entity.GameId,
+                entity.Player1Id,
+                entity.Player2Id,
+            });
+            statistics.HasOne(entity => entity.Game)
+                .WithMany()
+                .HasForeignKey(entity => entity.GameId);
+            statistics.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+        });
+
+        modelBuilder.Entity<CrewMemberWinStreak>(winStreak =>
+        {
+            winStreak.HasKey(entity => new
+            {
+                entity.CrewId,
+                entity.UserId,
+            });
+            winStreak.HasOne(entity => entity.Crew)
+                .WithMany()
+                .HasForeignKey(entity => entity.CrewId);
+            winStreak.Property(entity => entity.Version)
+                .IsRowVersion();
+        });
+
         modelBuilder.Entity<Game>(game =>
         {
             game.HasIndex(entity => entity.Uuid).IsUnique();
@@ -127,6 +196,14 @@ internal sealed class CrewScopedDbContext(
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
         modelBuilder.Entity<CrewMatchupStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewMemberGameStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewMatchupGameStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewDoublesPairingGameStatistics>()
+            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
+        modelBuilder.Entity<CrewMemberWinStreak>()
+            .HasQueryFilter(winStreak => winStreak.CrewId == CrewId);
         modelBuilder.Entity<Game>()
             .HasQueryFilter(game => game.CrewId == CrewId);
     }

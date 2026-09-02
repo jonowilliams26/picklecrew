@@ -19,11 +19,12 @@ internal sealed class StatisticsRebuildHostedService(
         var result = await rebuildService.RebuildAsync(cancellationToken);
 
         logger.LogInformation(
-            "Recalculated {GameCount} games into {MemberCount} member, {PairingCount} pairing, and {MatchupCount} matchup statistics records.",
+            "Recalculated {GameCount} games into {GameMemberCount} game-based member, {GamePairingCount} game-based pairing, {GameMatchupCount} game-based matchup, and {WinStreakCount} win-streak records.",
             result.GamesRecalculated,
-            result.CrewMemberStatisticsCreated,
-            result.DoublesPairingStatisticsCreated,
-            result.MatchupStatisticsCreated
+            result.CrewMemberGameStatisticsCreated,
+            result.DoublesPairingGameStatisticsCreated,
+            result.MatchupGameStatisticsCreated,
+            result.CrewMemberWinStreaksCreated
         );
     }
 
@@ -55,9 +56,10 @@ internal sealed class StatisticsRebuildService(
             """
             LOCK TABLE
                 "Games",
-                "CrewMemberStatistics",
-                "CrewDoublesPairingStatistics",
-                "CrewMatchupStatistics"
+                "CrewMemberGameStatistics",
+                "CrewDoublesPairingGameStatistics",
+                "CrewMatchupGameStatistics",
+                "CrewMemberWinStreaks"
             IN ACCESS EXCLUSIVE MODE;
             """,
             cancellationToken
@@ -70,13 +72,16 @@ internal sealed class StatisticsRebuildService(
             .ThenBy(game => game.Id)
             .ToArrayAsync(cancellationToken);
 
-        await database.CrewMatchupStatistics
+        await database.CrewMatchupGameStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
-        await database.CrewDoublesPairingStatistics
+        await database.CrewDoublesPairingGameStatistics
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
-        await database.CrewMemberStatistics
+        await database.CrewMemberGameStatistics
+            .IgnoreQueryFilters()
+            .ExecuteDeleteAsync(cancellationToken);
+        await database.CrewMemberWinStreaks
             .IgnoreQueryFilters()
             .ExecuteDeleteAsync(cancellationToken);
 
@@ -86,8 +91,12 @@ internal sealed class StatisticsRebuildService(
         {
             crewUserContext.CrewId = game.CrewId;
             crewUserContext.CrewUuid = game.CrewUuid;
+            database.Attach(game);
 
-            await statisticsService.CalculateStatisticsAsync(game, cancellationToken);
+            await statisticsService.CalculateStatisticsAsync(
+                game,
+                cancellationToken
+            );
             await database.SaveChangesAsync(cancellationToken);
             database.ChangeTracker.Clear();
         }
@@ -95,13 +104,16 @@ internal sealed class StatisticsRebuildService(
         var result = new StatisticsRebuildResult
         {
             GamesRecalculated = games.Length,
-            CrewMemberStatisticsCreated = await database.CrewMemberStatistics
+            CrewMemberGameStatisticsCreated = await database.CrewMemberGameStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
-            DoublesPairingStatisticsCreated = await database.CrewDoublesPairingStatistics
+            DoublesPairingGameStatisticsCreated = await database.CrewDoublesPairingGameStatistics
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
-            MatchupStatisticsCreated = await database.CrewMatchupStatistics
+            MatchupGameStatisticsCreated = await database.CrewMatchupGameStatistics
+                .IgnoreQueryFilters()
+                .CountAsync(cancellationToken),
+            CrewMemberWinStreaksCreated = await database.CrewMemberWinStreaks
                 .IgnoreQueryFilters()
                 .CountAsync(cancellationToken),
         };
@@ -114,9 +126,11 @@ internal sealed record StatisticsRebuildResult
 {
     public required int GamesRecalculated { get; init; }
 
-    public required int CrewMemberStatisticsCreated { get; init; }
+    public required int CrewMemberGameStatisticsCreated { get; init; }
 
-    public required int DoublesPairingStatisticsCreated { get; init; }
+    public required int DoublesPairingGameStatisticsCreated { get; init; }
 
-    public required int MatchupStatisticsCreated { get; init; }
+    public required int MatchupGameStatisticsCreated { get; init; }
+
+    public required int CrewMemberWinStreaksCreated { get; init; }
 }

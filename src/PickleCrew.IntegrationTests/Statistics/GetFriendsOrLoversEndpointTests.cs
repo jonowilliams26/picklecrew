@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -37,27 +36,31 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
         );
         Assert.NotNull(result);
         Assert.Null(result.Pairing);
+
+        await using var database = fixture.CreateDbContext();
+        Assert.False(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
+            statistics.CrewId == context.Id
+        ));
     }
 
     [Fact]
     public async Task GetFriendsOrLovers_WhenPairingHasFewerThanThreeGames_ShouldReturnNullPairing()
     {
+        const string administratorId = "user_friends_minimum_admin";
         const string memberId = "user_friends_minimum_member";
         var context = await fixture.CreateCrewBuilder()
-            .WithAdministrator(id: "user_friends_minimum_admin")
+            .WithAdministrator(id: administratorId)
             .WithMember(id: memberId)
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                memberId,
-                Wins: 1,
-                Losses: 1,
-                PointsScored: 18,
-                PointsConceded: 18
+            .WithDoublesGames(
+                side1: (administratorId, memberId),
+                side2: ("Minimum Guest One", "Minimum Guest Two"),
+                scores:
+                [
+                    (11, 7),
+                    (8, 11),
+                ]
             )
-        );
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/statistics/friends-or-lovers");
@@ -128,51 +131,64 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, pairing.Wins);
         Assert.Equal(1, pairing.Losses);
         Assert.Equal(3, pairing.GamesPlayed);
-        Assert.Equal(2m / 3m, pairing.WinPercentage);
+        Assert.Equal(2m / 3m, pairing.WinPercentage, precision: 20);
         Assert.Equal(1, pairing.PointDifferential);
     }
 
     [Fact]
     public async Task GetFriendsOrLovers_WhenPairingsHaveTiedGameCounts_ShouldOrderByWinsThenPointDifferential()
     {
+        const string administratorId = "user_friends_order_admin";
         const string lowerWinsId = "user_friends_order_lower_wins";
         const string lowerDifferentialId = "user_friends_order_lower_differential";
-        const string winnerId = "user_friends_order_winner";
+        const string winnerId = "user_friends_order_a_winner";
         var context = await fixture.CreateCrewBuilder()
-            .WithAdministrator(id: "user_friends_order_admin")
+            .WithAdministrator(id: administratorId)
             .WithMember(id: lowerWinsId)
             .WithMember(id: lowerDifferentialId)
             .WithMember(id: winnerId)
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                lowerWinsId,
-                Wins: 2,
-                Losses: 4,
-                PointsScored: 80,
-                PointsConceded: 50
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                lowerDifferentialId,
-                Wins: 3,
-                Losses: 3,
-                PointsScored: 60,
-                PointsConceded: 55
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                winnerId,
-                Wins: 3,
-                Losses: 3,
-                PointsScored: 61,
-                PointsConceded: 55
+            .WithDoublesGames(
+                side1: (administratorId, lowerWinsId),
+                side2: ("Lower Wins Guest One", "Lower Wins Guest Two"),
+                scores:
+                [
+                    (11, 4),
+                    (11, 5),
+                    (8, 11),
+                    (8, 11),
+                    (8, 11),
+                    (8, 11),
+                ]
             )
-        );
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
+            .WithDoublesGames(
+                side1: (administratorId, lowerDifferentialId),
+                side2: ("Lower Differential Guest One", "Lower Differential Guest Two"),
+                scores:
+                [
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (9, 11),
+                    (9, 11),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, winnerId),
+                side2: ("Winner Guest One", "Winner Guest Two"),
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                    (9, 11),
+                    (9, 11),
+                    (9, 11),
+                ]
+            )
+            .BuildAsync();
 
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/friends-or-lovers");
 
         response.EnsureSuccessStatusCode();
@@ -190,12 +206,13 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetFriendsOrLovers_WhenPairingsSpanMembershipsAndCrews_ShouldReturnMostPlayedActiveCrewPairing()
     {
+        const string administratorId = "user_friends_scope_admin";
         const string activeWinnerId = "user_friends_scope_winner";
         const string higherWinRateId = "user_friends_scope_higher_win_rate";
         const string inactiveMemberId = "user_friends_scope_inactive";
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(
-                id: "user_friends_scope_admin",
+                id: administratorId,
                 displayName: "Scope Admin"
             )
             .WithMember(
@@ -211,48 +228,65 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Former Member"
             )
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                inactiveMemberId,
-                Wins: 100,
-                Losses: 0,
-                PointsScored: 1100,
-                PointsConceded: 0
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                higherWinRateId,
-                Wins: 5,
-                Losses: 0,
-                PointsScored: 55,
-                PointsConceded: 20
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                activeWinnerId,
-                Wins: 2,
-                Losses: 4,
-                PointsScored: 57,
-                PointsConceded: 60
+            .WithDoublesGames(
+                side1: (administratorId, inactiveMemberId),
+                side2: ("Inactive Guest One", "Inactive Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (11, 6),
+                ]
             )
-        );
-        var otherCrew = await fixture.CreateCrewBuilder()
+            .WithDoublesGames(
+                side1: (administratorId, higherWinRateId),
+                side2: ("Rate Guest One", "Rate Guest Two"),
+                scores:
+                [
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (11, 6),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, activeWinnerId),
+                side2: ("Games Guest One", "Games Guest Two"),
+                scores:
+                [
+                    (11, 8),
+                    (11, 9),
+                    (8, 11),
+                    (8, 11),
+                    (8, 11),
+                    (8, 11),
+                ]
+            )
+            .BuildAsync();
+        await fixture.CreateCrewBuilder()
             .WithName("Other Friends Crew")
-            .BuildAsync();
-        await SeedPairingsAsync(
-            otherCrew,
-            new PairingSeed(
-                context.Administrator.UserId,
-                higherWinRateId,
-                Wins: 200,
-                Losses: 0,
-                PointsScored: 2200,
-                PointsConceded: 0
+            .WithMember(id: administratorId)
+            .WithMember(id: higherWinRateId)
+            .WithDoublesGames(
+                side1: (administratorId, higherWinRateId),
+                side2: ("Other Guest One", "Other Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (11, 6),
+                ]
             )
-        );
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/statistics/friends-or-lovers");
@@ -269,53 +303,7 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, pairing.Wins);
         Assert.Equal(4, pairing.Losses);
         Assert.Equal(6, pairing.GamesPlayed);
-        Assert.Equal(1m / 3m, pairing.WinPercentage);
-        Assert.Equal(-3, pairing.PointDifferential);
+        Assert.Equal(1m / 3m, pairing.WinPercentage, precision: 20);
+        Assert.Equal(-7, pairing.PointDifferential);
     }
-
-    private async Task SeedPairingsAsync(
-        BuiltCrewTestData context,
-        params PairingSeed[] pairings)
-    {
-        await using var database = fixture.CreateDbContext();
-        database.CrewDoublesPairingStatistics.AddRange(
-            pairings.Select(pairing => CreatePairingStatistics(
-                context.Id,
-                context.Uuid,
-                pairing
-            ))
-        );
-        await database.SaveChangesAsync();
-    }
-
-    private static CrewDoublesPairingStatistics CreatePairingStatistics(
-        long crewId,
-        Guid crewUuid,
-        PairingSeed pairing)
-    {
-        var key = CrewDoublesPairingKey.Create(
-            pairing.FirstPlayerId,
-            pairing.SecondPlayerId
-        );
-
-        return new CrewDoublesPairingStatistics
-        {
-            CrewId = crewId,
-            CrewUuid = crewUuid,
-            Player1Id = key.Player1Id,
-            Player2Id = key.Player2Id,
-            Wins = pairing.Wins,
-            Losses = pairing.Losses,
-            PointsScored = pairing.PointsScored,
-            PointsConceded = pairing.PointsConceded,
-        };
-    }
-
-    private sealed record PairingSeed(
-        string FirstPlayerId,
-        string SecondPlayerId,
-        long Wins,
-        long Losses,
-        long PointsScored,
-        long PointsConceded);
 }

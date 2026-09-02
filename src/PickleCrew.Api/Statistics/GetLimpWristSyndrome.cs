@@ -20,9 +20,9 @@ public sealed record LimpWristSyndromeHttpResponse
 
     public required string? ProfilePictureUrl { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }
 
 internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
@@ -66,20 +66,19 @@ internal sealed class GetLimpWristSyndromeEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var holderStatistics = await database.CrewMemberStatistics
-            .Where(statistics =>
-                activeMemberUserIds.Contains(statistics.UserId)
-                && statistics.Losses > 0
-            )
+        var holderStatistics = await database.CrewMemberGameStatistics
+            .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
+            .GroupBy(statistics => statistics.UserId)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                Losses = group.Sum(statistics => statistics.Losses),
+                PointDifferential = group.Sum(statistics => statistics.PointDifferential),
+            })
+            .Where(statistics => statistics.Losses > 0)
             .OrderByDescending(statistics => statistics.Losses)
             .ThenBy(statistics => statistics.PointDifferential)
             .ThenBy(statistics => statistics.UserId)
-            .Select(statistics => new
-            {
-                statistics.UserId,
-                statistics.Losses,
-                statistics.PointDifferential,
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (holderStatistics is null)

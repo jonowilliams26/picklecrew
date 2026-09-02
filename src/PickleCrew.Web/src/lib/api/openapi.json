@@ -1301,15 +1301,15 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "winPercentage": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1321,15 +1321,15 @@
           },
           "pointsScored": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointsConceded": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointDifferential": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1348,7 +1348,7 @@
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1375,7 +1375,7 @@
           },
           "thatsAPaddlin": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1452,15 +1452,15 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "crewScore": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1526,15 +1526,15 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "winPercentage": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1546,15 +1546,15 @@
           },
           "pointsScored": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointsConceded": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointDifferential": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1598,15 +1598,15 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "winPercentage": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1618,7 +1618,7 @@
           },
           "pointDifferential": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -1939,23 +1939,23 @@
         "properties": {
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "thatsAPaddlin": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "currentWinStreak": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "currentWinStreakStartedAtUtc": {
             "type": [
@@ -1966,7 +1966,7 @@
           },
           "longestWinStreak": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "longestWinStreakStartedAtUtc": {
             "type": [
@@ -1992,19 +1992,19 @@
           },
           "pointsScored": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointsConceded": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointDifferential": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "crewScore": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "crewRank": {
             "type": "integer",
@@ -2121,11 +2121,11 @@
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "pointDifferential": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -2154,7 +2154,7 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "startedAtUtc": {
             "type": "string",
@@ -2192,7 +2192,7 @@
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           }
         }
       },
@@ -2501,11 +2501,11 @@
           },
           "wins": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "losses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int32"
           },
           "winPercentage": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",

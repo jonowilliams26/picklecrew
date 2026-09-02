@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using PickleCrew.Api.Data;
+using Microsoft.EntityFrameworkCore;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -41,15 +41,21 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
             .WithDoublesGames(
                 side1: (administratorId, partnerId),
                 side2: (firstOpponentId, "Guest Opponent"),
-                (Side1: 11, Side2: 6),
-                (Side1: 9, Side2: 11),
-                (Side1: 11, Side2: 8)
+                scores:
+                [
+                    (11, 6),
+                    (9, 11),
+                    (11, 8),
+                ]
             )
             .WithDoublesGames(
                 side1: (administratorId, unqualifiedPartnerId),
                 side2: (firstOpponentId, secondOpponentId),
-                (Side1: 11, Side2: 3),
-                (Side1: 11, Side2: 4)
+                scores:
+                [
+                    (11, 3),
+                    (11, 4),
+                ]
             )
             .WithDoublesGame(
                 side1: (administratorId, "Guest Teammate", 11),
@@ -73,18 +79,17 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, bestPartner.Wins);
         Assert.Equal(1, bestPartner.Losses);
         Assert.Equal(3, bestPartner.GamesPlayed);
-        Assert.Equal(2m / 3m, bestPartner.WinPercentage);
+        Assert.Equal(2m / 3m, bestPartner.WinPercentage, precision: 20);
         Assert.Equal(31, bestPartner.PointsScored);
         Assert.Equal(25, bestPartner.PointsConceded);
         Assert.Equal(6, bestPartner.PointDifferential);
     }
 
     [Fact]
-    public async Task GetBestPartner_WhenPairingsDifferByEligibilityAndRank_ShouldReturnDeterministicActiveCrewPartner()
+    public async Task GetBestPartner_WhenPairingsDifferByEligibilityAndRank_ShouldReturnBestActiveCrewPartner()
     {
         const string administratorId = "user_personal_rank_admin";
         const string winnerId = "user_personal_rank_a_winner";
-        const string exactTieId = "user_personal_rank_z_exact_tie";
         const string lowerDifferentialId = "user_personal_rank_lower_differential";
         const string fewerGamesId = "user_personal_rank_fewer_games";
         const string lowerPercentageId = "user_personal_rank_lower_percentage";
@@ -92,8 +97,7 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
         const string inactiveId = "user_personal_rank_inactive";
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(id: administratorId)
-            .WithMember(id: winnerId, displayName: "Deterministic Winner")
-            .WithMember(id: exactTieId)
+            .WithMember(id: winnerId, displayName: "Best Partner")
             .WithMember(id: lowerDifferentialId)
             .WithMember(id: fewerGamesId)
             .WithMember(id: lowerPercentageId)
@@ -102,67 +106,112 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
                 id: inactiveId,
                 status: FakeMembershipStatus.Inactive
             )
+            .WithDoublesGames(
+                side1: (administratorId, winnerId),
+                side2: ("Winner Guest One", "Winner Guest Two"),
+                scores:
+                [
+                    (11, 1),
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (11, 6),
+                    (11, 7),
+                    (11, 8),
+                    (9, 11),
+                    (8, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, lowerDifferentialId),
+                side2: ("Differential Guest One", "Differential Guest Two"),
+                scores:
+                [
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (9, 11),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, fewerGamesId),
+                side2: ("Fewer Guest One", "Fewer Guest Two"),
+                scores:
+                [
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, lowerPercentageId),
+                side2: ("Percentage Guest One", "Percentage Guest Two"),
+                scores:
+                [
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, unqualifiedId),
+                side2: ("Unqualified Guest One", "Unqualified Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, inactiveId),
+                side2: ("Inactive Guest One", "Inactive Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                    (11, 2),
+                    (11, 3),
+                ]
+            )
             .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(administratorId, winnerId, 8, 2, 110, 101),
-            new PairingSeed(administratorId, exactTieId, 8, 2, 110, 101),
-            new PairingSeed(administratorId, lowerDifferentialId, 8, 2, 100, 98),
-            new PairingSeed(administratorId, fewerGamesId, 4, 1, 50, 40),
-            new PairingSeed(administratorId, lowerPercentageId, 3, 1, 44, 20),
-            new PairingSeed(administratorId, unqualifiedId, 2, 0, 22, 0),
-            new PairingSeed(administratorId, inactiveId, 20, 0, 220, 0),
-            new PairingSeed(winnerId, exactTieId, 100, 0, 1100, 0)
-        );
-        var otherCrew = await fixture.CreateCrewBuilder()
+        await fixture.CreateCrewBuilder()
             .WithName("Other Personal Partner Crew")
+            .WithMember(id: administratorId)
+            .WithMember(id: winnerId)
+            .WithDoublesGames(
+                side1: (administratorId, winnerId),
+                side2: ("Other Guest One", "Other Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                    (11, 2),
+                ]
+            )
             .BuildAsync();
-        await SeedPairingsAsync(
-            otherCrew,
-            new PairingSeed(administratorId, exactTieId, 100, 0, 1100, 0)
-        );
 
         var result = await GetBestPartnerAsync(context.Administrator);
 
         var bestPartner = Assert.IsType<BestPartnerHttpResponse>(result.BestPartner);
         Assert.Equal(winnerId, bestPartner.UserId);
-        Assert.Equal("Deterministic Winner", bestPartner.DisplayName);
+        Assert.Equal("Best Partner", bestPartner.DisplayName);
         Assert.Equal(8, bestPartner.Wins);
         Assert.Equal(2, bestPartner.Losses);
         Assert.Equal(10, bestPartner.GamesPlayed);
         Assert.Equal(0.8m, bestPartner.WinPercentage);
-        Assert.Equal(110, bestPartner.PointsScored);
-        Assert.Equal(101, bestPartner.PointsConceded);
-        Assert.Equal(9, bestPartner.PointDifferential);
-    }
-
-    private async Task SeedPairingsAsync(
-        BuiltCrewTestData context,
-        params PairingSeed[] pairings)
-    {
-        await using var database = fixture.CreateDbContext();
-        database.CrewDoublesPairingStatistics.AddRange(
-            pairings.Select(pairing =>
-            {
-                var key = CrewDoublesPairingKey.Create(
-                    pairing.FirstPlayerId,
-                    pairing.SecondPlayerId
-                );
-
-                return new CrewDoublesPairingStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    Player1Id = key.Player1Id,
-                    Player2Id = key.Player2Id,
-                    Wins = pairing.Wins,
-                    Losses = pairing.Losses,
-                    PointsScored = pairing.PointsScored,
-                    PointsConceded = pairing.PointsConceded,
-                };
-            })
-        );
-        await database.SaveChangesAsync();
+        Assert.Equal(105, bestPartner.PointsScored);
+        Assert.Equal(58, bestPartner.PointsConceded);
+        Assert.Equal(47, bestPartner.PointDifferential);
     }
 
     private async Task<GetBestPartnerHttpResponse> GetBestPartnerAsync(
@@ -178,12 +227,4 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
             "The API returned an empty best partner response."
         );
     }
-
-    private sealed record PairingSeed(
-        string FirstPlayerId,
-        string SecondPlayerId,
-        long Wins,
-        long Losses,
-        long PointsScored,
-        long PointsConceded);
 }

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -58,6 +57,41 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task GetBiggestRivals_WhenQualifyingDoublesGamesContainGuests_ShouldReturnMemberRivalry()
+    {
+        const string administratorId = "user_rivals_guest_admin";
+        const string memberId = "user_rivals_guest_member";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId, displayName: "Administrator")
+            .WithMember(id: memberId, displayName: "Member Rival")
+            .WithDoublesGames(
+                side1: (administratorId, "Guest Partner"),
+                side2: (memberId, "Guest Opponent"),
+                scores:
+                [
+                    (11, 7),
+                    (8, 11),
+                    (11, 9),
+                ]
+            )
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var response = await apiClient.GetAsync("/statistics/biggest-rivals");
+
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<GetBiggestRivalsHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        var rivalry = Assert.IsType<BiggestRivalryHttpResponse>(result?.Rivalry);
+        Assert.Equal(3, rivalry.GamesPlayed);
+        Assert.Equal(
+            [administratorId, memberId],
+            rivalry.Players.Select(player => player.UserId).Order().ToArray()
+        );
+    }
+
+    [Fact]
     public async Task GetBiggestRivals_WhenMatchupsDifferInBalanceAndGamesPlayed_ShouldReturnMostPlayedClosestMatchup()
     {
         const string administratorId = "user_rivals_admin";
@@ -111,6 +145,7 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
                 ]
             )
             .BuildAsync();
+
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/statistics/biggest-rivals");
@@ -158,31 +193,50 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Inactive Rival"
             )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: activeMemberId,
+                scores:
+                [
+                    (11, 7),
+                    (11, 8),
+                    (9, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: inactiveMemberId,
+                scores:
+                [
+                    (11, 4),
+                    (5, 11),
+                    (11, 6),
+                    (7, 11),
+                    (11, 8),
+                    (9, 11),
+                    (11, 7),
+                    (8, 11),
+                    (11, 9),
+                    (6, 11),
+                ]
+            )
             .BuildAsync();
-        await SeedMatchupAsync(
-            context,
-            administratorId,
-            activeMemberId,
-            firstPlayerWins: 2,
-            secondPlayerWins: 1
-        );
-        await SeedMatchupAsync(
-            context,
-            administratorId,
-            inactiveMemberId,
-            firstPlayerWins: 5,
-            secondPlayerWins: 5
-        );
-        var otherCrew = await fixture.CreateCrewBuilder()
+        await fixture.CreateCrewBuilder()
             .WithName("Other Rivals Crew")
+            .WithMember(id: administratorId)
+            .WithMember(id: activeMemberId)
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: activeMemberId,
+                scores:
+                [
+                    (11, 7),
+                    (8, 11),
+                    (11, 9),
+                    (6, 11),
+                ]
+            )
             .BuildAsync();
-        await SeedMatchupAsync(
-            otherCrew,
-            administratorId,
-            activeMemberId,
-            firstPlayerWins: 20,
-            secondPlayerWins: 20
-        );
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/statistics/biggest-rivals");
@@ -197,9 +251,15 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
             rivalry.Players.Select(player => player.UserId).Order().ToArray()
         );
         Assert.Equal(3, rivalry.GamesPlayed);
+        var administrator = Assert.Single(rivalry.Players, player =>
+            player.UserId == administratorId
+        );
+        Assert.Equal(2, administrator.Wins);
+        Assert.Equal(1, administrator.Losses);
+        Assert.Equal(2m / 3m, administrator.WinPercentage, precision: 20);
 
         await using var database = fixture.CreateDbContext();
-        Assert.True(await database.CrewMatchupStatistics.AnyAsync(matchup =>
+        Assert.True(await database.CrewMatchupGameStatistics.AnyAsync(matchup =>
             matchup.CrewId == context.Id
             && (matchup.UserId == inactiveMemberId
                 || matchup.OpponentUserId == inactiveMemberId)
@@ -218,21 +278,29 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
             .WithMember(id: alphaId)
             .WithMember(id: betaId)
             .WithMember(id: gammaId)
+            .WithSinglesGames(
+                side1: betaId,
+                side2: gammaId,
+                scores:
+                [
+                    (11, 7),
+                    (8, 11),
+                    (11, 9),
+                    (6, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: alphaId,
+                scores:
+                [
+                    (11, 7),
+                    (8, 11),
+                    (11, 9),
+                    (6, 11),
+                ]
+            )
             .BuildAsync();
-        await SeedMatchupAsync(
-            context,
-            betaId,
-            gammaId,
-            firstPlayerWins: 2,
-            secondPlayerWins: 2
-        );
-        await SeedMatchupAsync(
-            context,
-            administratorId,
-            alphaId,
-            firstPlayerWins: 2,
-            secondPlayerWins: 2
-        );
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync("/statistics/biggest-rivals");
@@ -270,36 +338,5 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType
         );
-    }
-
-    private async Task SeedMatchupAsync(
-        BuiltCrewTestData context,
-        string firstPlayerId,
-        string secondPlayerId,
-        long firstPlayerWins,
-        long secondPlayerWins)
-    {
-        await using var database = fixture.CreateDbContext();
-        database.CrewMatchupStatistics.AddRange(
-            new CrewMatchupStatistics
-            {
-                CrewId = context.Id,
-                CrewUuid = context.Uuid,
-                UserId = firstPlayerId,
-                OpponentUserId = secondPlayerId,
-                Wins = firstPlayerWins,
-                Losses = secondPlayerWins,
-            },
-            new CrewMatchupStatistics
-            {
-                CrewId = context.Id,
-                CrewUuid = context.Uuid,
-                UserId = secondPlayerId,
-                OpponentUserId = firstPlayerId,
-                Wins = secondPlayerWins,
-                Losses = firstPlayerWins,
-            }
-        );
-        await database.SaveChangesAsync();
     }
 }

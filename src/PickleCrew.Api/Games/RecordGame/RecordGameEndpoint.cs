@@ -135,12 +135,12 @@ internal sealed class RecordGameEndpoint : IEndpoint
                 .ToList(),
         };
 
+        database.Games.Add(game);
         await gameStatisticsService.CalculateStatisticsAsync(
             game,
             cancellationToken
         );
 
-        database.Games.Add(game);
         await database.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync(

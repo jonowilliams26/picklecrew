@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -32,32 +31,32 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetBestDoublesPairing_WhenAllPairingsHavePlayedFewerThanThreeGames_ShouldReturnNullPairing()
     {
+        const string administratorId = "user_pairing_minimum_admin";
         const string firstMemberId = "user_pairing_minimum_first";
         const string secondMemberId = "user_pairing_minimum_second";
         var context = await fixture.CreateCrewBuilder()
-            .WithAdministrator(id: "user_pairing_minimum_admin")
+            .WithAdministrator(id: administratorId)
             .WithMember(id: firstMemberId)
             .WithMember(id: secondMemberId)
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                firstMemberId,
-                Wins: 2,
-                Losses: 0,
-                PointsScored: 22,
-                PointsConceded: 10
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                secondMemberId,
-                Wins: 1,
-                Losses: 1,
-                PointsScored: 18,
-                PointsConceded: 20
+            .WithDoublesGames(
+                side1: (administratorId, firstMemberId),
+                side2: (secondMemberId, "Minimum Guest One"),
+                scores:
+                [
+                    (11, 5),
+                    (7, 11),
+                ]
             )
-        );
+            .WithDoublesGames(
+                side1: (administratorId, secondMemberId),
+                side2: (firstMemberId, "Minimum Guest Two"),
+                scores:
+                [
+                    (11, 6),
+                    (8, 11),
+                ]
+            )
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync(
@@ -75,11 +74,12 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetBestDoublesPairing_WhenHighestWinPercentageHasFewerThanThreeGames_ShouldReturnBestQualifiedPairing()
     {
+        const string administratorId = "user_pairing_eligibility_admin";
         const string unqualifiedMemberId = "user_pairing_eligibility_unqualified";
         const string qualifiedMemberId = "user_pairing_eligibility_qualified";
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(
-                id: "user_pairing_eligibility_admin",
+                id: administratorId,
                 displayName: "Eligibility Admin"
             )
             .WithMember(
@@ -90,26 +90,26 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
                 id: qualifiedMemberId,
                 displayName: "Qualified Member"
             )
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                unqualifiedMemberId,
-                Wins: 2,
-                Losses: 0,
-                PointsScored: 22,
-                PointsConceded: 10
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                qualifiedMemberId,
-                Wins: 2,
-                Losses: 1,
-                PointsScored: 29,
-                PointsConceded: 24
+            .WithDoublesGames(
+                side1: (administratorId, unqualifiedMemberId),
+                side2: (qualifiedMemberId, "Eligibility Guest One"),
+                scores:
+                [
+                    (11, 4),
+                    (11, 5),
+                ]
             )
-        );
+            .WithDoublesGames(
+                side1: (administratorId, qualifiedMemberId),
+                side2: (unqualifiedMemberId, "Eligibility Guest Two"),
+                scores:
+                [
+                    (11, 6),
+                    (11, 7),
+                    (8, 11),
+                ]
+            )
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync(
@@ -159,7 +159,7 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
         Assert.Null(result.Pairing);
 
         await using var database = fixture.CreateDbContext();
-        Assert.False(await database.CrewDoublesPairingStatistics.AnyAsync(statistics =>
+        Assert.False(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
             statistics.CrewId == context.Id
         ));
     }
@@ -167,13 +167,14 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetBestDoublesPairing_WhenHighestPairingContainsInactiveMember_ShouldReturnBestActivePairingAndPreserveHistory()
     {
+        const string administratorId = "user_pairing_active_admin";
         const string activeTeammateId = "user_pairing_active_teammate";
         const string firstOpponentId = "user_pairing_active_opponent_one";
         const string secondOpponentId = "user_pairing_active_opponent_two";
         const string inactiveMemberId = "user_pairing_inactive_member";
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(
-                id: "user_pairing_active_admin",
+                id: administratorId,
                 displayName: "Active Admin"
             )
             .WithMember(
@@ -187,26 +188,28 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Inactive Champion"
             )
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                inactiveMemberId,
-                Wins: 20,
-                Losses: 0,
-                PointsScored: 220,
-                PointsConceded: 40
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                activeTeammateId,
-                Wins: 2,
-                Losses: 1,
-                PointsScored: 29,
-                PointsConceded: 24
+            .WithDoublesGames(
+                side1: (administratorId, inactiveMemberId),
+                side2: (firstOpponentId, secondOpponentId),
+                scores:
+                [
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                ]
             )
-        );
+            .WithDoublesGames(
+                side1: (administratorId, activeTeammateId),
+                side2: (firstOpponentId, secondOpponentId),
+                scores:
+                [
+                    (11, 6),
+                    (11, 7),
+                    (8, 11),
+                ]
+            )
+            .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
 
         using var response = await apiClient.GetAsync(
@@ -226,7 +229,7 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
         Assert.Equal(1, pairing.Losses);
 
         await using var database = fixture.CreateDbContext();
-        Assert.True(await database.CrewDoublesPairingStatistics.AnyAsync(statistics =>
+        Assert.True(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
             statistics.CrewId == context.Id
             && (statistics.Player1Id == inactiveMemberId
                 || statistics.Player2Id == inactiveMemberId)
@@ -236,71 +239,95 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
     [Fact]
     public async Task GetBestDoublesPairing_WhenPairingsDifferByRankingCriteria_ShouldApplyAllCriteriaWithinActiveCrew()
     {
+        const string administratorId = "user_pairing_rank_admin";
         const string firstId = "user_pairing_rank_first";
         const string secondId = "user_pairing_rank_second";
         const string thirdId = "user_pairing_rank_third";
         const string winnerId = "user_pairing_rank_winner";
         var context = await fixture.CreateCrewBuilder()
             .WithAdministrator(
-                id: "user_pairing_rank_admin",
+                id: administratorId,
                 displayName: "Ranking Admin"
             )
             .WithMember(id: firstId)
             .WithMember(id: secondId)
             .WithMember(id: thirdId)
             .WithMember(id: winnerId, displayName: "Ranking Winner")
-            .BuildAsync();
-        await SeedPairingsAsync(
-            context,
-            new PairingSeed(
-                context.Administrator.UserId,
-                firstId,
-                Wins: 3,
-                Losses: 1,
-                PointsScored: 100,
-                PointsConceded: 20
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                secondId,
-                Wins: 4,
-                Losses: 1,
-                PointsScored: 50,
-                PointsConceded: 49
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                thirdId,
-                Wins: 8,
-                Losses: 2,
-                PointsScored: 100,
-                PointsConceded: 98
-            ),
-            new PairingSeed(
-                context.Administrator.UserId,
-                winnerId,
-                Wins: 8,
-                Losses: 2,
-                PointsScored: 110,
-                PointsConceded: 101
+            .WithDoublesGames(
+                side1: (administratorId, firstId),
+                side2: ("First Guest One", "First Guest Two"),
+                scores:
+                [
+                    (11, 5),
+                    (11, 6),
+                    (11, 7),
+                    (9, 11),
+                ]
             )
-        );
-        var otherCrew = await fixture.CreateCrewBuilder()
+            .WithDoublesGames(
+                side1: (administratorId, secondId),
+                side2: ("Second Guest One", "Second Guest Two"),
+                scores:
+                [
+                    (11, 8),
+                    (11, 8),
+                    (11, 8),
+                    (11, 8),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, thirdId),
+                side2: ("Third Guest One", "Third Guest Two"),
+                scores:
+                [
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (11, 9),
+                    (9, 11),
+                    (9, 11),
+                ]
+            )
+            .WithDoublesGames(
+                side1: (administratorId, winnerId),
+                side2: ("Winner Guest One", "Winner Guest Two"),
+                scores:
+                [
+                    (11, 1),
+                    (11, 2),
+                    (11, 3),
+                    (11, 4),
+                    (11, 5),
+                    (11, 6),
+                    (11, 7),
+                    (11, 8),
+                    (9, 11),
+                    (8, 11),
+                ]
+            )
+            .BuildAsync();
+        await fixture.CreateCrewBuilder()
             .WithName("Other Pairing Crew")
-            .BuildAsync();
-        await SeedPairingsAsync(
-            otherCrew,
-            new PairingSeed(
-                context.Administrator.UserId,
-                winnerId,
-                Wins: 100,
-                Losses: 0,
-                PointsScored: 1100,
-                PointsConceded: 0
+            .WithMember(id: administratorId)
+            .WithMember(id: winnerId)
+            .WithDoublesGames(
+                side1: (administratorId, winnerId),
+                side2: ("Other Guest One", "Other Guest Two"),
+                scores:
+                [
+                    (11, 0),
+                    (11, 1),
+                    (11, 2),
+                ]
             )
-        );
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
+            .BuildAsync();
 
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync(
             "/statistics/best-doubles-pairing"
         );
@@ -318,9 +345,9 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, pairing.Losses);
         Assert.Equal(10, pairing.GamesPlayed);
         Assert.Equal(0.8m, pairing.WinPercentage);
-        Assert.Equal(110, pairing.PointsScored);
-        Assert.Equal(101, pairing.PointsConceded);
-        Assert.Equal(9, pairing.PointDifferential);
+        Assert.Equal(105, pairing.PointsScored);
+        Assert.Equal(58, pairing.PointsConceded);
+        Assert.Equal(47, pairing.PointDifferential);
     }
 
     [Fact]
@@ -346,9 +373,12 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
             .WithDoublesGames(
                 side1: (administratorId, teammateId),
                 side2: (firstOpponentId, secondOpponentId),
-                (Side1: 11, Side2: 6),
-                (Side1: 11, Side2: 7),
-                (Side1: 11, Side2: 8)
+                scores:
+                [
+                    (11, 6),
+                    (11, 7),
+                    (11, 8),
+                ]
             )
             .BuildAsync();
         var recordedNames = context.Games
@@ -431,50 +461,4 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
             response.Content.Headers.ContentType?.MediaType
         );
     }
-
-    private async Task SeedPairingsAsync(
-        BuiltCrewTestData context,
-        params PairingSeed[] pairings)
-    {
-        await using var database = fixture.CreateDbContext();
-        database.CrewDoublesPairingStatistics.AddRange(
-            pairings.Select(pairing => CreatePairingStatistics(
-                context.Id,
-                context.Uuid,
-                pairing
-            ))
-        );
-        await database.SaveChangesAsync();
-    }
-
-    private static CrewDoublesPairingStatistics CreatePairingStatistics(
-        long crewId,
-        Guid crewUuid,
-        PairingSeed pairing)
-    {
-        var key = CrewDoublesPairingKey.Create(
-            pairing.FirstPlayerId,
-            pairing.SecondPlayerId
-        );
-
-        return new CrewDoublesPairingStatistics
-        {
-            CrewId = crewId,
-            CrewUuid = crewUuid,
-            Player1Id = key.Player1Id,
-            Player2Id = key.Player2Id,
-            Wins = pairing.Wins,
-            Losses = pairing.Losses,
-            PointsScored = pairing.PointsScored,
-            PointsConceded = pairing.PointsConceded,
-        };
-    }
-
-    private sealed record PairingSeed(
-        string FirstPlayerId,
-        string SecondPlayerId,
-        long Wins,
-        long Losses,
-        long PointsScored,
-        long PointsConceded);
 }

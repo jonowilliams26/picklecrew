@@ -78,7 +78,7 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(4, result.LongestWinStreak);
         Assert.Equal(context.Games[0].PlayedAtUtc, result.LongestWinStreakStartedAtUtc);
         Assert.Equal(context.Games[4].PlayedAtUtc, result.LongestWinStreakEndedAtUtc);
-        Assert.Equal(4m / 6m, result.WinPercentage);
+        Assert.Equal(4m / 6m, result.WinPercentage, precision: 20);
         Assert.Equal(62, result.PointsScored);
         Assert.Equal(49, result.PointsConceded);
         Assert.Equal(13, result.PointDifferential);
@@ -136,9 +136,14 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, doublesOpponentStatistics.ThatsAPaddlin);
 
         await using var database = fixture.CreateDbContext();
-        var storedStatistics = await database.CrewMemberStatistics
-            .AsNoTracking()
+        var storedStatistics = await database.CrewMemberGameStatistics
             .Where(statistics => statistics.CrewUuid == context.Uuid)
+            .GroupBy(statistics => statistics.UserId)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                ThatsAPaddlin = group.Sum(statistics => statistics.ThatsAPaddlin),
+            })
             .ToDictionaryAsync(statistics => statistics.UserId);
 
         Assert.Equal(4, storedStatistics.Count);

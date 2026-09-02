@@ -20,19 +20,19 @@ public sealed record BestPartnerHttpResponse
 
     public string? ProfilePictureUrl { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }
 
 internal sealed class GetBestPartnerEndpoint : IEndpoint
@@ -88,32 +88,36 @@ internal sealed class GetBestPartnerEndpoint : IEndpoint
             ))
             .ToArray();
 
-        var statistics = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
+        var statistics = await database.CrewDoublesPairingGameStatistics
             .Where(candidate =>
-                candidate.GamesPlayed >= MinimumGamesPlayed
-                && ((candidate.Player1Id == userId
-                        && activePartnerUserIds.Contains(candidate.Player2Id))
-                    || (candidate.Player2Id == userId
-                        && activePartnerUserIds.Contains(candidate.Player1Id)))
+                (candidate.Player1Id == userId
+                    && activePartnerUserIds.Contains(candidate.Player2Id))
+                || (candidate.Player2Id == userId
+                    && activePartnerUserIds.Contains(candidate.Player1Id))
             )
-            .Select(candidate => new BestPartnerStatisticsTotals
+            .GroupBy(candidate => new
             {
-                PartnerUserId = candidate.Player1Id == userId
-                    ? candidate.Player2Id
-                    : candidate.Player1Id,
-                Wins = candidate.Wins,
-                Losses = candidate.Losses,
-                GamesPlayed = candidate.GamesPlayed,
-                WinPercentage = candidate.WinPercentage,
-                PointsScored = candidate.PointsScored,
-                PointsConceded = candidate.PointsConceded,
-                PointDifferential = candidate.PointDifferential,
+                candidate.Player1Id,
+                candidate.Player2Id,
             })
+            .Select(group => new BestPartnerStatisticsTotals
+            {
+                PartnerUserId = group.Key.Player1Id == userId
+                    ? group.Key.Player2Id
+                    : group.Key.Player1Id,
+                Wins = group.Sum(candidate => candidate.Wins),
+                Losses = group.Sum(candidate => candidate.Losses),
+                GamesPlayed = group.Sum(candidate => candidate.Wins + candidate.Losses),
+                WinPercentage = (decimal)group.Sum(candidate => candidate.Wins)
+                    / group.Sum(candidate => candidate.Wins + candidate.Losses),
+                PointsScored = group.Sum(candidate => candidate.PointsScored),
+                PointsConceded = group.Sum(candidate => candidate.PointsConceded),
+                PointDifferential = group.Sum(candidate => candidate.PointDifferential),
+            })
+            .Where(candidate => candidate.GamesPlayed >= MinimumGamesPlayed)
             .OrderByDescending(candidate => candidate.WinPercentage)
             .ThenByDescending(candidate => candidate.GamesPlayed)
             .ThenByDescending(candidate => candidate.PointDifferential)
-            .ThenBy(candidate => candidate.PartnerUserId)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (statistics is null)
@@ -149,17 +153,17 @@ internal sealed record BestPartnerStatisticsTotals
 {
     public required string PartnerUserId { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }

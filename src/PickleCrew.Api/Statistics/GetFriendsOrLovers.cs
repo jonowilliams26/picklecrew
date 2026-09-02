@@ -16,15 +16,15 @@ public sealed record FriendsOrLoversPairingHttpResponse
 {
     public required FriendsOrLoversPlayerHttpResponse[] Players { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }
 
 public sealed record FriendsOrLoversPlayerHttpResponse
@@ -78,28 +78,31 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var statistics = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
+        var statistics = await database.CrewDoublesPairingGameStatistics
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)
-                && candidate.GamesPlayed >= 3
             )
+            .GroupBy(candidate => new
+            {
+                candidate.Player1Id,
+                candidate.Player2Id,
+            })
+            .Select(group => new FriendsOrLoversStatisticsTotals
+            {
+                Player1Id = group.Key.Player1Id,
+                Player2Id = group.Key.Player2Id,
+                Wins = group.Sum(candidate => candidate.Wins),
+                Losses = group.Sum(candidate => candidate.Losses),
+                GamesPlayed = group.Sum(candidate => candidate.Wins + candidate.Losses),
+                WinPercentage = (decimal)group.Sum(candidate => candidate.Wins)
+                    / group.Sum(candidate => candidate.Wins + candidate.Losses),
+                PointDifferential = group.Sum(candidate => candidate.PointDifferential),
+            })
+            .Where(candidate => candidate.GamesPlayed >= 3)
             .OrderByDescending(candidate => candidate.GamesPlayed)
             .ThenByDescending(candidate => candidate.Wins)
             .ThenByDescending(candidate => candidate.PointDifferential)
-            .ThenBy(candidate => candidate.Player1Id)
-            .ThenBy(candidate => candidate.Player2Id)
-            .Select(candidate => new FriendsOrLoversStatisticsTotals
-            {
-                Player1Id = candidate.Player1Id,
-                Player2Id = candidate.Player2Id,
-                Wins = candidate.Wins,
-                Losses = candidate.Losses,
-                GamesPlayed = candidate.GamesPlayed,
-                WinPercentage = candidate.WinPercentage,
-                PointDifferential = candidate.PointDifferential,
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (statistics is null)
@@ -151,13 +154,13 @@ internal sealed record FriendsOrLoversStatisticsTotals
 
     public required string Player2Id { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }

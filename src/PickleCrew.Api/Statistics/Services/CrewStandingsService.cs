@@ -43,45 +43,45 @@ internal sealed class CrewStandingsService(
             cancellationToken
         );
 
-        var persistedStatistics = await database.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(statistics => activeMembersByUserId.Keys.Contains(statistics.UserId))
-            .Select(statistics => new CrewMemberStatisticsTotals
+        var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
+
+        var statisticsByUserId = await database.CrewMemberGameStatistics
+            .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
+            .GroupBy(statistics => statistics.UserId)
+            .Select(group => new CrewMemberStatisticsTotals
             {
-                UserId = statistics.UserId,
-                Wins = statistics.Wins,
-                Losses = statistics.Losses,
-                GamesPlayed = statistics.GamesPlayed,
-                WinPercentage = statistics.WinPercentage,
-                ThatsAPaddlin = statistics.ThatsAPaddlin,
-                CurrentWinStreak = statistics.CurrentWinStreak,
-                CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
-                LongestWinStreak = statistics.LongestWinStreak,
-                LongestWinStreakStartedAtUtc = statistics.LongestWinStreakStartedAtUtc,
-                LongestWinStreakEndedAtUtc = statistics.LongestWinStreakEndedAtUtc,
-                PointsScored = statistics.PointsScored,
-                PointsConceded = statistics.PointsConceded,
-                PointDifferential = statistics.PointDifferential,
-                CrewScore = statistics.CrewScore,
+                UserId = group.Key,
+                Wins = group.Sum(statistics => statistics.Wins),
+                Losses = group.Sum(statistics => statistics.Losses),
+                GamesPlayed = group.Sum(statistics => statistics.Wins + statistics.Losses),
+                WinPercentage = group.Sum(statistics => statistics.Wins + statistics.Losses) == 0
+                    ? 0
+                    : (decimal)group.Sum(statistics => statistics.Wins) / group.Sum(statistics => statistics.Wins + statistics.Losses),
+                ThatsAPaddlin = group.Sum(statistics => statistics.ThatsAPaddlin),
+                PointsScored = group.Sum(statistics => statistics.PointsScored),
+                PointsConceded = group.Sum(statistics => statistics.PointsConceded),
+                PointDifferential = group.Sum(statistics => statistics.PointDifferential),
+                CrewScore = group.Sum(statistics => statistics.CrewScore),
             })
             .ToDictionaryAsync(statistics => statistics.UserId, cancellationToken);
 
-        var statistics = activeMembersByUserId.Values
-            .Select(member => persistedStatistics.GetValueOrDefault(member.WorkOsUserId) ?? new CrewMemberStatisticsTotals
+        var winStreaksByUserId = await database.CrewMemberWinStreaks
+            .Where(winStreak => activeMemberUserIds.Contains(winStreak.UserId))
+            .Select(winStreak => new CrewMemberWinStreakTotals
             {
-                UserId = member.WorkOsUserId,
-                Wins = 0,
-                Losses = 0,
-                GamesPlayed = 0,
-                WinPercentage = 0,
-                ThatsAPaddlin = 0,
-                CurrentWinStreak = 0,
-                LongestWinStreak = 0,
-                PointsScored = 0,
-                PointsConceded = 0,
-                PointDifferential = 0,
-                CrewScore = 0,
+                UserId = winStreak.UserId,
+                CurrentWinStreak = winStreak.CurrentWinStreak,
+                CurrentWinStreakStartedAtUtc = winStreak.CurrentWinStreakStartedAtUtc,
+                LongestWinStreak = winStreak.LongestWinStreak,
+                LongestWinStreakStartedAtUtc = winStreak.LongestWinStreakStartedAtUtc,
+                LongestWinStreakEndedAtUtc = winStreak.LongestWinStreakEndedAtUtc,
             })
+            .ToDictionaryAsync(winStreak => winStreak.UserId, cancellationToken);
+
+
+        // Backfill any missing statistics or win streaks with default values
+        var statistics = activeMembersByUserId.Keys
+            .Select(userId => statisticsByUserId.GetValueOrDefault(userId) ?? new CrewMemberStatisticsTotals { UserId = userId })
             .ToArray();
 
         var rankedStatistics = CrewRankingCalculator.Rank(statistics);
@@ -90,6 +90,7 @@ internal sealed class CrewStandingsService(
             .Select(statistics =>
             {
                 var member = activeMembersByUserId[statistics.UserId];
+                var winStreak = winStreaksByUserId.GetValueOrDefault(statistics.UserId);
 
                 return new CrewStanding
                 {
@@ -101,11 +102,11 @@ internal sealed class CrewStandingsService(
                     Losses = statistics.Losses,
                     GamesPlayed = statistics.GamesPlayed,
                     ThatsAPaddlin = statistics.ThatsAPaddlin,
-                    CurrentWinStreak = statistics.CurrentWinStreak,
-                    CurrentWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc,
-                    LongestWinStreak = statistics.LongestWinStreak,
-                    LongestWinStreakStartedAtUtc = statistics.LongestWinStreakStartedAtUtc,
-                    LongestWinStreakEndedAtUtc = statistics.LongestWinStreakEndedAtUtc,
+                    CurrentWinStreak = winStreak?.CurrentWinStreak ?? 0,
+                    CurrentWinStreakStartedAtUtc = winStreak?.CurrentWinStreakStartedAtUtc,
+                    LongestWinStreak = winStreak?.LongestWinStreak ?? 0,
+                    LongestWinStreakStartedAtUtc = winStreak?.LongestWinStreakStartedAtUtc,
+                    LongestWinStreakEndedAtUtc = winStreak?.LongestWinStreakEndedAtUtc,
                     WinPercentage = statistics.WinPercentage,
                     PointsScored = statistics.PointsScored,
                     PointsConceded = statistics.PointsConceded,
@@ -123,15 +124,14 @@ internal sealed class CrewStandingsService(
 
 internal static class CrewRankingCalculator
 {
-    public static CrewMemberStatisticsTotals[] Rank(
-        CrewMemberStatisticsTotals[] statistics)
+    public static CrewMemberStatisticsTotals[] Rank(CrewMemberStatisticsTotals[] statistics)
     {
         var rankedStatistics = statistics
             .OrderByDescending(memberStatistics => memberStatistics.CrewScore)
             .ThenBy(memberStatistics => memberStatistics.UserId, StringComparer.Ordinal)
             .ToArray();
 
-        var previousCrewScore = default(long?);
+        var previousCrewScore = default(int?);
         var rank = 0;
 
         for (var index = 0; index < rankedStatistics.Length; index++)
@@ -161,19 +161,19 @@ internal sealed record CrewStanding
 
     public required int Rank { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
-    public required long ThatsAPaddlin { get; init; }
+    public required int ThatsAPaddlin { get; init; }
 
-    public required long CurrentWinStreak { get; init; }
+    public required int CurrentWinStreak { get; init; }
 
     public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
 
-    public required long LongestWinStreak { get; init; }
+    public required int LongestWinStreak { get; init; }
 
     public DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
 
@@ -181,15 +181,30 @@ internal sealed record CrewStanding
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 
-    public required long CrewScore { get; init; }
+    public required int CrewScore { get; init; }
 
     public required int ActiveCrewMemberCount { get; init; }
+}
+
+internal sealed record CrewMemberWinStreakTotals
+{
+    public required string UserId { get; init; }
+
+    public required int CurrentWinStreak { get; init; }
+
+    public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
+
+    public required int LongestWinStreak { get; init; }
+
+    public DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
+
+    public DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
 }
 
 internal sealed record CrewMemberStatisticsTotals
@@ -198,31 +213,21 @@ internal sealed record CrewMemberStatisticsTotals
 
     public int Rank { get; init; }
 
-    public required long Wins { get; init; }
+    public int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public int GamesPlayed { get; init; }
 
-    public required decimal WinPercentage { get; init; }
+    public decimal WinPercentage { get; init; }
 
-    public required long ThatsAPaddlin { get; init; }
+    public int ThatsAPaddlin { get; init; }
 
-    public required long CurrentWinStreak { get; init; }
+    public int PointsScored { get; init; }
 
-    public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
+    public int PointsConceded { get; init; }
 
-    public required long LongestWinStreak { get; init; }
+    public int PointDifferential { get; init; }
 
-    public DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
-
-    public DateTimeOffset? LongestWinStreakEndedAtUtc { get; init; }
-
-    public required long PointsScored { get; init; }
-
-    public required long PointsConceded { get; init; }
-
-    public required long PointDifferential { get; init; }
-
-    public required long CrewScore { get; init; }
+    public int CrewScore { get; init; }
 }

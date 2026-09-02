@@ -16,19 +16,19 @@ public sealed record DoublesPairingHttpResponse
 {
     public required DoublesPairingPlayerHttpResponse[] Players { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }
 
 public sealed record DoublesPairingPlayerHttpResponse
@@ -84,25 +84,30 @@ internal sealed class GetBestDoublesPairingEndpoint : IEndpoint
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var statistics = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
+        var statistics = await database.CrewDoublesPairingGameStatistics
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)
-                && candidate.GamesPlayed >= MinimumGamesPlayed
             )
-            .Select(candidate => new DoublesPairingStatisticsTotals
+            .GroupBy(candidate => new
             {
-                Player1Id = candidate.Player1Id,
-                Player2Id = candidate.Player2Id,
-                Wins = candidate.Wins,
-                Losses = candidate.Losses,
-                GamesPlayed = candidate.GamesPlayed,
-                WinPercentage = candidate.WinPercentage,
-                PointsScored = candidate.PointsScored,
-                PointsConceded = candidate.PointsConceded,
-                PointDifferential = candidate.PointDifferential,
+                candidate.Player1Id,
+                candidate.Player2Id,
             })
+            .Select(group => new DoublesPairingStatisticsTotals
+            {
+                Player1Id = group.Key.Player1Id,
+                Player2Id = group.Key.Player2Id,
+                Wins = group.Sum(candidate => candidate.Wins),
+                Losses = group.Sum(candidate => candidate.Losses),
+                GamesPlayed = group.Sum(candidate => candidate.Wins + candidate.Losses),
+                WinPercentage = (decimal)group.Sum(candidate => candidate.Wins)
+                    / group.Sum(candidate => candidate.Wins + candidate.Losses),
+                PointsScored = group.Sum(candidate => candidate.PointsScored),
+                PointsConceded = group.Sum(candidate => candidate.PointsConceded),
+                PointDifferential = group.Sum(candidate => candidate.PointDifferential),
+            })
+            .Where(candidate => candidate.GamesPlayed >= MinimumGamesPlayed)
             .OrderByDescending(candidate => candidate.WinPercentage)
             .ThenByDescending(candidate => candidate.GamesPlayed)
             .ThenByDescending(candidate => candidate.PointDifferential)
@@ -159,17 +164,17 @@ internal sealed record DoublesPairingStatisticsTotals
 
     public required string Player2Id { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 }

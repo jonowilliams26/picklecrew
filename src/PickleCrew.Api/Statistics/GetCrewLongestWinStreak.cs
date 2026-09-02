@@ -20,7 +20,7 @@ public sealed record LongestWinStreakHttpResponse
 
     public required string? ProfilePictureUrl { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
     public required DateTimeOffset StartedAtUtc { get; init; }
 
@@ -68,20 +68,20 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var recordHolderStatistics = await database.CrewMemberStatistics
+        var recordHolderStatistics = await database.CrewMemberWinStreaks
             .AsNoTracking()
-            .Where(statistics =>
-                activeMemberUserIds.Contains(statistics.UserId)
-                && statistics.LongestWinStreak > 0
+            .Where(winStreak =>
+                activeMemberUserIds.Contains(winStreak.UserId)
+                && winStreak.LongestWinStreak > 0
             )
-            .OrderByDescending(statistics => statistics.LongestWinStreak)
-            .ThenByDescending(statistics => statistics.LongestWinStreakStartedAtUtc)
-            .Select(statistics => new
+            .OrderByDescending(winStreak => winStreak.LongestWinStreak)
+            .ThenByDescending(winStreak => winStreak.LongestWinStreakStartedAtUtc)
+            .Select(winStreak => new
             {
-                statistics.UserId,
-                statistics.LongestWinStreak,
-                statistics.LongestWinStreakStartedAtUtc,
-                statistics.LongestWinStreakEndedAtUtc,
+                winStreak.UserId,
+                winStreak.LongestWinStreak,
+                winStreak.LongestWinStreakStartedAtUtc,
+                winStreak.LongestWinStreakEndedAtUtc,
             })
             .FirstOrDefaultAsync(cancellationToken);
 

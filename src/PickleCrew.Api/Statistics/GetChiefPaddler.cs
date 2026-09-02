@@ -20,7 +20,7 @@ public sealed record ChiefPaddlerHttpResponse
 
     public required string? ProfilePictureUrl { get; init; }
 
-    public required long ThatsAPaddlin { get; init; }
+    public required int ThatsAPaddlin { get; init; }
 }
 
 internal sealed class GetChiefPaddlerEndpoint : IEndpoint
@@ -64,20 +64,19 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var chiefPaddlerStatistics = await database.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(statistics =>
-                activeMemberUserIds.Contains(statistics.UserId)
-                && statistics.ThatsAPaddlin > 0
-            )
+        var chiefPaddlerStatistics = await database.CrewMemberGameStatistics
+            .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
+            .GroupBy(statistics => statistics.UserId)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                ThatsAPaddlin = group.Sum(statistics => statistics.ThatsAPaddlin),
+                CrewScore = group.Sum(statistics => statistics.CrewScore),
+            })
+            .Where(statistics => statistics.ThatsAPaddlin > 0)
             .OrderByDescending(statistics => statistics.ThatsAPaddlin)
             .ThenByDescending(statistics => statistics.CrewScore)
             .ThenBy(statistics => statistics.UserId)
-            .Select(statistics => new
-            {
-                statistics.UserId,
-                statistics.ThatsAPaddlin,
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (chiefPaddlerStatistics is null)

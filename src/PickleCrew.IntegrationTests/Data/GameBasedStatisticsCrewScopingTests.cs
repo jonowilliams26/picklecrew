@@ -7,14 +7,14 @@ using Xunit;
 namespace PickleCrew.IntegrationTests.Data;
 
 [Collection(nameof(AppHostCollection))]
-public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
+public sealed class GameBasedStatisticsCrewScopingTests(AppHostFixture fixture)
 {
     [Fact]
-    public async Task Queries_WhenContextsHaveDifferentCrews_ShouldIsolateEachCrew()
+    public async Task Queries_WhenContextsHaveDifferentCrews_ShouldIsolateGameBasedStatistics()
     {
         await using var database = fixture.CreateDbContext();
-        var firstCrew = CreateCrew("First Crew");
-        var secondCrew = CreateCrew("Second Crew");
+        var firstCrew = CreateCrew("First Game Statistics Crew");
+        var secondCrew = CreateCrew("Second Game Statistics Crew");
 
         database.AddRange(
             CreateProvisioningAttempt(firstCrew),
@@ -24,15 +24,20 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         );
         await database.SaveChangesAsync();
 
+        var firstGame = CreateGame(firstCrew);
+        var secondGame = CreateGame(secondCrew);
+        database.AddRange(firstGame, secondGame);
+        await database.SaveChangesAsync();
+
         database.AddRange(
-            CreateGame(firstCrew),
-            CreateGame(secondCrew),
-            CreateMemberStatistics(firstCrew),
-            CreateMemberStatistics(secondCrew),
-            CreatePairingStatistics(firstCrew),
-            CreatePairingStatistics(secondCrew),
-            CreateMatchupStatistics(firstCrew),
-            CreateMatchupStatistics(secondCrew)
+            CreateMemberGameStatistics(firstGame),
+            CreateMemberGameStatistics(secondGame),
+            CreateMatchupGameStatistics(firstGame),
+            CreateMatchupGameStatistics(secondGame),
+            CreatePairingGameStatistics(firstGame),
+            CreatePairingGameStatistics(secondGame),
+            CreateWinStreak(firstCrew),
+            CreateWinStreak(secondCrew)
         );
         await database.SaveChangesAsync();
 
@@ -43,68 +48,31 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         await AssertScopedToCrew(secondCrewDatabase, secondCrew);
     }
 
-    [Fact]
-    public async Task CrewMemberStatistics_WhenStatisticsAreSaved_ShouldPersistQueryableValues()
-    {
-        await using var database = fixture.CreateDbContext();
-        var crew = CreateCrew("Calculated Statistics Crew");
-
-        database.AddRange(
-            CreateProvisioningAttempt(crew),
-            crew
-        );
-        await database.SaveChangesAsync();
-
-        var statistics = new CrewMemberStatistics
-        {
-            CrewId = crew.Id,
-            CrewUuid = crew.Uuid,
-            UserId = $"user_{Guid.NewGuid():N}",
-            Wins = 2,
-            Losses = 1,
-            PointsScored = 35,
-            PointsConceded = 29,
-            CrewScore = 211,
-        };
-        database.CrewMemberStatistics.Add(statistics);
-        await database.SaveChangesAsync();
-        database.ChangeTracker.Clear();
-
-        var persistedStatistics = await database.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewScore > 200)
-            .OrderByDescending(candidate => candidate.WinPercentage)
-            .SingleAsync(candidate => candidate.UserId == statistics.UserId);
-
-        Assert.Equal(3, persistedStatistics.GamesPlayed);
-        Assert.Equal(2m / 3m, persistedStatistics.WinPercentage);
-        Assert.Equal(6, persistedStatistics.PointDifferential);
-        Assert.Equal(211, persistedStatistics.CrewScore);
-    }
-
     private static async Task AssertScopedToCrew(
         CrewScopedDbContext database,
         Crew expectedCrew)
     {
-        var memberStatistics = await database.CrewMemberStatistics
+        var memberStatistics = await database.CrewMemberGameStatistics
             .AsNoTracking()
             .SingleAsync();
-        var pairingStatistics = await database.CrewDoublesPairingStatistics
+        var matchupStatistics = await database.CrewMatchupGameStatistics
             .AsNoTracking()
             .SingleAsync();
-        var matchupStatistics = await database.CrewMatchupStatistics
+        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
             .AsNoTracking()
             .SingleAsync();
-        var game = await database.Games.AsNoTracking().SingleAsync();
+        var winStreak = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .SingleAsync();
 
         Assert.Equal(expectedCrew.Id, memberStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, memberStatistics.CrewUuid);
-        Assert.Equal(expectedCrew.Id, pairingStatistics.CrewId);
-        Assert.Equal(expectedCrew.Uuid, pairingStatistics.CrewUuid);
         Assert.Equal(expectedCrew.Id, matchupStatistics.CrewId);
         Assert.Equal(expectedCrew.Uuid, matchupStatistics.CrewUuid);
-        Assert.Equal(expectedCrew.Id, game.CrewId);
-        Assert.Equal(expectedCrew.Uuid, game.CrewUuid);
+        Assert.Equal(expectedCrew.Id, pairingStatistics.CrewId);
+        Assert.Equal(expectedCrew.Uuid, pairingStatistics.CrewUuid);
+        Assert.Equal(expectedCrew.Id, winStreak.CrewId);
+        Assert.Equal(expectedCrew.Uuid, winStreak.CrewUuid);
     }
 
     private static Crew CreateCrew(string name)
@@ -138,46 +106,87 @@ public sealed class CrewScopedDbContextTests(AppHostFixture fixture)
         {
             CrewId = crew.Id,
             CrewUuid = crew.Uuid,
-            Format = GameFormat.Singles,
+            Format = GameFormat.Doubles,
             RecorderUserId = $"user_{Guid.NewGuid():N}",
             PlayedAtUtc = DateTimeOffset.UtcNow,
         };
     }
 
-    private static CrewMemberStatistics CreateMemberStatistics(Crew crew)
+    private static CrewMemberGameStatistics CreateMemberGameStatistics(Game game)
     {
-        return new CrewMemberStatistics
+        return new CrewMemberGameStatistics
         {
-            CrewId = crew.Id,
-            CrewUuid = crew.Uuid,
+            GameId = game.Id,
+            GameUuid = game.Uuid,
+            CrewId = game.CrewId,
+            CrewUuid = game.CrewUuid,
             UserId = $"user_{Guid.NewGuid():N}",
+            PlayedAtUtc = game.PlayedAtUtc,
+            Wins = 1,
+            Losses = 0,
+            PointsScored = 11,
+            PointsConceded = 4,
+            PointDifferential = 7,
+            CrewScore = 107,
+            ThatsAPaddlin = 0,
         };
     }
 
-    private static CrewDoublesPairingStatistics CreatePairingStatistics(Crew crew)
+    private static CrewMatchupGameStatistics CreateMatchupGameStatistics(Game game)
+    {
+        return new CrewMatchupGameStatistics
+        {
+            GameId = game.Id,
+            GameUuid = game.Uuid,
+            CrewId = game.CrewId,
+            CrewUuid = game.CrewUuid,
+            UserId = $"user_{Guid.NewGuid():N}",
+            OpponentUserId = $"user_{Guid.NewGuid():N}",
+            PlayedAtUtc = game.PlayedAtUtc,
+            Wins = 1,
+            Losses = 0,
+            PointsScored = 11,
+            PointsConceded = 4,
+            PointDifferential = 7,
+        };
+    }
+
+    private static CrewDoublesPairingGameStatistics CreatePairingGameStatistics(Game game)
     {
         var key = CrewDoublesPairingKey.Create(
             $"user_{Guid.NewGuid():N}",
             $"user_{Guid.NewGuid():N}"
         );
 
-        return new CrewDoublesPairingStatistics
+        return new CrewDoublesPairingGameStatistics
         {
-            CrewId = crew.Id,
-            CrewUuid = crew.Uuid,
+            GameId = game.Id,
+            GameUuid = game.Uuid,
+            CrewId = game.CrewId,
+            CrewUuid = game.CrewUuid,
             Player1Id = key.Player1Id,
             Player2Id = key.Player2Id,
+            PlayedAtUtc = game.PlayedAtUtc,
+            Wins = 1,
+            Losses = 0,
+            PointsScored = 11,
+            PointsConceded = 4,
+            PointDifferential = 7,
         };
     }
 
-    private static CrewMatchupStatistics CreateMatchupStatistics(Crew crew)
+    private static CrewMemberWinStreak CreateWinStreak(Crew crew)
     {
-        return new CrewMatchupStatistics
+        return new CrewMemberWinStreak
         {
             CrewId = crew.Id,
             CrewUuid = crew.Uuid,
             UserId = $"user_{Guid.NewGuid():N}",
-            OpponentUserId = $"user_{Guid.NewGuid():N}",
+            CurrentWinStreak = 0,
+            CurrentWinStreakStartedAtUtc = null,
+            LongestWinStreak = 0,
+            LongestWinStreakStartedAtUtc = null,
+            LongestWinStreakEndedAtUtc = null,
         };
     }
 

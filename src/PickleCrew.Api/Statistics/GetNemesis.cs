@@ -20,7 +20,7 @@ public sealed record NemesisHttpResponse
 
     public required string? ProfilePictureUrl { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 }
 
 internal sealed class GetNemesisEndpoint : IEndpoint
@@ -69,21 +69,28 @@ internal sealed class GetNemesisEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberIds = activeMembersByUserId.Keys.ToArray();
-        var matchup = await database.CrewMatchupStatistics
-            .AsNoTracking()
+        var matchup = await database.CrewMatchupGameStatistics
             .Where(statistics =>
                 statistics.UserId == userId
-                && statistics.Losses > 0
-                && statistics.GamesPlayed >= MinimumGamesPlayed
                 && activeMemberIds.Contains(statistics.OpponentUserId)
+            )
+            .GroupBy(statistics => new
+            {
+                statistics.UserId,
+                statistics.OpponentUserId,
+            })
+            .Select(group => new
+            {
+                group.Key.OpponentUserId,
+                Losses = group.Sum(statistics => statistics.Losses),
+                GamesPlayed = group.Sum(statistics => statistics.Wins + statistics.Losses),
+            })
+            .Where(statistics =>
+                statistics.Losses > 0
+                && statistics.GamesPlayed >= MinimumGamesPlayed
             )
             .OrderByDescending(statistics => statistics.Losses)
             .ThenBy(statistics => statistics.OpponentUserId)
-            .Select(statistics => new
-            {
-                statistics.OpponentUserId,
-                statistics.Losses,
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (matchup is null)

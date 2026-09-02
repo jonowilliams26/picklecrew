@@ -8,19 +8,19 @@ namespace PickleCrew.Api.Statistics;
 
 public sealed record GetPersonalStatisticsHttpResponse
 {
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long GamesPlayed { get; init; }
+    public required int GamesPlayed { get; init; }
 
-    public required long ThatsAPaddlin { get; init; }
+    public required int ThatsAPaddlin { get; init; }
 
-    public required long CurrentWinStreak { get; init; }
+    public required int CurrentWinStreak { get; init; }
 
     public required DateTimeOffset? CurrentWinStreakStartedAtUtc { get; init; }
 
-    public required long LongestWinStreak { get; init; }
+    public required int LongestWinStreak { get; init; }
 
     public required DateTimeOffset? LongestWinStreakStartedAtUtc { get; init; }
 
@@ -28,13 +28,13 @@ public sealed record GetPersonalStatisticsHttpResponse
 
     public required decimal WinPercentage { get; init; }
 
-    public required long PointsScored { get; init; }
+    public required int PointsScored { get; init; }
 
-    public required long PointsConceded { get; init; }
+    public required int PointsConceded { get; init; }
 
-    public required long PointDifferential { get; init; }
+    public required int PointDifferential { get; init; }
 
-    public required long CrewScore { get; init; }
+    public required int CrewScore { get; init; }
 
     public required int CrewRank { get; init; }
 
