@@ -11,6 +11,7 @@ import type {
   GetCrewLongestWinStreakHttpResponse,
   GetEasyWinHttpResponse,
   GetFriendsOrLoversHttpResponse,
+  GetHotPaddleHttpResponse,
   GetLimpWristSyndromeHttpResponse,
   GetNemesisHttpResponse,
   GetPersonalStatisticsHttpResponse,
@@ -34,6 +35,7 @@ export type DashboardData = Readonly<{
   chiefPaddler: GetChiefPaddlerHttpResponse
   iceMan: GetIceManHttpResponse
   friendsOrLovers: GetFriendsOrLoversHttpResponse
+  hotPaddle: GetHotPaddleHttpResponse
   limpWristSyndrome: GetLimpWristSyndromeHttpResponse
   pointMachine: GetPointMachineHttpResponse
 }>
@@ -315,7 +317,7 @@ export function getCurrentStreakDetail({
   const winsUntilBest = longestWinStreak - currentWinStreak
 
   if (winsUntilBest <= 0) {
-    return 'You’ve got the hot paddle — personal best in progress'
+    return 'You’re matching your personal-best streak'
   }
 
   return winsUntilBest === 1

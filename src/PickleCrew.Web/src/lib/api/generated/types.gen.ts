@@ -203,6 +203,10 @@ export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
 };
 
+export type GetHotPaddleHttpResponse = {
+    hotPaddle: null | HotPaddleHttpResponse;
+};
+
 export type GetIceManHttpResponse = {
     iceMan: null | IceManHttpResponse;
 };
@@ -244,6 +248,16 @@ export type GetRecentGamesHttpResponse = {
     wins: number;
     losses: number;
     winStreak: number;
+};
+
+export type HotPaddleHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    wins: number;
+    losses: number;
+    gamesPlayed: number;
+    winPercentage: number | string;
 };
 
 export type HttpValidationProblemDetails = {
@@ -1264,6 +1278,43 @@ export type GetFriendsOrLoversResponses = {
 };
 
 export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
+
+export type GetHotPaddleData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/hot-paddle';
+};
+
+export type GetHotPaddleErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetHotPaddleError = GetHotPaddleErrors[keyof GetHotPaddleErrors];
+
+export type GetHotPaddleResponses = {
+    /**
+     * OK
+     */
+    200: GetHotPaddleHttpResponse;
+};
+
+export type GetHotPaddleResponse = GetHotPaddleResponses[keyof GetHotPaddleResponses];
 
 export type GetIceManData = {
     body?: never;

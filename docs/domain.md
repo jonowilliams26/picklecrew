@@ -174,6 +174,23 @@ The active crew member with the highest all-time average points scored per game 
 
 - A crew has zero or one Point Machine.
 
+## The Hot Paddle
+
+The active crew member with the best recent form across their five newest games in one crew.
+
+### Business rules
+
+- A member must have played at least five games to qualify as The Hot Paddle.
+- Recent form includes exactly the member's five newest games, ordered by played date and time, then by game identifier when games share the same played date and time.
+- The qualifying active member with the most wins across those five games is The Hot Paddle.
+- Members tied on wins are resolved by highest point differential across those five games.
+- Former members cannot be the current Hot Paddle, while their historical games remain preserved.
+- Games from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one Hot Paddle.
+
 ## The Ice Man
 
 The active crew member who holds the crew's bragging-rights award for the most all-time clutch wins.

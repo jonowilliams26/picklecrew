@@ -71,6 +71,7 @@ internal static class Endpoints
             .MapEndpoint<GetCrewHealthEndpoint>()
             .MapEndpoint<GetEasyWinEndpoint>()
             .MapEndpoint<GetFriendsOrLoversEndpoint>()
+            .MapEndpoint<GetHotPaddleEndpoint>()
             .MapEndpoint<GetIceManEndpoint>()
             .MapEndpoint<GetLimpWristSyndromeEndpoint>()
             .MapEndpoint<GetPointMachineEndpoint>()
