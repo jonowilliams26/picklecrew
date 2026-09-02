@@ -62,6 +62,20 @@ internal sealed class TestWorkOsService : IWorkOsService
         );
     }
 
+    public async Task UpdateOrganizationNameAsync(
+        string organizationId,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var encodedOrganizationId = Uri.EscapeDataString(organizationId);
+        using var response = await client.PutAsJsonAsync(
+            $"/organizations/{encodedOrganizationId}",
+            new UpdateOrganizationNameHttpRequest { Name = name },
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task DeleteOrganizationAsync(
         string organizationId,
         CancellationToken cancellationToken)
@@ -317,6 +331,11 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string Name { get; init; }
 
         public required string ExternalId { get; init; }
+    }
+
+    private sealed record UpdateOrganizationNameHttpRequest
+    {
+        public required string Name { get; init; }
     }
 
     private sealed record CreateMembershipHttpRequest

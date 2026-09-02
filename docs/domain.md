@@ -11,6 +11,7 @@ A named group that users belong to within Picklecrew.
 - Any active crew member may create another crew, regardless of their role in their current crew.
 - The user who creates a crew is its administrator.
 - A newly created crew becomes its creator's active crew.
+- Only a crew administrator may change the crew's name.
 - After creating a crew, its creator may invite friends or skip the invitation step.
 - The invitation step is offered only as part of the uninterrupted crew-creation flow; after a refresh or later sign-in, the creator's active crew membership takes them to the dashboard instead.
 - A crew administrator may permanently delete their active crew after confirming its exact name.

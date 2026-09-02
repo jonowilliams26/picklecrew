@@ -1,4 +1,7 @@
-import type { CreateCrewHttpResponse } from '~/lib/api/generated/types.gen'
+import type {
+  ChangeCrewNameHttpResponse,
+  CreateCrewHttpResponse,
+} from '~/lib/api/generated/types.gen'
 import { failure, success, type Result } from '../results.ts'
 
 export type InvalidCrewNameError = Readonly<{
@@ -29,6 +32,31 @@ export type CrewCreationSubmissionError =
 export type CrewCreationSubmissionResult = Result<
   CreateCrewHttpResponse,
   CrewCreationSubmissionError
+>
+
+export type CrewNameChangeValidationError = Readonly<{
+  type: 'crew-name-change-validation-error'
+  message: string
+}>
+
+export type CrewNameChangeForbiddenError = Readonly<{
+  type: 'crew-name-change-forbidden-error'
+  message: string
+}>
+
+export type CrewNameChangeUnavailableError = Readonly<{
+  type: 'crew-name-change-unavailable-error'
+  message: string
+}>
+
+export type CrewNameChangeError =
+  | CrewNameChangeValidationError
+  | CrewNameChangeForbiddenError
+  | CrewNameChangeUnavailableError
+
+export type CrewNameChangeResult = Result<
+  ChangeCrewNameHttpResponse,
+  CrewNameChangeError
 >
 
 export function validateCrewName(
