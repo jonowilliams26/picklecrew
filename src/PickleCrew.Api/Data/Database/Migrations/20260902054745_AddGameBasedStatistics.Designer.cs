@@ -13,7 +13,7 @@ using PickleCrew.Api.Data.Database;
 namespace PickleCrew.Api.Data.Database.Migrations
 {
     [DbContext(typeof(PickleCrewDbContext))]
-    [Migration("20260902003114_AddGameBasedStatistics")]
+    [Migration("20260902054745_AddGameBasedStatistics")]
     partial class AddGameBasedStatistics
     {
         /// <inheritdoc />
@@ -101,10 +101,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.HasIndex("CrewId");
 
-                    b.ToTable("CrewDoublesPairingGameStatistics", t =>
-                        {
-                            t.HasCheckConstraint("CK_CrewDoublesPairingGameStatistics_CanonicalPlayers", "\"Player1Id\" < \"Player2Id\"");
-                        });
+                    b.ToTable("CrewDoublesPairingGameStatistics");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingStatistics", b =>

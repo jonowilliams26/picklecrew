@@ -147,10 +147,6 @@ public class PickleCrewDbContext : DbContext
             statistics.HasOne(entity => entity.Crew)
                 .WithMany()
                 .HasForeignKey(entity => entity.CrewId);
-            statistics.ToTable(table => table.HasCheckConstraint(
-                "CK_CrewDoublesPairingGameStatistics_CanonicalPlayers",
-                "\"Player1Id\" < \"Player2Id\""
-            ));
         });
 
         modelBuilder.Entity<CrewMemberWinStreak>(winStreak =>

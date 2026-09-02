@@ -31,7 +31,6 @@ namespace PickleCrew.Api.Data.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CrewDoublesPairingGameStatistics", x => new { x.GameId, x.Player1Id, x.Player2Id });
-                    table.CheckConstraint("CK_CrewDoublesPairingGameStatistics_CanonicalPlayers", "\"Player1Id\" < \"Player2Id\"");
                     table.ForeignKey(
                         name: "FK_CrewDoublesPairingGameStatistics_Crews_CrewId",
                         column: x => x.CrewId,

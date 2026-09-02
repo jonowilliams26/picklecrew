@@ -153,22 +153,6 @@ public sealed class GameBasedStatisticsPersistenceTests(AppHostFixture fixture)
         );
     }
 
-    [Fact]
-    public async Task CrewDoublesPairingGameStatistics_WhenPairingOrderIsReversed_ShouldRejectRecord()
-    {
-        await using var database = fixture.CreateDbContext();
-        var crew = await CreateCrewAsync(database, "Reversed Pairing Statistics Crew");
-        var game = await CreateGameAsync(database, crew);
-
-        database.CrewDoublesPairingGameStatistics.Add(
-            CreatePairingGameStatistics(game, "user_b", "user_a")
-        );
-
-        await Assert.ThrowsAsync<DbUpdateException>(
-            async () => await database.SaveChangesAsync()
-        );
-    }
-
     private static CrewMemberGameStatistics CreateMemberGameStatistics(
         Game game,
         string userId)

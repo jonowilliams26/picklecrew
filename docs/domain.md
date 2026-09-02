@@ -214,7 +214,7 @@ The currently active Crew member who forms the signed-in member's strongest qual
 - Only doubles pairings containing the signed-in member are considered.
 - A pairing must have played at least three Games to qualify.
 - The partner must be a currently active member of the Crew.
-- Best Partner is selected by highest win percentage, then most Games played, then highest point differential, then partner user identifier.
+- Best Partner is selected by highest win percentage, then most Games played, then highest point differential.
 - Singles Games and sides containing a Guest do not contribute to a pairing.
 - A qualifying Crew-member side receives pairing statistics when the opposing side contains a Guest.
 - Statistics from another Crew do not affect Best Partner.
@@ -234,7 +234,7 @@ The active Crew's doubles pairing that has played the most all-time Games togeth
 - Games played equals the pairing's wins plus losses.
 - A pairing must have played at least three Games together to qualify.
 - The qualifying pairing with the most Games played is selected.
-- Ties are resolved by most wins, then highest point differential, then user identifiers.
+- Ties are resolved by most wins, then highest point differential.
 - Exactly one pairing is selected when qualifying pairings exist.
 - A Crew has no **Friends or lovers?** pairing when no pairing qualifies.
 - Statistics from another Crew do not affect the selection.
