@@ -4,11 +4,15 @@ export type CrewMembership = Readonly<{
   organizationId: string
   organizationName: string
   status: MembershipStatus
+  role: string
+  joinedAt: string
 }>
 
 export type Crew = Readonly<{
   organizationId: string
   name: string
+  role: string
+  joinedAt: string
 }>
 
 export type MembershipResolution =
@@ -60,6 +64,8 @@ export function resolveCrewMembership({
   const crews = activeMemberships.map((membership) => ({
     organizationId: membership.organizationId,
     name: membership.organizationName,
+    role: membership.role,
+    joinedAt: membership.joinedAt,
   }))
   const currentMembership = activeMemberships.find(
     (membership) => membership.organizationId === currentOrganizationId,
@@ -73,6 +79,8 @@ export function resolveCrewMembership({
   const crew = {
     organizationId: selectedMembership.organizationId,
     name: selectedMembership.organizationName,
+    role: selectedMembership.role,
+    joinedAt: selectedMembership.joinedAt,
   }
 
   return selectedMembership.organizationId === currentOrganizationId

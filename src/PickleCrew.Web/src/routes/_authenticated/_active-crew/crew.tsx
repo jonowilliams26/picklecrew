@@ -15,6 +15,7 @@ import {
   MailPlus,
   MoreHorizontal,
   Send,
+  UserRoundCheck,
   UserRoundX,
   UsersRound,
 } from 'lucide-react'
@@ -48,6 +49,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field'
@@ -66,6 +68,7 @@ import { toast } from '~/components/ui/toast'
 import type { CrewMemberHttpResponse } from '~/lib/api/generated/types.gen'
 import { getCrewMembers } from '~/lib/crews/crew-members.functions'
 import { removeCrewMember } from '~/lib/crews/member-removal.functions'
+import { changeCrewMemberRole } from '~/lib/crews/membership.functions'
 import { validateMemberRemovalConfirmation } from '~/lib/crews/member-removal'
 import { sendCrewInvitation } from '~/lib/crews/invitations.functions'
 import {
@@ -359,8 +362,10 @@ function CrewRosterRow({
 }
 
 function CrewMemberActions({ entry }: { entry: CrewMemberHttpResponse }) {
+  const changeCrewMemberRoleServerFn = useServerFn(changeCrewMemberRole)
   const removeCrewMemberServerFn = useServerFn(removeCrewMember)
   const router = useRouter()
+  const [isChangingRole, setIsChangingRole] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [confirmation, setConfirmation] = useState('')
   const [confirmationError, setConfirmationError] = useState<string>()
@@ -368,6 +373,8 @@ function CrewMemberActions({ entry }: { entry: CrewMemberHttpResponse }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const confirmationInputId = `remove-member-confirmation-${entry.id}`
   const hasValidConfirmation = confirmation === entry.displayName
+  const newRole = entry.role === 'admin' ? 'member' : 'admin'
+  const newRoleName = newRole === 'admin' ? 'administrator' : 'member'
 
   const resetForm = () => {
     setConfirmation('')
@@ -385,6 +392,46 @@ function CrewMemberActions({ entry }: { entry: CrewMemberHttpResponse }) {
 
     if (!nextOpen) {
       resetForm()
+    }
+  }
+
+  const submitRoleChange = async () => {
+    setIsChangingRole(true)
+
+    try {
+      const result = await changeCrewMemberRoleServerFn({
+        data: { userId: entry.id, role: newRole },
+      })
+
+      if (!result.ok) {
+        toast.add({
+          type: 'error',
+          title: 'Role not changed',
+          description: result.error.message,
+        })
+        return
+      }
+
+      toast.add({
+        type: 'success',
+        title: 'Role changed',
+        description: `${entry.displayName} now has the ${newRoleName} role.`,
+      })
+      void router.invalidate({ forcePending: true }).catch(() => {
+        toast.add({
+          type: 'error',
+          title: 'Roster not refreshed',
+          description: 'Refresh the page to see the updated crew roster.',
+        })
+      })
+    } catch {
+      toast.add({
+        type: 'error',
+        title: 'Role not changed',
+        description: 'This crew member role could not be changed. Try again.',
+      })
+    } finally {
+      setIsChangingRole(false)
     }
   }
 
@@ -440,6 +487,22 @@ function CrewMemberActions({ entry }: { entry: CrewMemberHttpResponse }) {
             <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={isChangingRole}
+                onClick={() => void submitRoleChange()}
+              >
+                {isChangingRole ? (
+                  <Spinner data-icon="inline-start" />
+                ) : newRole === 'admin' ? (
+                  <Crown />
+                ) : (
+                  <UserRoundCheck />
+                )}
+                Make {newRoleName}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
                 variant="destructive"

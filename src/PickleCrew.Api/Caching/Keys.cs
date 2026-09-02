@@ -43,6 +43,20 @@ internal sealed record CrewStatisticsCacheOption(
     ];
 }
 
+internal sealed record CrewHealthCacheOption(
+    Guid CrewId,
+    DateOnly EndDate) : ICacheOption
+{
+    public string Key { get; } =
+        $"v1:crew:{CrewId}:statistics:crew-health:end-date:{EndDate:yyyy-MM-dd}";
+
+    public ICacheTag[] Tags { get; } =
+    [
+        new CrewCacheTag(CrewId),
+        new CrewStatisticsCacheTag(CrewId),
+    ];
+}
+
 internal sealed record PersonalStatisticsCacheOption(
     Guid CrewId,
     string UserId,
@@ -62,17 +76,21 @@ internal enum CrewStatisticsCacheResource
 {
     BestDoublesPairing,
     BiggestRivals,
+    BrickWall,
     ChiefPaddler,
     CrewLeaderboard,
     CrewLongestWinStreak,
     CrewStandings,
     FriendsOrLovers,
+    IceMan,
     LimpWristSyndrome,
+    PointMachine,
 }
 
 internal enum PersonalStatisticsCacheResource
 {
     BestPartner,
+    EasyWin,
     Nemesis,
     PersonalStatistics,
     RecentGames,
@@ -86,12 +104,15 @@ internal static class StatisticsCacheResourceExtensions
         {
             CrewStatisticsCacheResource.BestDoublesPairing => "best-doubles-pairing",
             CrewStatisticsCacheResource.BiggestRivals => "biggest-rivals",
+            CrewStatisticsCacheResource.BrickWall => "brick-wall",
             CrewStatisticsCacheResource.ChiefPaddler => "chief-paddler",
             CrewStatisticsCacheResource.CrewLeaderboard => "crew-leaderboard",
             CrewStatisticsCacheResource.CrewLongestWinStreak => "crew-longest-win-streak",
             CrewStatisticsCacheResource.CrewStandings => "crew-standings",
             CrewStatisticsCacheResource.FriendsOrLovers => "friends-or-lovers",
+            CrewStatisticsCacheResource.IceMan => "ice-man",
             CrewStatisticsCacheResource.LimpWristSyndrome => "limp-wrist-syndrome",
+            CrewStatisticsCacheResource.PointMachine => "point-machine",
             _ => throw new ArgumentOutOfRangeException(nameof(resource), resource, null),
         };
     }
@@ -101,6 +122,7 @@ internal static class StatisticsCacheResourceExtensions
         return resource switch
         {
             PersonalStatisticsCacheResource.BestPartner => "best-partner",
+            PersonalStatisticsCacheResource.EasyWin => "easy-win",
             PersonalStatisticsCacheResource.Nemesis => "nemesis",
             PersonalStatisticsCacheResource.PersonalStatistics => "personal-statistics",
             PersonalStatisticsCacheResource.RecentGames => "recent-games",
