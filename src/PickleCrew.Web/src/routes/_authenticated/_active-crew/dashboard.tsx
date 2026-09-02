@@ -3,6 +3,7 @@ import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
 import {
+  BrickWall,
   CircleAlert,
   Crown,
   Flame,
@@ -42,6 +43,7 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
+  formatAveragePointsConceded,
   formatCount,
   formatPercentage,
   formatRecord,
@@ -233,6 +235,7 @@ function DashboardPage() {
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
     biggestRivals,
+    brickWall: brickWallResponse,
     chiefPaddler: chiefPaddlerResponse,
     friendsOrLovers,
     limpWristSyndrome: limpWristSyndromeResponse,
@@ -259,6 +262,7 @@ function DashboardPage() {
   const rivalry = biggestRivals.rivalry
   const firstRival = rivalry?.players[0]
   const secondRival = rivalry?.players[1]
+  const brickWall = brickWallResponse.brickWall
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
   const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
@@ -388,6 +392,8 @@ function DashboardPage() {
             <LimpWristSyndromeCard
               limpWristSyndrome={limpWristSyndrome}
             />
+
+            <BrickWallCard brickWall={brickWall} />
 
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
@@ -1129,6 +1135,55 @@ function LimpWristSyndromeCard({
         direction="counterclockwise"
         icon={Hand}
       />
+    </DashboardStatCard>
+  )
+}
+
+function BrickWallCard({
+  brickWall,
+}: {
+  brickWall: DashboardData['brickWall']['brickWall']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-5"
+      tone="aqua"
+    >
+      <DashboardCardHeader
+        description="Lowest average points conceded per game"
+        icon={BrickWall}
+        iconTone="orange"
+        title="Brick wall"
+      />
+      {brickWall ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={
+            <>
+              {formatCount({
+                count: brickWall.pointsConceded,
+                singular: 'point',
+              })}{' '}
+              conceded across{' '}
+              {formatCount({
+                count: brickWall.gamesPlayed,
+                singular: 'game',
+              })}
+            </>
+          }
+          metric={formatAveragePointsConceded({
+            value: brickWall.averagePointsConceded,
+          })}
+          metricLabel="points conceded per game"
+          person={brickWall}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Record a game and see who gives away the fewest points."
+          title="No wall yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={BrickWall} />
     </DashboardStatCard>
   )
 }

@@ -62,6 +62,7 @@ internal enum CrewStatisticsCacheResource
 {
     BestDoublesPairing,
     BiggestRivals,
+    BrickWall,
     ChiefPaddler,
     CrewLeaderboard,
     CrewLongestWinStreak,
@@ -87,6 +88,7 @@ internal static class StatisticsCacheResourceExtensions
         {
             CrewStatisticsCacheResource.BestDoublesPairing => "best-doubles-pairing",
             CrewStatisticsCacheResource.BiggestRivals => "biggest-rivals",
+            CrewStatisticsCacheResource.BrickWall => "brick-wall",
             CrewStatisticsCacheResource.ChiefPaddler => "chief-paddler",
             CrewStatisticsCacheResource.CrewLeaderboard => "crew-leaderboard",
             CrewStatisticsCacheResource.CrewLongestWinStreak => "crew-longest-win-streak",

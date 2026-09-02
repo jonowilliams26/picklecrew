@@ -62,6 +62,7 @@ internal static class Endpoints
             .MapEndpoint<GetBestDoublesPairingEndpoint>()
             .MapEndpoint<GetBestPartnerEndpoint>()
             .MapEndpoint<GetBiggestRivalsEndpoint>()
+            .MapEndpoint<GetBrickWallEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
             .MapEndpoint<GetEasyWinEndpoint>()
             .MapEndpoint<GetFriendsOrLoversEndpoint>()

@@ -782,6 +782,67 @@
         }
       }
     },
+    "/statistics/brick-wall": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Brick Wall for the active Crew.",
+        "operationId": "GetBrickWall",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBrickWallHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/chief-paddler": {
       "get": {
         "tags": [
@@ -1413,6 +1474,47 @@
           }
         }
       },
+      "BrickWallHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "gamesPlayed",
+          "pointsConceded",
+          "averagePointsConceded"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsConceded": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "ChiefPaddlerHttpResponse": {
         "required": [
           "userId",
@@ -1881,6 +1983,24 @@
               },
               {
                 "$ref": "#/components/schemas/BiggestRivalryHttpResponse"
+              }
+            ]
+          }
+        }
+      },
+      "GetBrickWallHttpResponse": {
+        "required": [
+          "brickWall"
+        ],
+        "type": "object",
+        "properties": {
+          "brickWall": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BrickWallHttpResponse"
               }
             ]
           }
