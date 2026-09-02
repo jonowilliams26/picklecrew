@@ -79,7 +79,8 @@ internal static class Endpoints
             .MapEndpoint<GetPersonalStatisticsEndpoint>()
             .MapEndpoint<GetCrewLeaderboardEndpoint>()
             .MapEndpoint<GetCrewLongestWinStreakEndpoint>()
-            .MapEndpoint<GetRecentGamesEndpoint>();
+            .MapEndpoint<GetRecentGamesEndpoint>()
+            .MapEndpoint<ResetCrewStatisticsEndpoint>();
 
         return app;
     }
