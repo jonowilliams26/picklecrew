@@ -173,6 +173,10 @@ export type GetCrewLeaderboardHttpResponse = {
     entries: Array<CrewLeaderboardEntryHttpResponse>;
 };
 
+export type GetCrewLeavingEligibilityHttpResponse = {
+    canLeave: boolean;
+};
+
 export type GetCrewLongestWinStreakHttpResponse = {
     longestWinStreak: null | LongestWinStreakHttpResponse;
 };
@@ -252,6 +256,10 @@ export type IceManHttpResponse = {
     displayName: string;
     profilePictureUrl: null | string;
     clutchWins: number;
+};
+
+export type LeaveCrewHttpRequest = {
+    crewName: string;
 };
 
 export type LimpWristSyndromeHttpResponse = {
@@ -557,6 +565,126 @@ export type RemoveCrewMemberResponses = {
 };
 
 export type RemoveCrewMemberResponse = RemoveCrewMemberResponses[keyof RemoveCrewMemberResponses];
+
+export type GetCrewLeavingEligibilityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/crews/leave-eligibility';
+};
+
+export type GetCrewLeavingEligibilityErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetCrewLeavingEligibilityError = GetCrewLeavingEligibilityErrors[keyof GetCrewLeavingEligibilityErrors];
+
+export type GetCrewLeavingEligibilityResponses = {
+    /**
+     * OK
+     */
+    200: GetCrewLeavingEligibilityHttpResponse;
+};
+
+export type GetCrewLeavingEligibilityResponse = GetCrewLeavingEligibilityResponses[keyof GetCrewLeavingEligibilityResponses];
+
+export type LeaveCrewData = {
+    body: LeaveCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews/leave';
+};
+
+export type LeaveCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Conflict
+     */
+    409: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type LeaveCrewError = LeaveCrewErrors[keyof LeaveCrewErrors];
+
+export type LeaveCrewResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type LeaveCrewResponse = LeaveCrewResponses[keyof LeaveCrewResponses];
 
 export type GetGameRecordingOptionsData = {
     body?: never;

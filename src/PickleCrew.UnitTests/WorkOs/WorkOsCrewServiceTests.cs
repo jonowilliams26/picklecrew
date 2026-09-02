@@ -85,6 +85,87 @@ public sealed class WorkOsCrewServiceTests
         Assert.Equal("user_removed", workOs.DeactivatedMembershipUserId);
     }
 
+    [Fact]
+    public async Task GetCrewLeavingEligibilityAsync_WhenCurrentUserIsSoleAdministrator_ShouldReturnSoleAdministrator()
+    {
+        var workOs = new RecordingWorkOsService
+        {
+            ActiveMembers = [CreateActiveMember("user_active", "admin")],
+        };
+        var service = CreateService(workOs);
+
+        var eligibility = await service.GetCrewLeavingEligibilityAsync(
+            CancellationToken.None
+        );
+
+        Assert.Equal(CrewLeavingEligibility.SoleAdministrator, eligibility);
+    }
+
+    [Fact]
+    public async Task LeaveCrewAsync_WhenCurrentUserIsMember_ShouldDeactivateCurrentUserMembership()
+    {
+        var workOs = new RecordingWorkOsService
+        {
+            ActiveMembers = [CreateActiveMember("user_active", "member")],
+        };
+        var service = CreateService(workOs);
+
+        var outcome = await service.LeaveCrewAsync(CancellationToken.None);
+
+        Assert.Equal(LeaveCrewOutcome.Left, outcome);
+        Assert.Equal("org_active", workOs.DeactivatedMembershipOrganizationId);
+        Assert.Equal("user_active", workOs.DeactivatedMembershipUserId);
+    }
+
+    [Fact]
+    public async Task LeaveCrewAsync_WhenCurrentUserIsSoleAdministrator_ShouldNotDeactivateMembership()
+    {
+        var workOs = new RecordingWorkOsService
+        {
+            ActiveMembers = [CreateActiveMember("user_active", "admin")],
+        };
+        var service = CreateService(workOs);
+
+        var outcome = await service.LeaveCrewAsync(CancellationToken.None);
+
+        Assert.Equal(LeaveCrewOutcome.SoleAdministrator, outcome);
+        Assert.Null(workOs.DeactivatedMembershipOrganizationId);
+        Assert.Null(workOs.DeactivatedMembershipUserId);
+    }
+
+    [Fact]
+    public async Task LeaveCrewAsync_WhenAnotherAdministratorIsActive_ShouldDeactivateCurrentUserMembership()
+    {
+        var workOs = new RecordingWorkOsService
+        {
+            ActiveMembers =
+            [
+                CreateActiveMember("user_active", "admin"),
+                CreateActiveMember("user_other_admin", "admin"),
+            ],
+        };
+        var service = CreateService(workOs);
+
+        var outcome = await service.LeaveCrewAsync(CancellationToken.None);
+
+        Assert.Equal(LeaveCrewOutcome.Left, outcome);
+        Assert.Equal("org_active", workOs.DeactivatedMembershipOrganizationId);
+        Assert.Equal("user_active", workOs.DeactivatedMembershipUserId);
+    }
+
+    private static ActiveCrewMember CreateActiveMember(
+        string userId,
+        string role)
+    {
+        return new ActiveCrewMember
+        {
+            WorkOsUserId = userId,
+            DisplayName = userId,
+            EmailAddress = $"{userId}@example.com",
+            RoleSlug = role,
+        };
+    }
+
     private static ICrewService CreateService(IWorkOsService workOs)
     {
         var crewUserContext = new CrewUserContext

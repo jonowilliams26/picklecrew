@@ -59,6 +59,10 @@ A person who uses Picklecrew.
 - Crew roster entries are ordered alphabetically by display name or invitation email address.
 - A crew administrator may remove another active member from the crew.
 - A crew administrator may not remove themselves from the crew.
+- Any active crew member may leave their active crew after confirming the crew's exact name, unless they are the crew's only active administrator.
+- The only active crew administrator must assign another active member as an administrator before leaving.
+- Leaving a crew makes the member's own membership inactive without deleting their historical games or statistics in that crew.
+- After leaving a crew, the user is signed out rather than automatically entering another crew or crew creation.
 - Removing a crew member makes their membership inactive without deleting their historical games or statistics in that crew.
 
 ## Crew member statistics

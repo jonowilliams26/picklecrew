@@ -11,12 +11,30 @@ const firstMembership: CrewMembership = {
   organizationId: 'org_first',
   organizationName: 'First Crew',
   status: 'active',
+  role: 'admin',
+  joinedAt: '2026-01-10T12:00:00.000Z',
 }
 
 const secondMembership: CrewMembership = {
   organizationId: 'org_second',
   organizationName: 'Second Crew',
   status: 'active',
+  role: 'member',
+  joinedAt: '2026-02-10T12:00:00.000Z',
+}
+
+const firstCrewDetails = {
+  organizationId: 'org_first',
+  name: 'First Crew',
+  role: 'admin',
+  joinedAt: '2026-01-10T12:00:00.000Z',
+}
+
+const secondCrewDetails = {
+  organizationId: 'org_second',
+  name: 'Second Crew',
+  role: 'member',
+  joinedAt: '2026-02-10T12:00:00.000Z',
 }
 
 function resolve({
@@ -66,11 +84,8 @@ test('preserves the current organization and lists every active crew', () => {
     }),
     {
       type: 'active-crew',
-      crew: { organizationId: 'org_second', name: 'Second Crew' },
-      crews: [
-        { organizationId: 'org_first', name: 'First Crew' },
-        { organizationId: 'org_second', name: 'Second Crew' },
-      ],
+      crew: secondCrewDetails,
+      crews: [firstCrewDetails, secondCrewDetails],
     },
   )
 })
@@ -80,11 +95,8 @@ test('selects the first active membership when the current organization is missi
     resolve({ memberships: [firstMembership, secondMembership] }),
     {
       type: 'switch-required',
-      crew: { organizationId: 'org_first', name: 'First Crew' },
-      crews: [
-        { organizationId: 'org_first', name: 'First Crew' },
-        { organizationId: 'org_second', name: 'Second Crew' },
-      ],
+      crew: firstCrewDetails,
+      crews: [firstCrewDetails, secondCrewDetails],
     },
   )
 })
@@ -100,18 +112,15 @@ test('selects and lists only active memberships', () => {
     }),
     {
       type: 'switch-required',
-      crew: { organizationId: 'org_first', name: 'First Crew' },
-      crews: [{ organizationId: 'org_first', name: 'First Crew' }],
+      crew: firstCrewDetails,
+      crews: [firstCrewDetails],
     },
   )
 })
 
 const signedOut: MembershipResolution = { type: 'signed-out' }
 const noActiveCrew: MembershipResolution = { type: 'no-active-crew' }
-const activeCrewDetails = {
-  organizationId: 'org_first',
-  name: 'First Crew',
-}
+const activeCrewDetails = firstCrewDetails
 const crews = [activeCrewDetails]
 const activeCrew: MembershipResolution = {
   type: 'active-crew',
