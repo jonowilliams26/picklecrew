@@ -6,132 +6,67 @@ namespace PickleCrew.Api.Statistics.Services;
 
 internal sealed class GameStatisticsService(CrewScopedDbContext database)
 {
-    public async Task<CalculateGameStatisticsResult> CalculateStatisticsAsync(
+    public async Task CalculateStatisticsAsync(
         Game game,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
-        var playerStatistics = await CalculatePlayerStatistics(game, cancellationToken);
-        var doublesPairingStatistics = await CalculateDoublesPairingStatistics(game, cancellationToken);
-        var matchupStatistics = await CalculateMatchupStatistics(game, cancellationToken);
-        return new CalculateGameStatisticsResult
-        {
-            PlayerStatistics = playerStatistics,
-            DoublesPairingStatistics = doublesPairingStatistics,
-            MatchupStatistics = matchupStatistics
-        };
+        CalculatePlayerStatistics(game);
+        CalculateDoublesPairingStatistics(game);
+        CalculateMatchupStatistics(game);
+        await CalculateWinStreaksAsync(game, cancellationToken);
     }
 
-    private async Task<CalculateGameStatisticsResult<CrewMemberStatistics>[]> CalculatePlayerStatistics(Game game, CancellationToken cancellationToken)
+    private void CalculatePlayerStatistics(Game game)
     {
-        var gameStatistics = game.Sides
+        var statistics = game.Sides
             .SelectMany(
                 side => side.Participants,
                 (side, participant) => new
                 {
-                    Participant = participant,
-                    Side = side,
+                    UserId = participant.UserId ?? "",
+                    Score = side.Score,
+                    SideNumber = side.SideNumber
                 }
             )
-            .Where(x => x.Participant.UserId is not null)
+            .Where(x => !string.IsNullOrWhiteSpace(x.UserId))
             .Select(x =>
             {
-                var opposingSide = game.Sides.First(side => side != x.Side);
-                return new PlayerGameStatistics
+                var opposingSide = game.Sides.First(side => side.SideNumber != x.SideNumber);
+                var won = x.Score > opposingSide.Score;
+                var pointDifferential = x.Score - opposingSide.Score;
+
+                return new CrewMemberGameStatistics
                 {
-                    UserId = x.Participant.UserId!,
-                    Won = x.Side.Score > opposingSide.Score,
-                    IsThatsAPaddlin = x.Side.Score == 11 && opposingSide.Score == 0,
-                    PointsScored = x.Side.Score,
+                    Game = game,
+                    GameId = game.Id,
+                    GameUuid = game.Uuid,
+                    CrewId = game.CrewId,
+                    CrewUuid = game.CrewUuid,
+                    UserId = x.UserId,
+                    PlayedAtUtc = game.PlayedAtUtc,
+                    Wins = won ? 1 : 0,
+                    Losses = !won ? 1 : 0,
+                    PointsScored = x.Score,
                     PointsConceded = opposingSide.Score,
+                    PointDifferential = pointDifferential,
+                    CrewScore = won ? (100 + pointDifferential) : 0,
+                    ThatsAPaddlin = x.Score == 11 && opposingSide.Score == 0 ? 1 : 0
                 };
             })
             .ToArray();
 
-        var playerIds = gameStatistics.Select(x => x.UserId)
-            .ToArray();
-
-        var statisticsByUserId = await database.CrewMemberStatistics
-            .Where(statistics => playerIds.Contains(statistics.UserId))
-            .ToDictionaryAsync(x => x.UserId, cancellationToken);
-
-        var results = new List<CalculateGameStatisticsResult<CrewMemberStatistics>>();
-
-        foreach (var playerGameStatistics in gameStatistics)
-        {
-            var operation = CalculateGameStatisticsResultOperation.Updated;
-            if (!statisticsByUserId.TryGetValue(playerGameStatistics.UserId, out var statistics))
-            {
-                statistics = new CrewMemberStatistics
-                {
-                    UserId = playerGameStatistics.UserId,
-                    CrewId = game.CrewId,
-                    CrewUuid = game.CrewUuid,
-                };
-                database.CrewMemberStatistics.Add(statistics);
-                operation = CalculateGameStatisticsResultOperation.Created;
-            }
-
-            statistics.Wins += playerGameStatistics.Won ? 1 : 0;
-            statistics.Losses += playerGameStatistics.Won ? 0 : 1;
-            statistics.PointsScored += playerGameStatistics.PointsScored;
-            statistics.PointsConceded += playerGameStatistics.PointsConceded;
-            statistics.ThatsAPaddlin += playerGameStatistics.IsThatsAPaddlin ? 1 : 0;
-            statistics.CrewScore += CrewScoreCalculator.Calculate(
-                playerGameStatistics.Won,
-                playerGameStatistics.PointsScored,
-                playerGameStatistics.PointsConceded
-            );
-
-            if (playerGameStatistics.Won)
-            {
-                statistics.CurrentWinStreak += 1;
-                statistics.CurrentWinStreakStartedAtUtc ??= game.PlayedAtUtc;
-
-                if (statistics.CurrentWinStreak > statistics.LongestWinStreak)
-                {
-                    statistics.LongestWinStreak = statistics.CurrentWinStreak;
-                    statistics.LongestWinStreakStartedAtUtc = statistics.CurrentWinStreakStartedAtUtc;
-                    statistics.LongestWinStreakEndedAtUtc = null;
-                }
-            }
-            else
-            {
-                var endedRecordSettingStreak =
-                    statistics.CurrentWinStreak > 0 &&
-                    statistics.CurrentWinStreak == statistics.LongestWinStreak &&
-                    statistics.CurrentWinStreakStartedAtUtc == statistics.LongestWinStreakStartedAtUtc &&
-                    statistics.LongestWinStreakEndedAtUtc is null;
-
-                if (endedRecordSettingStreak)
-                {
-                    statistics.LongestWinStreakEndedAtUtc = game.PlayedAtUtc;
-                }
-
-                statistics.CurrentWinStreak = 0;
-                statistics.CurrentWinStreakStartedAtUtc = null;
-            }
-
-            var result = new CalculateGameStatisticsResult<CrewMemberStatistics>
-            {
-                Operation = operation,
-                Statistics = statistics,
-            };
-
-            results.Add(result);
-        }
-
-        return [.. results];
+        database.CrewMemberGameStatistics.AddRange(statistics);
     }
 
-    private async Task<CalculateGameStatisticsResult<CrewDoublesPairingStatistics>[]> CalculateDoublesPairingStatistics(Game game, CancellationToken cancellationToken)
+    private void CalculateDoublesPairingStatistics(Game game)
     {
         if (game.Format is not GameFormat.Doubles)
         {
-            return [];
+            return;
         }
 
-        var doublesPairingGameStatistics = game.Sides
+        var statistics = game.Sides
             .Where(side => side.Participants.All(participant => participant.UserId is not null))
             .Select(side =>
             {
@@ -141,76 +76,31 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                     side.Participants[1].UserId!
                 );
 
-                return new DoublesPairingGameStatistics
+                return new CrewDoublesPairingGameStatistics
                 {
-                    Key = key,
-                    Won = side.Score > opposingSide.Score,
+                    Game = game,
+                    GameId = game.Id,
+                    GameUuid = game.Uuid,
+                    CrewId = game.CrewId,
+                    CrewUuid = game.CrewUuid,
+                    Player1Id = key.Player1Id,
+                    Player2Id = key.Player2Id,
+                    PlayedAtUtc = game.PlayedAtUtc,
+                    Wins = side.Score > opposingSide.Score ? 1 : 0,
+                    Losses = side.Score < opposingSide.Score ? 1 : 0,
                     PointsScored = side.Score,
                     PointsConceded = opposingSide.Score,
+                    PointDifferential = side.Score - opposingSide.Score,
                 };
             })
             .ToArray();
 
-        if (doublesPairingGameStatistics.Length == 0)
-        {
-            return [];
-        }
-
-        var playerIds = doublesPairingGameStatistics
-            .SelectMany(x => new[] { x.Key.Player1Id, x.Key.Player2Id })
-            .ToArray();
-
-        var doublesPairingStatisticsByKey = await database.CrewDoublesPairingStatistics
-            .Where(statistics =>
-                playerIds.Contains(statistics.Player1Id) &&
-                playerIds.Contains(statistics.Player2Id)
-            )
-            .ToDictionaryAsync(
-                statistics => CrewDoublesPairingKey.Create(
-                    statistics.Player1Id,
-                    statistics.Player2Id
-                ),
-                cancellationToken
-            );
-
-        var results = new List<CalculateGameStatisticsResult<CrewDoublesPairingStatistics>>();
-
-        foreach (var doublesPairingGameStats in doublesPairingGameStatistics)
-        {
-            var operation = CalculateGameStatisticsResultOperation.Updated;
-            if (!doublesPairingStatisticsByKey.TryGetValue(doublesPairingGameStats.Key, out var statistics))
-            {
-                statistics = new CrewDoublesPairingStatistics
-                {
-                    CrewId = game.CrewId,
-                    CrewUuid = game.CrewUuid,
-                    Player1Id = doublesPairingGameStats.Key.Player1Id,
-                    Player2Id = doublesPairingGameStats.Key.Player2Id,
-                };
-                database.CrewDoublesPairingStatistics.Add(statistics);
-                operation = CalculateGameStatisticsResultOperation.Created;
-            }
-
-            statistics.Wins += doublesPairingGameStats.Won ? 1 : 0;
-            statistics.Losses += doublesPairingGameStats.Won ? 0 : 1;
-            statistics.PointsScored += doublesPairingGameStats.PointsScored;
-            statistics.PointsConceded += doublesPairingGameStats.PointsConceded;
-
-            var result = new CalculateGameStatisticsResult<CrewDoublesPairingStatistics>
-            {
-                Operation = operation,
-                Statistics = statistics,
-            };
-
-            results.Add(result);
-        }
-
-        return [.. results];
+        database.CrewDoublesPairingGameStatistics.AddRange(statistics);
     }
 
-    private async Task<CalculateGameStatisticsResult<CrewMatchupStatistics>[]> CalculateMatchupStatistics(Game game, CancellationToken cancellationToken)
+    private void CalculateMatchupStatistics(Game game)
     {
-        var matchupGameStatistics = game.Sides
+        var statistics = game.Sides
             .SelectMany(side =>
             {
                 var opposingSide = game.Sides.First(candidate => candidate != side);
@@ -221,115 +111,98 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
 
                 return side.Participants
                     .Where(participant => participant.UserId is not null)
-                    .SelectMany(participant => opposingPlayers.Select(opponentId => new MatchupGameStatistics
+                    .SelectMany(participant => opposingPlayers.Select(opponentId => new CrewMatchupGameStatistics
                     {
+                        Game = game,
+                        GameId = game.Id,
+                        GameUuid = game.Uuid,
+                        CrewId = game.CrewId,
+                        CrewUuid = game.CrewUuid,
                         UserId = participant.UserId!,
                         OpponentUserId = opponentId,
-                        Won = side.Score > opposingSide.Score,
+                        PlayedAtUtc = game.PlayedAtUtc,
+                        Wins = side.Score > opposingSide.Score ? 1 : 0,
+                        Losses = side.Score < opposingSide.Score ? 1 : 0,
                         PointsScored = side.Score,
                         PointsConceded = opposingSide.Score,
+                        PointDifferential = side.Score - opposingSide.Score,
                     }));
             })
             .ToArray();
 
-        if (matchupGameStatistics.Length == 0)
-        {
-            return [];
-        }
+        database.CrewMatchupGameStatistics.AddRange(statistics);
+    }
 
-        var playerIds = matchupGameStatistics
-            .SelectMany(x => new[] { x.UserId, x.OpponentUserId })
-            .ToArray();
-
-        var matchupStatisticsByKey = await database.CrewMatchupStatistics
-            .Where(statistics =>
-                playerIds.Contains(statistics.UserId) &&
-                playerIds.Contains(statistics.OpponentUserId)
+    private async Task CalculateWinStreaksAsync(Game game, CancellationToken cancellationToken)
+    {
+        var resultsByUserId = game.Sides
+            .SelectMany(
+                side => side.Participants,
+                (side, participant) =>
+                {
+                    var opposingSide = game.Sides.First(otherSide => otherSide != side);
+                    var won = side.Score > opposingSide.Score;
+                    return new
+                    {
+                        UserId = participant.UserId ?? "",
+                        Won = won
+                    };
+                }
             )
-            .ToDictionaryAsync(
-                statistics => new MatchupKey(statistics.UserId, statistics.OpponentUserId),
-                cancellationToken
-            );
+            .Where(x => !string.IsNullOrWhiteSpace(x.UserId))
+            .ToDictionary(x => x.UserId, x => x.Won);
 
-        var results = new List<CalculateGameStatisticsResult<CrewMatchupStatistics>>();
-        foreach (var matchupGameStats in matchupGameStatistics)
+        var winStreaksByUserId = await database.CrewMemberWinStreaks
+            .Where(x => resultsByUserId.Keys.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, cancellationToken);
+
+        foreach (var (userId, won) in resultsByUserId)
         {
-            var operation = CalculateGameStatisticsResultOperation.Updated;
-            var key = new MatchupKey(matchupGameStats.UserId, matchupGameStats.OpponentUserId);
-            if (!matchupStatisticsByKey.TryGetValue(key, out var statistics))
+            if (!winStreaksByUserId.TryGetValue(userId, out var winStreak))
             {
-                statistics = new CrewMatchupStatistics
+                winStreak = new CrewMemberWinStreak
                 {
                     CrewId = game.CrewId,
                     CrewUuid = game.CrewUuid,
-                    UserId = matchupGameStats.UserId,
-                    OpponentUserId = matchupGameStats.OpponentUserId,
+                    UserId = userId,
+                    CurrentWinStreak = won ? 1 : 0,
+                    CurrentWinStreakStartedAtUtc = won ? game.PlayedAtUtc : null,
+                    LongestWinStreak = won ? 1 : 0,
+                    LongestWinStreakStartedAtUtc = won ? game.PlayedAtUtc : null,
                 };
-                database.CrewMatchupStatistics.Add(statistics);
-                operation = CalculateGameStatisticsResultOperation.Created;
+
+                database.CrewMemberWinStreaks.Add(winStreak);
+                continue;
             }
 
-            statistics.Wins += matchupGameStats.Won ? 1 : 0;
-            statistics.Losses += matchupGameStats.Won ? 0 : 1;
-            statistics.PointsScored += matchupGameStats.PointsScored;
-            statistics.PointsConceded += matchupGameStats.PointsConceded;
-
-            var result = new CalculateGameStatisticsResult<CrewMatchupStatistics>
+            if (won)
             {
-                Operation = operation,
-                Statistics = statistics,
-            };
+                winStreak.CurrentWinStreak++;
+                winStreak.CurrentWinStreakStartedAtUtc ??= game.PlayedAtUtc;
 
-            results.Add(result);
+                if (winStreak.CurrentWinStreak > winStreak.LongestWinStreak)
+                {
+                    winStreak.LongestWinStreak = winStreak.CurrentWinStreak;
+                    winStreak.LongestWinStreakStartedAtUtc = winStreak.CurrentWinStreakStartedAtUtc;
+                    winStreak.LongestWinStreakEndedAtUtc = null;
+                }
+            }
+            else
+            {
+                var endedRecordSettingStreak =
+                    winStreak.CurrentWinStreak > 0 &&
+                    winStreak.CurrentWinStreak == winStreak.LongestWinStreak &&
+                    winStreak.CurrentWinStreakStartedAtUtc == winStreak.LongestWinStreakStartedAtUtc &&
+                    winStreak.LongestWinStreakEndedAtUtc is null;
+
+                if (endedRecordSettingStreak)
+                {
+                    winStreak.LongestWinStreakEndedAtUtc = game.PlayedAtUtc;
+                }
+
+                winStreak.CurrentWinStreak = 0;
+                winStreak.CurrentWinStreakStartedAtUtc = null;
+            }
         }
-
-        return [.. results];
     }
-
-    private sealed record PlayerGameStatistics
-    {
-        public required string UserId { get; init; }
-        public bool Won { get; init; }
-        public bool IsThatsAPaddlin { get; init; }
-        public long PointsScored { get; init; }
-        public long PointsConceded { get; init; }
-    }
-
-    private sealed record DoublesPairingGameStatistics
-    {
-        public required CrewDoublesPairingKey Key { get; init; }
-        public bool Won { get; init; }
-        public long PointsScored { get; init; }
-        public long PointsConceded { get; init; }
-    }
-
-    private sealed record MatchupGameStatistics
-    {
-        public required string UserId { get; init; }
-        public required string OpponentUserId { get; init; }
-        public bool Won { get; init; }
-        public long PointsScored { get; init; }
-        public long PointsConceded { get; init; }
-    }
-
-    private sealed record MatchupKey(string UserId, string OpponentUserId);
-}
-
-internal sealed record CalculateGameStatisticsResult
-{
-    public required CalculateGameStatisticsResult<CrewMemberStatistics>[] PlayerStatistics { get; init; }
-    public required CalculateGameStatisticsResult<CrewDoublesPairingStatistics>[] DoublesPairingStatistics { get; init; }
-    public required CalculateGameStatisticsResult<CrewMatchupStatistics>[] MatchupStatistics { get; init; }
-}
-
-internal sealed record CalculateGameStatisticsResult<T>
-{
-    public required CalculateGameStatisticsResultOperation Operation { get; init; }
-    public required T Statistics { get; init; }
-}
-
-internal enum CalculateGameStatisticsResultOperation
-{
-    Created,
-    Updated
 }

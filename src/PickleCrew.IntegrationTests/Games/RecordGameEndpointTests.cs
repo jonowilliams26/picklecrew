@@ -7,7 +7,6 @@ using PickleCrew.Api.Games;
 using PickleCrew.Api.Games.RecordGame;
 using PickleCrew.Api.Services;
 using PickleCrew.Api.Statistics.Services;
-using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
 
@@ -16,6 +15,190 @@ namespace PickleCrew.IntegrationTests.Games;
 [Collection(nameof(AppHostCollection))]
 public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 {
+    [Fact]
+    public async Task RecordGame_WhenFourMembersPlayDoubles_ShouldPersistCompleteGameBasedRecords()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var teammateId = context.Members[0].UserId;
+        var firstOpponentId = context.Members[1].UserId;
+        var secondOpponentId = context.Members[2].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var request = new RecordGameHttpRequest
+        {
+            Format = GameFormat.Doubles,
+            Sides =
+            [
+                CreateSide(
+                    11,
+                    CreateMemberParticipant(context.Administrator.UserId),
+                    CreateMemberParticipant(teammateId)
+                ),
+                CreateSide(
+                    0,
+                    CreateMemberParticipant(firstOpponentId),
+                    CreateMemberParticipant(secondOpponentId)
+                ),
+            ],
+        };
+
+        using var response = await apiClient.PostAsJsonAsync(
+            "/games",
+            request,
+            TestJsonSerializerOptions.Default
+        );
+
+        response.EnsureSuccessStatusCode();
+        var recordedGame = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
+            TestJsonSerializerOptions.Default
+        );
+        Assert.NotNull(recordedGame);
+        Assert.Equal(context.Uuid, recordedGame.CrewId);
+        Assert.Equal(context.Administrator.UserId, recordedGame.RecorderUserId);
+        Assert.Equal(GameFormat.Doubles, recordedGame.Format);
+        Assert.Collection(
+            recordedGame.Sides.OrderBy(side => side.SideNumber),
+            side =>
+            {
+                Assert.Equal(11, side.Score);
+                Assert.Equal(2, side.Participants.Length);
+            },
+            side =>
+            {
+                Assert.Equal(0, side.Score);
+                Assert.Equal(2, side.Participants.Length);
+            }
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var game = await database.Games
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.Uuid == recordedGame.GameId);
+        var memberStatistics = await database.CrewMemberGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.Uuid)
+            .ToDictionaryAsync(statistics => statistics.UserId);
+        var matchupStatistics = await database.CrewMatchupGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.Uuid)
+            .ToArrayAsync();
+        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.Uuid)
+            .ToArrayAsync();
+        var winStreaks = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .Where(winStreak => winStreak.CrewUuid == context.Uuid)
+            .ToDictionaryAsync(winStreak => winStreak.UserId);
+
+        Assert.Equal(4, memberStatistics.Count);
+        Assert.Equal(8, matchupStatistics.Length);
+        Assert.Equal(2, pairingStatistics.Length);
+        Assert.Equal(4, winStreaks.Count);
+
+        var winnerIds = new[]
+        {
+            context.Administrator.UserId,
+            teammateId,
+        };
+        var loserIds = new[]
+        {
+            firstOpponentId,
+            secondOpponentId,
+        };
+
+        foreach (var winnerId in winnerIds)
+        {
+            AssertMemberGameStatistics(
+                memberStatistics[winnerId],
+                game,
+                wins: 1,
+                losses: 0,
+                pointsScored: 11,
+                pointsConceded: 0,
+                crewScore: 111,
+                thatsAPaddlin: 1
+            );
+            AssertGameBasedWinStreak(
+                winStreaks[winnerId],
+                game,
+                won: true
+            );
+        }
+
+        foreach (var loserId in loserIds)
+        {
+            AssertMemberGameStatistics(
+                memberStatistics[loserId],
+                game,
+                wins: 0,
+                losses: 1,
+                pointsScored: 0,
+                pointsConceded: 11,
+                crewScore: 0,
+                thatsAPaddlin: 0
+            );
+            AssertGameBasedWinStreak(
+                winStreaks[loserId],
+                game,
+                won: false
+            );
+        }
+
+        foreach (var winnerId in winnerIds)
+        {
+            foreach (var loserId in loserIds)
+            {
+                AssertMatchupGameStatistics(
+                    Assert.Single(matchupStatistics, statistics =>
+                        statistics.UserId == winnerId
+                        && statistics.OpponentUserId == loserId
+                    ),
+                    game,
+                    wins: 1,
+                    losses: 0,
+                    pointsScored: 11,
+                    pointsConceded: 0
+                );
+                AssertMatchupGameStatistics(
+                    Assert.Single(matchupStatistics, statistics =>
+                        statistics.UserId == loserId
+                        && statistics.OpponentUserId == winnerId
+                    ),
+                    game,
+                    wins: 0,
+                    losses: 1,
+                    pointsScored: 0,
+                    pointsConceded: 11
+                );
+            }
+        }
+
+        AssertPairingGameStatistics(
+            pairingStatistics,
+            game,
+            context.Administrator.UserId,
+            teammateId,
+            wins: 1,
+            losses: 0,
+            pointsScored: 11,
+            pointsConceded: 0
+        );
+        AssertPairingGameStatistics(
+            pairingStatistics,
+            game,
+            firstOpponentId,
+            secondOpponentId,
+            wins: 0,
+            losses: 1,
+            pointsScored: 0,
+            pointsConceded: 11
+        );
+    }
+
     [Fact]
     public async Task GetGameRecordingOptions_WhenRecorderIsActive_ShouldReturnCrewRosterWithoutEmails()
     {
@@ -44,717 +227,6 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         var content = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain(member.EmailAddress, content, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenFourMembersPlayOneDoublesGame_ShouldPersistPairingsAndReturnNoBestPairing()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithAdministrator(
-                id: "user_pairing_morgan",
-                displayName: "Morgan Kitchen",
-                profilePictureUrl: "https://example.test/morgan.jpg"
-            )
-            .WithMember(
-                id: "user_pairing_alex",
-                displayName: "Alex Paddle",
-                profilePictureUrl: "https://example.test/alex.jpg"
-            )
-            .WithMember(
-                id: "user_pairing_jordan",
-                displayName: "Jordan Dink"
-            )
-            .WithMember(
-                id: "user_pairing_taylor",
-                displayName: "Taylor Volley"
-            )
-            .BuildAsync();
-        var alex = context.Members[0];
-        var jordan = context.Members[1];
-        var taylor = context.Members[2];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateMemberParticipant(alex.UserId)
-                ),
-                CreateSide(
-                    7,
-                    CreateMemberParticipant(taylor.UserId),
-                    CreateMemberParticipant(jordan.UserId)
-                ),
-            ],
-        };
-
-        using var recordResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        recordResponse.EnsureSuccessStatusCode();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            var pairingStatistics = await database.CrewDoublesPairingStatistics
-                .AsNoTracking()
-                .Where(statistics => statistics.CrewUuid == context.Uuid)
-                .ToArrayAsync();
-
-            Assert.Equal(2, pairingStatistics.Length);
-            AssertPairingStatistics(
-                Assert.Single(pairingStatistics, statistics =>
-                    statistics.Player1Id == alex.UserId
-                    && statistics.Player2Id == context.Administrator.UserId
-                ),
-                context.Uuid,
-                wins: 1,
-                losses: 0,
-                pointsScored: 11,
-                pointsConceded: 7
-            );
-            AssertPairingStatistics(
-                Assert.Single(pairingStatistics, statistics =>
-                    statistics.Player1Id == jordan.UserId
-                    && statistics.Player2Id == taylor.UserId
-                ),
-                context.Uuid,
-                wins: 0,
-                losses: 1,
-                pointsScored: 7,
-                pointsConceded: 11
-            );
-        }
-
-        using var pairingResponse = await apiClient.GetAsync(
-            "/statistics/best-doubles-pairing"
-        );
-
-        pairingResponse.EnsureSuccessStatusCode();
-        var result = await pairingResponse.Content.ReadFromJsonAsync<GetBestDoublesPairingHttpResponse>(
-            TestJsonSerializerOptions.Default
-        );
-        Assert.NotNull(result);
-        Assert.Null(result.Pairing);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenPairingOrderIsReversed_ShouldAccumulateOneCanonicalPairingPerSide()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .WithMember()
-            .WithMember()
-            .BuildAsync();
-        var firstTeammate = context.Members[0];
-        var firstOpponent = context.Members[1];
-        var secondOpponent = context.Members[2];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var firstRequest = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateMemberParticipant(firstTeammate.UserId)
-                ),
-                CreateSide(
-                    7,
-                    CreateMemberParticipant(firstOpponent.UserId),
-                    CreateMemberParticipant(secondOpponent.UserId)
-                ),
-            ],
-        };
-        var reversedRequest = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    9,
-                    CreateMemberParticipant(firstTeammate.UserId),
-                    CreateMemberParticipant(context.Administrator.UserId)
-                ),
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(secondOpponent.UserId),
-                    CreateMemberParticipant(firstOpponent.UserId)
-                ),
-            ],
-        };
-
-        using var firstResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            firstRequest,
-            TestJsonSerializerOptions.Default
-        );
-        using var secondResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            reversedRequest,
-            TestJsonSerializerOptions.Default
-        );
-
-        firstResponse.EnsureSuccessStatusCode();
-        secondResponse.EnsureSuccessStatusCode();
-
-        await using var database = fixture.CreateDbContext();
-        var pairingStatistics = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
-            .Where(statistics => statistics.CrewUuid == context.Uuid)
-            .ToArrayAsync();
-        var firstPairingKey = CrewDoublesPairingKey.Create(
-            context.Administrator.UserId,
-            firstTeammate.UserId
-        );
-        var opposingPairingKey = CrewDoublesPairingKey.Create(
-            firstOpponent.UserId,
-            secondOpponent.UserId
-        );
-
-        Assert.Equal(2, pairingStatistics.Length);
-        AssertPairingStatistics(
-            Assert.Single(pairingStatistics, statistics =>
-                statistics.Player1Id == firstPairingKey.Player1Id
-                && statistics.Player2Id == firstPairingKey.Player2Id
-            ),
-            context.Uuid,
-            wins: 1,
-            losses: 1,
-            pointsScored: 20,
-            pointsConceded: 18
-        );
-        AssertPairingStatistics(
-            Assert.Single(pairingStatistics, statistics =>
-                statistics.Player1Id == opposingPairingKey.Player1Id
-                && statistics.Player2Id == opposingPairingKey.Player2Id
-            ),
-            context.Uuid,
-            wins: 1,
-            losses: 1,
-            pointsScored: 18,
-            pointsConceded: 20
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenMemberPairingPlaysAgainstGuestSide_ShouldPersistOnlyMemberPairing()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .WithMember()
-            .BuildAsync();
-        var teammate = context.Members[0];
-        var opponent = context.Members[1];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateMemberParticipant(teammate.UserId)
-                ),
-                CreateSide(
-                    8,
-                    CreateMemberParticipant(opponent.UserId),
-                    CreateGuestParticipant("Jamie Kitchen")
-                ),
-            ],
-        };
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        await using var database = fixture.CreateDbContext();
-        var pairingStatistics = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
-            .SingleAsync(statistics => statistics.CrewUuid == context.Uuid);
-        var pairingKey = CrewDoublesPairingKey.Create(
-            context.Administrator.UserId,
-            teammate.UserId
-        );
-
-        Assert.Equal(pairingKey.Player1Id, pairingStatistics.Player1Id);
-        Assert.Equal(pairingKey.Player2Id, pairingStatistics.Player2Id);
-        AssertPairingStatistics(
-            pairingStatistics,
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 8
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenRecorderParticipates_ShouldPersistCompleteResult()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var opponent = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(context.Administrator.UserId, opponent.UserId, 11, 7),
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
-            TestJsonSerializerOptions.Default
-        );
-        Assert.NotNull(result);
-        Assert.Equal(context.Uuid, result.CrewId);
-        Assert.Equal(context.Administrator.UserId, result.RecorderUserId);
-        Assert.Equal(GameFormat.Singles, result.Format);
-
-        await using var dbContext = fixture.CreateDbContext();
-        var crewId = await dbContext.Crews
-            .Where(crew => crew.Uuid == context.Uuid)
-            .Select(crew => crew.Id)
-            .SingleAsync();
-        var game = await dbContext.Games
-            .AsNoTracking()
-            .SingleAsync(candidate => candidate.CrewId == crewId);
-
-        Assert.Equal(result.GameId, game.Uuid);
-        Assert.Equal(result.CrewId, game.CrewUuid);
-        Assert.Equal(result.RecorderUserId, game.RecorderUserId);
-        Assert.Equal(result.Format, game.Format);
-        Assert.Collection(
-            game.Sides.OrderBy(side => side.SideNumber),
-            side => AssertSide(side, 1, 11, context.Administrator.UserId),
-            side => AssertSide(side, 2, 7, opponent.UserId)
-        );
-        AssertResponseMatchesGame(result, game);
-
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewId == crewId)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(2, statistics.Count);
-        AssertStatistics(
-            statistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 7
-        );
-        AssertStatistics(
-            statistics[opponent.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-        Assert.Equal(104, statistics[context.Administrator.UserId].CrewScore);
-        Assert.Equal(0, statistics[opponent.UserId].CrewScore);
-        Assert.Equal(
-            0,
-            await dbContext.CrewDoublesPairingStatistics.CountAsync(candidate =>
-                candidate.CrewId == crewId
-            )
-        );
-
-        var winnerStatistics = statistics[context.Administrator.UserId];
-        Assert.Equal(1, winnerStatistics.CurrentWinStreak);
-        Assert.Equal(game.PlayedAtUtc, winnerStatistics.CurrentWinStreakStartedAtUtc);
-        Assert.Equal(1, winnerStatistics.LongestWinStreak);
-        Assert.Equal(game.PlayedAtUtc, winnerStatistics.LongestWinStreakStartedAtUtc);
-        Assert.Null(winnerStatistics.LongestWinStreakEndedAtUtc);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenMembersHaveExistingStatistics_ShouldAccumulateContributions()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var opponent = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-
-        using var firstResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(context.Administrator.UserId, opponent.UserId, 11, 7),
-            TestJsonSerializerOptions.Default
-        );
-        using var secondResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(context.Administrator.UserId, opponent.UserId, 10, 12),
-            TestJsonSerializerOptions.Default
-        );
-
-        firstResponse.EnsureSuccessStatusCode();
-        secondResponse.EnsureSuccessStatusCode();
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Uuid)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(2, statistics.Count);
-        AssertStatistics(
-            statistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 1,
-            pointsScored: 21,
-            pointsConceded: 19
-        );
-        AssertStatistics(
-            statistics[opponent.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 1,
-            pointsScored: 19,
-            pointsConceded: 21
-        );
-        Assert.Equal(
-            2,
-            statistics[context.Administrator.UserId].Wins
-                + statistics[context.Administrator.UserId].Losses
-        );
-        Assert.Equal(
-            2,
-            statistics[context.Administrator.UserId].PointsScored
-                - statistics[context.Administrator.UserId].PointsConceded
-        );
-        Assert.Equal(2, await CountGamesAsync(context.Uuid));
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenResultsContainMultipleStreaks_ShouldPersistCurrentAndLongestWinStreakPeriods()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var opponent = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var scores = new[]
-        {
-            (11, 7),
-            (11, 8),
-            (11, 9),
-            (9, 11),
-            (11, 6),
-            (11, 5),
-        };
-
-        foreach (var (administratorScore, opponentScore) in scores)
-        {
-            using var response = await apiClient.PostAsJsonAsync(
-                "/games",
-                CreateRequest(
-                    context.Administrator.UserId,
-                    opponent.UserId,
-                    administratorScore,
-                    opponentScore
-                ),
-                TestJsonSerializerOptions.Default
-            );
-            response.EnsureSuccessStatusCode();
-        }
-
-        await using var database = fixture.CreateDbContext();
-        var games = await database.Games
-            .AsNoTracking()
-            .Where(game => game.CrewUuid == context.Uuid)
-            .OrderBy(game => game.Id)
-            .ToArrayAsync();
-        var statistics = await database.CrewMemberStatistics
-            .AsNoTracking()
-            .SingleAsync(candidate =>
-                candidate.CrewUuid == context.Uuid &&
-                candidate.UserId == context.Administrator.UserId
-            );
-
-        Assert.Equal(2, statistics.CurrentWinStreak);
-        Assert.Equal(games[4].PlayedAtUtc, statistics.CurrentWinStreakStartedAtUtc);
-        Assert.Equal(3, statistics.LongestWinStreak);
-        Assert.Equal(games[0].PlayedAtUtc, statistics.LongestWinStreakStartedAtUtc);
-        Assert.Equal(games[3].PlayedAtUtc, statistics.LongestWinStreakEndedAtUtc);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenActiveStreakExceedsEndedLongestStreak_ShouldReplaceLongestWinStreakPeriod()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var opponent = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var scores = new[]
-        {
-            (11, 7),
-            (11, 8),
-            (9, 11),
-            (11, 6),
-            (11, 5),
-            (11, 4),
-        };
-
-        foreach (var (administratorScore, opponentScore) in scores)
-        {
-            using var response = await apiClient.PostAsJsonAsync(
-                "/games",
-                CreateRequest(
-                    context.Administrator.UserId,
-                    opponent.UserId,
-                    administratorScore,
-                    opponentScore
-                ),
-                TestJsonSerializerOptions.Default
-            );
-            response.EnsureSuccessStatusCode();
-        }
-
-        await using var database = fixture.CreateDbContext();
-        var games = await database.Games
-            .AsNoTracking()
-            .Where(game => game.CrewUuid == context.Uuid)
-            .OrderBy(game => game.Id)
-            .ToArrayAsync();
-        var statistics = await database.CrewMemberStatistics
-            .AsNoTracking()
-            .SingleAsync(candidate =>
-                candidate.CrewUuid == context.Uuid &&
-                candidate.UserId == context.Administrator.UserId
-            );
-
-        Assert.Equal(3, statistics.CurrentWinStreak);
-        Assert.Equal(games[3].PlayedAtUtc, statistics.CurrentWinStreakStartedAtUtc);
-        Assert.Equal(3, statistics.LongestWinStreak);
-        Assert.Equal(games[3].PlayedAtUtc, statistics.LongestWinStreakStartedAtUtc);
-        Assert.Null(statistics.LongestWinStreakEndedAtUtc);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenDoublesHasFourMembers_ShouldGiveEachMemberTheFullScoreContribution()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .WithMember()
-            .WithMember()
-            .BuildAsync();
-        var winningTeammate = context.Members[0];
-        var firstOpponent = context.Members[1];
-        var secondOpponent = context.Members[2];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides = [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateMemberParticipant(winningTeammate.UserId)
-                ),
-                CreateSide(
-                    7,
-                    CreateMemberParticipant(firstOpponent.UserId),
-                    CreateMemberParticipant(secondOpponent.UserId)
-                ),
-            ],
-        };
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Uuid)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(4, statistics.Count);
-        AssertStatistics(
-            statistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 7
-        );
-        AssertStatistics(
-            statistics[winningTeammate.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 7
-        );
-        AssertStatistics(
-            statistics[firstOpponent.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-        AssertStatistics(
-            statistics[secondOpponent.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenDoublesIncludesMembersAndGuests_ShouldPersistCompleteResult()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var teammate = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides = [
-                CreateSide(
-                    13,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateGuestParticipant("  Jamie Kitchen  ")
-                ),
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(teammate.UserId),
-                    CreateGuestParticipant("Taylor Dink")
-                ),
-            ],
-        };
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
-            TestJsonSerializerOptions.Default
-        );
-        Assert.NotNull(result);
-        Assert.Equal(GameFormat.Doubles, result.Format);
-        Assert.Equal("Jamie Kitchen", result.Sides[0].Participants[1].GuestName);
-        Assert.Equal("Taylor Dink", result.Sides[1].Participants[1].GuestName);
-
-        await using var dbContext = fixture.CreateDbContext();
-        var game = await dbContext.Games
-            .AsNoTracking()
-            .SingleAsync(candidate => candidate.Uuid == result.GameId);
-        Assert.Collection(
-            game.Sides.OrderBy(side => side.SideNumber),
-            side => Assert.Collection(
-                side.Participants.OrderBy(participant => participant.SlotNumber),
-                participant => AssertMemberParticipant(
-                    participant,
-                    1,
-                    context.Administrator.UserId
-                ),
-                participant => AssertGuestParticipant(participant, 2, "Jamie Kitchen")
-            ),
-            side => Assert.Collection(
-                side.Participants.OrderBy(participant => participant.SlotNumber),
-                participant => AssertMemberParticipant(participant, 1, teammate.UserId),
-                participant => AssertGuestParticipant(participant, 2, "Taylor Dink")
-            )
-        );
-
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Uuid)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(2, statistics.Count);
-        AssertStatistics(
-            statistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 13,
-            pointsConceded: 11
-        );
-        AssertStatistics(
-            statistics[teammate.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 11,
-            pointsConceded: 13
-        );
-        Assert.Equal(
-            0,
-            await dbContext.CrewDoublesPairingStatistics.CountAsync(candidate =>
-                candidate.CrewUuid == context.Uuid
-            )
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenSinglesIncludesGuest_ShouldPersistGuest()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .BuildAsync();
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Singles,
-            Sides = [
-                CreateSide(11, CreateMemberParticipant(context.Administrator.UserId)),
-                CreateSide(9, CreateGuestParticipant("Jamie Kitchen")),
-            ],
-        };
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
-            TestJsonSerializerOptions.Default
-        );
-        Assert.NotNull(result);
-        Assert.Equal("Jamie Kitchen", result.Sides[1].Participants[0].GuestName);
-        Assert.Null(result.Sides[1].Participants[0].UserId);
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .SingleAsync(candidate => candidate.CrewUuid == context.Uuid);
-        AssertStatistics(
-            statistics,
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 9
-        );
     }
 
     [Fact]
@@ -846,638 +318,6 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("current Crew", content, StringComparison.OrdinalIgnoreCase);
         await AssertNoGameOrStatisticsAsync(context.Uuid);
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenIdenticalGameIsRecordedTwice_ShouldPersistBothGames()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .BuildAsync();
-        var opponent = context.Members[0];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var request = CreateRequest(
-            context.Administrator.UserId,
-            opponent.UserId,
-            11,
-            7
-        );
-
-        using var firstResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-        using var secondResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            request,
-            TestJsonSerializerOptions.Default
-        );
-
-        firstResponse.EnsureSuccessStatusCode();
-        secondResponse.EnsureSuccessStatusCode();
-        Assert.Equal(2, await CountGamesAsync(context.Uuid));
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Uuid)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(2, statistics.Count);
-        AssertStatistics(
-            statistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 2,
-            losses: 0,
-            pointsScored: 22,
-            pointsConceded: 14
-        );
-        AssertStatistics(
-            statistics[opponent.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 2,
-            pointsScored: 14,
-            pointsConceded: 22
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenActiveRecorderDidNotPlay_ShouldNotGenerateRecorderStatistics()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .WithMember()
-            .BuildAsync();
-        var firstParticipant = context.Members[0];
-        var secondParticipant = context.Members[1];
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-
-        using var response = await apiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(firstParticipant.UserId, secondParticipant.UserId, 12, 10),
-            TestJsonSerializerOptions.Default
-        );
-
-        response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
-            TestJsonSerializerOptions.Default
-        );
-        Assert.NotNull(result);
-        Assert.Equal(context.Administrator.UserId, result.RecorderUserId);
-        Assert.DoesNotContain(
-            result.Sides.SelectMany(side => side.Participants),
-            participant => participant.UserId == context.Administrator.UserId
-        );
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statistics = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(candidate => candidate.CrewUuid == context.Uuid)
-            .ToDictionaryAsync(candidate => candidate.UserId);
-        Assert.Equal(2, statistics.Count);
-        Assert.DoesNotContain(context.Administrator.UserId, statistics.Keys);
-        AssertStatistics(
-            statistics[firstParticipant.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 12,
-            pointsConceded: 10
-        );
-        AssertStatistics(
-            statistics[secondParticipant.UserId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 10,
-            pointsConceded: 12
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenMemberParticipatesInTwoCrews_ShouldKeepStatisticsSeparate()
-    {
-        var sharedMemberId = $"user_test_{Guid.NewGuid():N}";
-        var firstContext = await fixture.CreateCrewBuilder()
-            .WithName("First Crew")
-            .WithMember(id: sharedMemberId)
-            .BuildAsync();
-        var secondContext = await fixture.CreateCrewBuilder()
-            .WithName("Second Crew")
-            .WithMember(id: sharedMemberId)
-            .BuildAsync();
-        var sharedMember = firstContext.Members[0];
-        using var firstApiClient = fixture.CreateApiClient(firstContext.Administrator);
-        using var secondApiClient = fixture.CreateApiClient(secondContext.Administrator);
-
-        using var firstResponse = await firstApiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(
-                sharedMember.UserId,
-                firstContext.Administrator.UserId,
-                11,
-                5
-            ),
-            TestJsonSerializerOptions.Default
-        );
-        using var secondResponse = await secondApiClient.PostAsJsonAsync(
-            "/games",
-            CreateRequest(
-                sharedMember.UserId,
-                secondContext.Administrator.UserId,
-                7,
-                11
-            ),
-            TestJsonSerializerOptions.Default
-        );
-
-        firstResponse.EnsureSuccessStatusCode();
-        secondResponse.EnsureSuccessStatusCode();
-
-        await using var dbContext = fixture.CreateDbContext();
-        var statisticsByCrew = await dbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(statistics => statistics.UserId == sharedMember.UserId)
-            .ToDictionaryAsync(statistics => statistics.CrewUuid);
-        Assert.Equal(2, statisticsByCrew.Count);
-        AssertStatistics(
-            statisticsByCrew[firstContext.Uuid],
-            firstContext.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 5
-        );
-        AssertStatistics(
-            statisticsByCrew[secondContext.Uuid],
-            secondContext.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-    }
-
-    [Fact]
-    public async Task RecordGame_WhenSamePairingPlaysInTwoCrews_ShouldKeepPairingStatisticsSeparate()
-    {
-        var firstPlayerId = $"user_test_{Guid.NewGuid():N}";
-        var secondPlayerId = $"user_test_{Guid.NewGuid():N}";
-        var firstContext = await fixture.CreateCrewBuilder()
-            .WithName("First Pairing Crew")
-            .WithMember(id: firstPlayerId)
-            .WithMember(id: secondPlayerId)
-            .BuildAsync();
-        var secondContext = await fixture.CreateCrewBuilder()
-            .WithName("Second Pairing Crew")
-            .WithMember(id: firstPlayerId)
-            .WithMember(id: secondPlayerId)
-            .BuildAsync();
-        using var firstApiClient = fixture.CreateApiClient(firstContext.Administrator);
-        using var secondApiClient = fixture.CreateApiClient(secondContext.Administrator);
-        var firstRequest = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(firstPlayerId),
-                    CreateMemberParticipant(secondPlayerId)
-                ),
-                CreateSide(
-                    5,
-                    CreateGuestParticipant("First Guest"),
-                    CreateGuestParticipant("Second Guest")
-                ),
-            ],
-        };
-        var secondRequest = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    7,
-                    CreateMemberParticipant(secondPlayerId),
-                    CreateMemberParticipant(firstPlayerId)
-                ),
-                CreateSide(
-                    11,
-                    CreateGuestParticipant("Third Guest"),
-                    CreateGuestParticipant("Fourth Guest")
-                ),
-            ],
-        };
-
-        using var firstResponse = await firstApiClient.PostAsJsonAsync(
-            "/games",
-            firstRequest,
-            TestJsonSerializerOptions.Default
-        );
-        using var secondResponse = await secondApiClient.PostAsJsonAsync(
-            "/games",
-            secondRequest,
-            TestJsonSerializerOptions.Default
-        );
-
-        firstResponse.EnsureSuccessStatusCode();
-        secondResponse.EnsureSuccessStatusCode();
-
-        await using var database = fixture.CreateDbContext();
-        var pairingKey = CrewDoublesPairingKey.Create(firstPlayerId, secondPlayerId);
-        var statisticsByCrew = await database.CrewDoublesPairingStatistics
-            .AsNoTracking()
-            .Where(statistics =>
-                statistics.Player1Id == pairingKey.Player1Id
-                && statistics.Player2Id == pairingKey.Player2Id
-            )
-            .ToDictionaryAsync(statistics => statistics.CrewUuid);
-
-        Assert.Equal(2, statisticsByCrew.Count);
-        AssertPairingStatistics(
-            statisticsByCrew[firstContext.Uuid],
-            firstContext.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 5
-        );
-        AssertPairingStatistics(
-            statisticsByCrew[secondContext.Uuid],
-            secondContext.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-    }
-
-    [Fact]
-    public async Task SaveChanges_WhenStatisticsHaveConcurrencyConflict_ShouldRollBackGameAndStatistics()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .BuildAsync();
-        var winnerUserId = context.Administrator.UserId;
-        var loserUserId = $"user_test_{Guid.NewGuid():N}";
-        long crewId;
-
-        await using (var seedDbContext = fixture.CreateDbContext())
-        {
-            crewId = await seedDbContext.Crews
-                .Where(crew => crew.Uuid == context.Uuid)
-                .Select(crew => crew.Id)
-                .SingleAsync();
-            seedDbContext.CrewMemberStatistics.AddRange(
-                CreateMemberStatistics(
-                    crewId,
-                    context.Uuid,
-                    winnerUserId,
-                    wins: 2,
-                    losses: 1,
-                    pointsScored: 31,
-                    pointsConceded: 20
-                ),
-                CreateMemberStatistics(
-                    crewId,
-                    context.Uuid,
-                    loserUserId,
-                    wins: 1,
-                    losses: 2,
-                    pointsScored: 20,
-                    pointsConceded: 31
-                )
-            );
-            await seedDbContext.SaveChangesAsync();
-        }
-
-        var crewUserContext = new CrewUserContext
-        {
-            CrewId = crewId,
-            CrewUuid = context.Uuid,
-        };
-        var options = new DbContextOptionsBuilder<CrewScopedDbContext>()
-            .UseNpgsql(fixture.DatabaseConnectionString)
-            .Options;
-        await using var staleDbContext = new CrewScopedDbContext(
-            options,
-            crewUserContext
-        );
-        var game = new Game
-        {
-            CrewId = crewId,
-            CrewUuid = context.Uuid,
-            Format = GameFormat.Singles,
-            RecorderUserId = winnerUserId,
-            PlayedAtUtc = DateTimeOffset.UtcNow,
-            Sides =
-            [
-                new GameSide
-                {
-                    SideNumber = 1,
-                    Score = 11,
-                    Participants =
-                    [
-                        new GameParticipant
-                        {
-                            SlotNumber = 1,
-                            UserId = winnerUserId,
-                        },
-                    ],
-                },
-                new GameSide
-                {
-                    SideNumber = 2,
-                    Score = 7,
-                    Participants =
-                    [
-                        new GameParticipant
-                        {
-                            SlotNumber = 1,
-                            UserId = loserUserId,
-                        },
-                    ],
-                },
-            ],
-        };
-        var statisticsService = new GameStatisticsService(staleDbContext);
-        var statisticsChanges = await statisticsService.CalculateStatisticsAsync(
-            game,
-            CancellationToken.None
-        );
-        Assert.Equal(2, statisticsChanges.PlayerStatistics.Length);
-        Assert.All(
-            statisticsChanges.PlayerStatistics,
-            change => Assert.Equal(
-                CalculateGameStatisticsResultOperation.Updated,
-                change.Operation
-            )
-        );
-        staleDbContext.Games.Add(game);
-
-        await using (var competingDbContext = fixture.CreateDbContext())
-        {
-            var competingStatistics = await competingDbContext.CrewMemberStatistics
-                .SingleAsync(statistics =>
-                    statistics.CrewId == crewId
-                    && statistics.UserId == winnerUserId
-                );
-            competingStatistics.Losses += 1;
-            competingStatistics.PointsScored += 7;
-            competingStatistics.PointsConceded += 11;
-            await competingDbContext.SaveChangesAsync();
-        }
-
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
-            async () => await staleDbContext.SaveChangesAsync()
-        );
-
-        await using var verificationDbContext = fixture.CreateDbContext();
-        Assert.Equal(
-            0,
-            await verificationDbContext.Games.CountAsync(candidate =>
-                candidate.CrewId == crewId
-            )
-        );
-        var persistedStatistics = await verificationDbContext.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(statistics => statistics.CrewId == crewId)
-            .ToDictionaryAsync(statistics => statistics.UserId);
-        Assert.Equal(2, persistedStatistics.Count);
-        AssertStatistics(
-            persistedStatistics[winnerUserId],
-            context.Uuid,
-            wins: 2,
-            losses: 2,
-            pointsScored: 38,
-            pointsConceded: 31
-        );
-        AssertStatistics(
-            persistedStatistics[loserUserId],
-            context.Uuid,
-            wins: 1,
-            losses: 2,
-            pointsScored: 20,
-            pointsConceded: 31
-        );
-    }
-
-    [Fact]
-    public async Task SaveChanges_WhenPairingStatisticsHaveConcurrencyConflict_ShouldRollBackAllGameChanges()
-    {
-        var context = await fixture.CreateCrewBuilder()
-            .WithMember()
-            .WithMember()
-            .WithMember()
-            .BuildAsync();
-        var firstTeammateId = context.Members[0].UserId;
-        var firstOpponentId = context.Members[1].UserId;
-        var secondOpponentId = context.Members[2].UserId;
-        var firstPairingKey = CrewDoublesPairingKey.Create(
-            context.Administrator.UserId,
-            firstTeammateId
-        );
-        var opposingPairingKey = CrewDoublesPairingKey.Create(
-            firstOpponentId,
-            secondOpponentId
-        );
-
-        using var apiClient = fixture.CreateApiClient(context.Administrator);
-        var seedRequest = new RecordGameHttpRequest
-        {
-            Format = GameFormat.Doubles,
-            Sides =
-            [
-                CreateSide(
-                    11,
-                    CreateMemberParticipant(context.Administrator.UserId),
-                    CreateMemberParticipant(firstTeammateId)
-                ),
-                CreateSide(
-                    7,
-                    CreateMemberParticipant(firstOpponentId),
-                    CreateMemberParticipant(secondOpponentId)
-                ),
-            ],
-        };
-        using var seedResponse = await apiClient.PostAsJsonAsync(
-            "/games",
-            seedRequest,
-            TestJsonSerializerOptions.Default
-        );
-        seedResponse.EnsureSuccessStatusCode();
-
-        var crewUserContext = new CrewUserContext
-        {
-            CrewId = context.Id,
-            CrewUuid = context.Uuid,
-        };
-        var options = new DbContextOptionsBuilder<CrewScopedDbContext>()
-            .UseNpgsql(fixture.DatabaseConnectionString)
-            .Options;
-        await using var staleDatabase = new CrewScopedDbContext(
-            options,
-            crewUserContext
-        );
-        var game = new Game
-        {
-            CrewId = context.Id,
-            CrewUuid = context.Uuid,
-            Format = GameFormat.Doubles,
-            RecorderUserId = context.Administrator.UserId,
-            PlayedAtUtc = DateTimeOffset.UtcNow,
-            Sides =
-            [
-                new GameSide
-                {
-                    SideNumber = 1,
-                    Score = 11,
-                    Participants =
-                    [
-                        new GameParticipant
-                        {
-                            SlotNumber = 1,
-                            UserId = context.Administrator.UserId,
-                        },
-                        new GameParticipant
-                        {
-                            SlotNumber = 2,
-                            UserId = firstTeammateId,
-                        },
-                    ],
-                },
-                new GameSide
-                {
-                    SideNumber = 2,
-                    Score = 7,
-                    Participants =
-                    [
-                        new GameParticipant
-                        {
-                            SlotNumber = 1,
-                            UserId = firstOpponentId,
-                        },
-                        new GameParticipant
-                        {
-                            SlotNumber = 2,
-                            UserId = secondOpponentId,
-                        },
-                    ],
-                },
-            ],
-        };
-        var statisticsService = new GameStatisticsService(staleDatabase);
-        var statisticsChanges = await statisticsService.CalculateStatisticsAsync(
-            game,
-            CancellationToken.None
-        );
-        Assert.Equal(4, statisticsChanges.PlayerStatistics.Length);
-        Assert.All(
-            statisticsChanges.PlayerStatistics,
-            change => Assert.Equal(
-                CalculateGameStatisticsResultOperation.Updated,
-                change.Operation
-            )
-        );
-        Assert.Equal(2, statisticsChanges.DoublesPairingStatistics.Length);
-        Assert.All(
-            statisticsChanges.DoublesPairingStatistics,
-            change => Assert.Equal(
-                CalculateGameStatisticsResultOperation.Updated,
-                change.Operation
-            )
-        );
-        staleDatabase.Games.Add(game);
-
-        await using (var competingDatabase = fixture.CreateDbContext())
-        {
-            var competingStatistics = await competingDatabase.CrewDoublesPairingStatistics
-                .SingleAsync(statistics =>
-                    statistics.CrewId == context.Id
-                    && statistics.Player1Id == firstPairingKey.Player1Id
-                    && statistics.Player2Id == firstPairingKey.Player2Id
-                );
-            competingStatistics.Losses += 1;
-            competingStatistics.PointsScored += 7;
-            competingStatistics.PointsConceded += 11;
-            await competingDatabase.SaveChangesAsync();
-        }
-
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
-            async () => await staleDatabase.SaveChangesAsync()
-        );
-
-        await using var verificationDatabase = fixture.CreateDbContext();
-        Assert.Equal(
-            1,
-            await verificationDatabase.Games.CountAsync(gameCandidate =>
-                gameCandidate.CrewId == context.Id
-            )
-        );
-        var persistedMemberStatistics = await verificationDatabase.CrewMemberStatistics
-            .AsNoTracking()
-            .Where(statistics => statistics.CrewId == context.Id)
-            .ToDictionaryAsync(statistics => statistics.UserId);
-        Assert.Equal(4, persistedMemberStatistics.Count);
-        AssertStatistics(
-            persistedMemberStatistics[context.Administrator.UserId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 7
-        );
-        AssertStatistics(
-            persistedMemberStatistics[firstTeammateId],
-            context.Uuid,
-            wins: 1,
-            losses: 0,
-            pointsScored: 11,
-            pointsConceded: 7
-        );
-        AssertStatistics(
-            persistedMemberStatistics[firstOpponentId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-        AssertStatistics(
-            persistedMemberStatistics[secondOpponentId],
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
-        var persistedPairingStatistics = await verificationDatabase.CrewDoublesPairingStatistics
-            .AsNoTracking()
-            .Where(statistics => statistics.CrewId == context.Id)
-            .ToArrayAsync();
-        AssertPairingStatistics(
-            Assert.Single(persistedPairingStatistics, statistics =>
-                statistics.Player1Id == firstPairingKey.Player1Id
-                && statistics.Player2Id == firstPairingKey.Player2Id
-            ),
-            context.Uuid,
-            wins: 1,
-            losses: 1,
-            pointsScored: 18,
-            pointsConceded: 18
-        );
-        AssertPairingStatistics(
-            Assert.Single(persistedPairingStatistics, statistics =>
-                statistics.Player1Id == opposingPairingKey.Player1Id
-                && statistics.Player2Id == opposingPairingKey.Player2Id
-            ),
-            context.Uuid,
-            wins: 0,
-            losses: 1,
-            pointsScored: 7,
-            pointsConceded: 11
-        );
     }
 
     [Theory]
@@ -1652,60 +492,886 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         await AssertNoGameOrStatisticsAsync(context.Uuid);
     }
 
-    private async Task<int> CountGamesAsync(Guid crewUuid)
+    [Fact]
+    public async Task RecordGame_WhenIdenticalGameIsRecordedTwice_ShouldPersistBothGamesAndSeparateContributions()
     {
-        await using var dbContext = fixture.CreateDbContext();
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponentId = context.Members[0].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var request = CreateSinglesRequest(
+            context.Administrator.UserId,
+            opponentId,
+            11,
+            7
+        );
 
-        return await dbContext.Games.CountAsync(game => game.Crew.Uuid == crewUuid);
+        var firstGame = await RecordGameAsync(apiClient, request);
+        var secondGame = await RecordGameAsync(apiClient, request);
+
+        await using var database = fixture.CreateDbContext();
+        Assert.NotEqual(firstGame.GameId, secondGame.GameId);
+        Assert.Equal(2, await database.Games.CountAsync(game =>
+            game.CrewUuid == context.Uuid
+        ));
+        Assert.Equal(4, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            statistics.CrewUuid == context.Uuid
+        ));
+        Assert.Equal(4, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+            statistics.CrewUuid == context.Uuid
+        ));
+        Assert.Equal(2, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == firstGame.GameId
+        ));
+        Assert.Equal(2, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == secondGame.GameId
+        ));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenActiveRecorderDidNotPlay_ShouldPersistOnlyParticipantContributions()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var firstParticipantId = context.Members[0].UserId;
+        var secondParticipantId = context.Members[1].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        var game = await RecordGameAsync(
+            apiClient,
+            CreateSinglesRequest(
+                firstParticipantId,
+                secondParticipantId,
+                12,
+                10
+            )
+        );
+
+        Assert.Equal(context.Administrator.UserId, game.RecorderUserId);
+        Assert.DoesNotContain(
+            game.Sides.SelectMany(side => side.Participants),
+            participant => participant.UserId == context.Administrator.UserId
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var memberIds = await database.CrewMemberGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.GameId)
+            .Select(statistics => statistics.UserId)
+            .ToArrayAsync();
+        var winStreakMemberIds = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .Where(winStreak => winStreak.CrewUuid == context.Uuid)
+            .Select(winStreak => winStreak.UserId)
+            .ToArrayAsync();
+
+        Assert.Equal(2, memberIds.Length);
+        Assert.Contains(firstParticipantId, memberIds);
+        Assert.Contains(secondParticipantId, memberIds);
+        Assert.DoesNotContain(context.Administrator.UserId, memberIds);
+        Assert.DoesNotContain(context.Administrator.UserId, winStreakMemberIds);
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenSinglesIncludesGuest_ShouldPersistGuestAndOnlyMemberStatistics()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var request = new RecordGameHttpRequest
+        {
+            Format = GameFormat.Singles,
+            Sides =
+            [
+                CreateSide(
+                    11,
+                    CreateMemberParticipant(context.Administrator.UserId)
+                ),
+                CreateSide(9, CreateGuestParticipant("  Jamie Kitchen  ")),
+            ],
+        };
+
+        var recordedGame = await RecordGameAsync(apiClient, request);
+
+        Assert.Equal("Jamie Kitchen", recordedGame.Sides[1].Participants[0].GuestName);
+        Assert.Null(recordedGame.Sides[1].Participants[0].UserId);
+
+        await using var database = fixture.CreateDbContext();
+        var game = await database.Games
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.Uuid == recordedGame.GameId);
+        var guest = game.Sides
+            .SelectMany(side => side.Participants)
+            .Single(participant => participant.GuestName is not null);
+
+        Assert.Equal("Jamie Kitchen", guest.GuestName);
+        Assert.Equal(1, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == recordedGame.GameId
+        ));
+        Assert.Equal(0, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == recordedGame.GameId
+        ));
+        Assert.Equal(1, await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+            winStreak.CrewUuid == context.Uuid
+        ));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenResultsContainMultipleStreaks_ShouldPersistCurrentAndLongestWinStreakPeriods()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponentId = context.Members[0].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var scores = new[]
+        {
+            (11, 7),
+            (11, 8),
+            (11, 9),
+            (9, 11),
+            (11, 6),
+            (11, 5),
+        };
+
+        foreach (var (administratorScore, opponentScore) in scores)
+        {
+            await RecordGameAsync(
+                apiClient,
+                CreateSinglesRequest(
+                    context.Administrator.UserId,
+                    opponentId,
+                    administratorScore,
+                    opponentScore
+                )
+            );
+        }
+
+        await using var database = fixture.CreateDbContext();
+        var games = await database.Games
+            .AsNoTracking()
+            .Where(game => game.CrewUuid == context.Uuid)
+            .OrderBy(game => game.Id)
+            .ToArrayAsync();
+        var winStreak = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .SingleAsync(candidate =>
+                candidate.CrewUuid == context.Uuid
+                && candidate.UserId == context.Administrator.UserId
+            );
+
+        Assert.Equal(2, winStreak.CurrentWinStreak);
+        Assert.Equal(games[4].PlayedAtUtc, winStreak.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(3, winStreak.LongestWinStreak);
+        Assert.Equal(games[0].PlayedAtUtc, winStreak.LongestWinStreakStartedAtUtc);
+        Assert.Equal(games[3].PlayedAtUtc, winStreak.LongestWinStreakEndedAtUtc);
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenActiveStreakExceedsEndedLongestStreak_ShouldReplaceLongestWinStreakPeriod()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponentId = context.Members[0].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var scores = new[]
+        {
+            (11, 7),
+            (11, 8),
+            (9, 11),
+            (11, 6),
+            (11, 5),
+            (11, 4),
+        };
+
+        foreach (var (administratorScore, opponentScore) in scores)
+        {
+            await RecordGameAsync(
+                apiClient,
+                CreateSinglesRequest(
+                    context.Administrator.UserId,
+                    opponentId,
+                    administratorScore,
+                    opponentScore
+                )
+            );
+        }
+
+        await using var database = fixture.CreateDbContext();
+        var games = await database.Games
+            .AsNoTracking()
+            .Where(game => game.CrewUuid == context.Uuid)
+            .OrderBy(game => game.Id)
+            .ToArrayAsync();
+        var winStreak = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .SingleAsync(candidate =>
+                candidate.CrewUuid == context.Uuid
+                && candidate.UserId == context.Administrator.UserId
+            );
+
+        Assert.Equal(3, winStreak.CurrentWinStreak);
+        Assert.Equal(games[3].PlayedAtUtc, winStreak.CurrentWinStreakStartedAtUtc);
+        Assert.Equal(3, winStreak.LongestWinStreak);
+        Assert.Equal(games[3].PlayedAtUtc, winStreak.LongestWinStreakStartedAtUtc);
+        Assert.Null(winStreak.LongestWinStreakEndedAtUtc);
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenMultipleFormatsAreRecorded_ShouldPersistSeparateRecordsAtEachGameGrain()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var firstMemberId = context.Members[0].UserId;
+        var secondMemberId = context.Members[1].UserId;
+        var thirdMemberId = context.Members[2].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        var singlesGame = await RecordGameAsync(
+            apiClient,
+            CreateSinglesRequest(
+                context.Administrator.UserId,
+                firstMemberId,
+                11,
+                7
+            )
+        );
+        var doublesGame = await RecordGameAsync(
+            apiClient,
+            CreateDoublesRequest(
+                9,
+                [context.Administrator.UserId, firstMemberId],
+                11,
+                [secondMemberId, thirdMemberId]
+            )
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var memberStatistics = await database.CrewMemberGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.CrewUuid == context.Uuid)
+            .ToArrayAsync();
+        var matchupStatistics = await database.CrewMatchupGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.CrewUuid == context.Uuid)
+            .ToArrayAsync();
+        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.CrewUuid == context.Uuid)
+            .ToArrayAsync();
+        var winStreaks = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .Where(winStreak => winStreak.CrewUuid == context.Uuid)
+            .ToArrayAsync();
+
+        Assert.Equal(6, memberStatistics.Length);
+        Assert.Equal(10, matchupStatistics.Length);
+        Assert.Equal(2, pairingStatistics.Length);
+        Assert.Equal(4, winStreaks.Length);
+        Assert.Equal(
+            2,
+            memberStatistics.Count(statistics => statistics.GameUuid == singlesGame.GameId)
+        );
+        Assert.Equal(
+            4,
+            memberStatistics.Count(statistics => statistics.GameUuid == doublesGame.GameId)
+        );
+        Assert.Equal(
+            2,
+            matchupStatistics.Count(statistics => statistics.GameUuid == singlesGame.GameId)
+        );
+        Assert.Equal(
+            8,
+            matchupStatistics.Count(statistics => statistics.GameUuid == doublesGame.GameId)
+        );
+        Assert.DoesNotContain(
+            pairingStatistics,
+            statistics => statistics.GameUuid == singlesGame.GameId
+        );
+        Assert.All(
+            pairingStatistics,
+            statistics => Assert.Equal(doublesGame.GameId, statistics.GameUuid)
+        );
+        Assert.All(
+            memberStatistics,
+            statistics => Assert.Equal(context.Id, statistics.CrewId)
+        );
+        Assert.All(
+            matchupStatistics,
+            statistics => Assert.Equal(context.Uuid, statistics.CrewUuid)
+        );
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenBothDoublesSidesContainGuests_ShouldPersistOnlyMemberContributionsAndMatchups()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var opponentId = context.Members[0].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var game = await RecordGameAsync(
+            apiClient,
+            CreateDoublesRequest(
+                13,
+                [context.Administrator.UserId, null],
+                11,
+                [opponentId, null],
+                firstGuestName: "Winning guest",
+                secondGuestName: "Losing guest"
+            )
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var memberStatistics = await database.CrewMemberGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.GameId)
+            .ToDictionaryAsync(statistics => statistics.UserId);
+        var matchupStatistics = await database.CrewMatchupGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.GameUuid == game.GameId)
+            .ToArrayAsync();
+        var winStreaks = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .Where(winStreak => winStreak.CrewUuid == context.Uuid)
+            .ToDictionaryAsync(winStreak => winStreak.UserId);
+
+        Assert.Equal(2, memberStatistics.Count);
+        Assert.Equal(2, matchupStatistics.Length);
+        Assert.Equal(2, winStreaks.Count);
+        Assert.Empty(
+            await database.CrewDoublesPairingGameStatistics
+                .AsNoTracking()
+                .Where(statistics => statistics.GameUuid == game.GameId)
+                .ToArrayAsync()
+        );
+        Assert.Equal(1, memberStatistics[context.Administrator.UserId].Wins);
+        Assert.Equal(1, memberStatistics[opponentId].Losses);
+        Assert.Contains(matchupStatistics, statistics =>
+            statistics.UserId == context.Administrator.UserId
+            && statistics.OpponentUserId == opponentId
+        );
+        Assert.Contains(matchupStatistics, statistics =>
+            statistics.UserId == opponentId
+            && statistics.OpponentUserId == context.Administrator.UserId
+        );
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenOnlyOpposingSideContainsGuest_ShouldPersistTheMemberPairing()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var teammateId = context.Members[0].UserId;
+        var opponentId = context.Members[1].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        var game = await RecordGameAsync(
+            apiClient,
+            CreateDoublesRequest(
+                11,
+                [context.Administrator.UserId, teammateId],
+                8,
+                [opponentId, null],
+                secondGuestName: "Guest opponent"
+            )
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var pairing = await database.CrewDoublesPairingGameStatistics
+            .AsNoTracking()
+            .SingleAsync(statistics => statistics.GameUuid == game.GameId);
+        var key = CrewDoublesPairingKey.Create(
+            context.Administrator.UserId,
+            teammateId
+        );
+
+        Assert.Equal(key.Player1Id, pairing.Player1Id);
+        Assert.Equal(key.Player2Id, pairing.Player2Id);
+        Assert.Equal(1, pairing.Wins);
+        Assert.Equal(0, pairing.Losses);
+        Assert.Equal(11, pairing.PointsScored);
+        Assert.Equal(8, pairing.PointsConceded);
+        Assert.Equal(3, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == game.GameId
+        ));
+        Assert.Equal(4, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+            statistics.GameUuid == game.GameId
+        ));
+        Assert.Equal(3, await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+            winStreak.CrewUuid == context.Uuid
+        ));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenPairingOrderIsReversed_ShouldPersistCanonicalPairingPerGame()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .WithMember()
+            .WithMember()
+            .BuildAsync();
+        var teammateId = context.Members[0].UserId;
+        var firstOpponentId = context.Members[1].UserId;
+        var secondOpponentId = context.Members[2].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        var firstGame = await RecordGameAsync(
+            apiClient,
+            CreateDoublesRequest(
+                11,
+                [context.Administrator.UserId, teammateId],
+                7,
+                [firstOpponentId, secondOpponentId]
+            )
+        );
+        var secondGame = await RecordGameAsync(
+            apiClient,
+            CreateDoublesRequest(
+                9,
+                [teammateId, context.Administrator.UserId],
+                11,
+                [secondOpponentId, firstOpponentId]
+            )
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var pairings = await database.CrewDoublesPairingGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.CrewUuid == context.Uuid)
+            .ToArrayAsync();
+        var firstKey = CrewDoublesPairingKey.Create(
+            context.Administrator.UserId,
+            teammateId
+        );
+        var secondKey = CrewDoublesPairingKey.Create(
+            firstOpponentId,
+            secondOpponentId
+        );
+
+        Assert.Equal(4, pairings.Length);
+        Assert.Equal(2, pairings.Count(statistics =>
+            statistics.Player1Id == firstKey.Player1Id
+            && statistics.Player2Id == firstKey.Player2Id
+        ));
+        Assert.Equal(2, pairings.Count(statistics =>
+            statistics.Player1Id == secondKey.Player1Id
+            && statistics.Player2Id == secondKey.Player2Id
+        ));
+        Assert.Equal(
+            [firstGame.GameId, secondGame.GameId],
+            pairings
+                .Where(statistics => statistics.Player1Id == firstKey.Player1Id)
+                .OrderBy(statistics => statistics.PlayedAtUtc)
+                .ThenBy(statistics => statistics.GameId)
+                .Select(statistics => statistics.GameUuid)
+                .ToArray()
+        );
+        Assert.All(pairings, statistics => Assert.True(
+            string.CompareOrdinal(statistics.Player1Id, statistics.Player2Id) < 0
+        ));
+    }
+
+    [Fact]
+    public async Task RecordGame_WhenSamePlayersPlayInTwoCrews_ShouldKeepGameBasedRecordsIsolatedByCrewAndGame()
+    {
+        var firstPlayerId = $"user_test_{Guid.NewGuid():N}";
+        var secondPlayerId = $"user_test_{Guid.NewGuid():N}";
+        var firstCrew = await fixture.CreateCrewBuilder()
+            .WithName("First game-based crew")
+            .WithMember(id: firstPlayerId)
+            .WithMember(id: secondPlayerId)
+            .BuildAsync();
+        var secondCrew = await fixture.CreateCrewBuilder()
+            .WithName("Second game-based crew")
+            .WithMember(id: firstPlayerId)
+            .WithMember(id: secondPlayerId)
+            .BuildAsync();
+        using var firstApiClient = fixture.CreateApiClient(firstCrew.Administrator);
+        using var secondApiClient = fixture.CreateApiClient(secondCrew.Administrator);
+
+        var firstGame = await RecordGameAsync(
+            firstApiClient,
+            CreateDoublesRequest(
+                11,
+                [firstPlayerId, secondPlayerId],
+                7,
+                [firstCrew.Administrator.UserId, null],
+                secondGuestName: "First guest"
+            )
+        );
+        var secondGame = await RecordGameAsync(
+            secondApiClient,
+            CreateDoublesRequest(
+                7,
+                [secondPlayerId, firstPlayerId],
+                11,
+                [secondCrew.Administrator.UserId, null],
+                secondGuestName: "Second guest"
+            )
+        );
+
+        await using var database = fixture.CreateDbContext();
+        var pairingKey = CrewDoublesPairingKey.Create(firstPlayerId, secondPlayerId);
+        var pairings = await database.CrewDoublesPairingGameStatistics
+            .AsNoTracking()
+            .Where(statistics =>
+                statistics.Player1Id == pairingKey.Player1Id
+                && statistics.Player2Id == pairingKey.Player2Id
+            )
+            .ToDictionaryAsync(statistics => statistics.CrewUuid);
+        var firstPlayerStatistics = await database.CrewMemberGameStatistics
+            .AsNoTracking()
+            .Where(statistics => statistics.UserId == firstPlayerId)
+            .ToDictionaryAsync(statistics => statistics.CrewUuid);
+        var firstPlayerStreaks = await database.CrewMemberWinStreaks
+            .AsNoTracking()
+            .Where(winStreak => winStreak.UserId == firstPlayerId)
+            .ToDictionaryAsync(winStreak => winStreak.CrewUuid);
+
+        Assert.Equal(2, pairings.Count);
+        Assert.Equal(firstCrew.Id, pairings[firstCrew.Uuid].CrewId);
+        Assert.Equal(firstGame.GameId, pairings[firstCrew.Uuid].GameUuid);
+        Assert.Equal(secondCrew.Id, pairings[secondCrew.Uuid].CrewId);
+        Assert.Equal(secondGame.GameId, pairings[secondCrew.Uuid].GameUuid);
+        Assert.Equal(2, firstPlayerStatistics.Count);
+        Assert.Equal(firstGame.GameId, firstPlayerStatistics[firstCrew.Uuid].GameUuid);
+        Assert.Equal(secondGame.GameId, firstPlayerStatistics[secondCrew.Uuid].GameUuid);
+        Assert.Equal(2, firstPlayerStreaks.Count);
+        Assert.Equal(firstCrew.Id, firstPlayerStreaks[firstCrew.Uuid].CrewId);
+        Assert.Equal(secondCrew.Id, firstPlayerStreaks[secondCrew.Uuid].CrewId);
+    }
+
+    [Fact]
+    public async Task SaveChanges_WhenGameBasedWinStreakHasConcurrencyConflict_ShouldRollBackGameAndAllStatistics()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithMember()
+            .BuildAsync();
+        var winnerId = context.Administrator.UserId;
+        var loserId = context.Members[0].UserId;
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+        await RecordGameAsync(
+            apiClient,
+            CreateSinglesRequest(winnerId, loserId, 11, 7)
+        );
+
+        var crewUserContext = new CrewUserContext
+        {
+            CrewId = context.Id,
+            CrewUuid = context.Uuid,
+        };
+        var options = new DbContextOptionsBuilder<CrewScopedDbContext>()
+            .UseNpgsql(fixture.DatabaseConnectionString)
+            .Options;
+        await using var staleDatabase = new CrewScopedDbContext(
+            options,
+            crewUserContext
+        );
+        var uncommittedGame = CreateSinglesGame(
+            context.Id,
+            context.Uuid,
+            winnerId,
+            loserId,
+            11,
+            8
+        );
+        staleDatabase.Games.Add(uncommittedGame);
+        var statisticsService = new GameStatisticsService(staleDatabase);
+        await statisticsService.CalculateStatisticsAsync(
+            uncommittedGame,
+            CancellationToken.None
+        );
+
+        await using (var competingDatabase = fixture.CreateDbContext())
+        {
+            var competingWinStreak = await competingDatabase.CrewMemberWinStreaks
+                .SingleAsync(winStreak =>
+                    winStreak.CrewId == context.Id
+                    && winStreak.UserId == winnerId
+                );
+            competingWinStreak.CurrentWinStreak++;
+            competingWinStreak.LongestWinStreak++;
+            await competingDatabase.SaveChangesAsync();
+        }
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+            async () => await staleDatabase.SaveChangesAsync()
+        );
+
+        await using var verificationDatabase = fixture.CreateDbContext();
+        Assert.Equal(1, await verificationDatabase.Games.CountAsync(game =>
+            game.CrewId == context.Id
+        ));
+        Assert.DoesNotContain(
+            await verificationDatabase.Games
+                .AsNoTracking()
+                .Where(game => game.CrewId == context.Id)
+                .Select(game => game.Uuid)
+                .ToArrayAsync(),
+            gameUuid => gameUuid == uncommittedGame.Uuid
+        );
+        Assert.Equal(2, await verificationDatabase.CrewMemberGameStatistics.CountAsync(
+            statistics => statistics.CrewId == context.Id
+        ));
+        Assert.Equal(2, await verificationDatabase.CrewMatchupGameStatistics.CountAsync(
+            statistics => statistics.CrewId == context.Id
+        ));
+        Assert.False(await verificationDatabase.CrewMemberGameStatistics.AnyAsync(
+            statistics => statistics.GameUuid == uncommittedGame.Uuid
+        ));
+        Assert.False(await verificationDatabase.CrewMatchupGameStatistics.AnyAsync(
+            statistics => statistics.GameUuid == uncommittedGame.Uuid
+        ));
+    }
+
+    private static void AssertMemberGameStatistics(
+        CrewMemberGameStatistics statistics,
+        Game game,
+        int wins,
+        int losses,
+        int pointsScored,
+        int pointsConceded,
+        int crewScore,
+        int thatsAPaddlin
+    )
+    {
+        AssertGameBasedStatisticsIdentities(
+            statistics.GameId,
+            statistics.GameUuid,
+            statistics.CrewId,
+            statistics.CrewUuid,
+            statistics.PlayedAtUtc,
+            game
+        );
+        Assert.Equal(wins, statistics.Wins);
+        Assert.Equal(losses, statistics.Losses);
+        Assert.Equal(pointsScored, statistics.PointsScored);
+        Assert.Equal(pointsConceded, statistics.PointsConceded);
+        Assert.Equal(pointsScored - pointsConceded, statistics.PointDifferential);
+        Assert.Equal(crewScore, statistics.CrewScore);
+        Assert.Equal(thatsAPaddlin, statistics.ThatsAPaddlin);
+    }
+
+    private static void AssertMatchupGameStatistics(
+        CrewMatchupGameStatistics statistics,
+        Game game,
+        int wins,
+        int losses,
+        int pointsScored,
+        int pointsConceded
+    )
+    {
+        AssertGameBasedStatisticsIdentities(
+            statistics.GameId,
+            statistics.GameUuid,
+            statistics.CrewId,
+            statistics.CrewUuid,
+            statistics.PlayedAtUtc,
+            game
+        );
+        Assert.Equal(wins, statistics.Wins);
+        Assert.Equal(losses, statistics.Losses);
+        Assert.Equal(pointsScored, statistics.PointsScored);
+        Assert.Equal(pointsConceded, statistics.PointsConceded);
+        Assert.Equal(pointsScored - pointsConceded, statistics.PointDifferential);
+    }
+
+    private static void AssertPairingGameStatistics(
+        CrewDoublesPairingGameStatistics[] allStatistics,
+        Game game,
+        string firstPlayerId,
+        string secondPlayerId,
+        int wins,
+        int losses,
+        int pointsScored,
+        int pointsConceded
+    )
+    {
+        var key = CrewDoublesPairingKey.Create(firstPlayerId, secondPlayerId);
+        var statistics = Assert.Single(allStatistics, candidate =>
+            candidate.Player1Id == key.Player1Id
+            && candidate.Player2Id == key.Player2Id
+        );
+
+        AssertGameBasedStatisticsIdentities(
+            statistics.GameId,
+            statistics.GameUuid,
+            statistics.CrewId,
+            statistics.CrewUuid,
+            statistics.PlayedAtUtc,
+            game
+        );
+        Assert.Equal(wins, statistics.Wins);
+        Assert.Equal(losses, statistics.Losses);
+        Assert.Equal(pointsScored, statistics.PointsScored);
+        Assert.Equal(pointsConceded, statistics.PointsConceded);
+        Assert.Equal(pointsScored - pointsConceded, statistics.PointDifferential);
+    }
+
+    private static void AssertGameBasedStatisticsIdentities(
+        long gameId,
+        Guid gameUuid,
+        long crewId,
+        Guid crewUuid,
+        DateTimeOffset playedAtUtc,
+        Game game
+    )
+    {
+        Assert.Equal(game.Id, gameId);
+        Assert.Equal(game.Uuid, gameUuid);
+        Assert.Equal(game.CrewId, crewId);
+        Assert.Equal(game.CrewUuid, crewUuid);
+        Assert.Equal(game.PlayedAtUtc, playedAtUtc);
+    }
+
+    private static void AssertGameBasedWinStreak(
+        CrewMemberWinStreak winStreak,
+        Game game,
+        bool won
+    )
+    {
+        Assert.Equal(game.CrewId, winStreak.CrewId);
+        Assert.Equal(game.CrewUuid, winStreak.CrewUuid);
+        Assert.Equal(won ? 1 : 0, winStreak.CurrentWinStreak);
+        Assert.Equal(
+            won ? game.PlayedAtUtc : null,
+            winStreak.CurrentWinStreakStartedAtUtc
+        );
+        Assert.Equal(won ? 1 : 0, winStreak.LongestWinStreak);
+        Assert.Equal(
+            won ? game.PlayedAtUtc : null,
+            winStreak.LongestWinStreakStartedAtUtc
+        );
+        Assert.Null(winStreak.LongestWinStreakEndedAtUtc);
+        Assert.NotEqual(0u, winStreak.Version);
     }
 
     private async Task AssertNoGameOrStatisticsAsync(Guid crewUuid)
     {
-        await using var dbContext = fixture.CreateDbContext();
-        var crewId = await dbContext.Crews
+        await using var database = fixture.CreateDbContext();
+        var crewId = await database.Crews
             .Where(crew => crew.Uuid == crewUuid)
             .Select(crew => crew.Id)
             .SingleAsync();
 
-        Assert.Equal(0, await dbContext.Games.CountAsync(game => game.CrewId == crewId));
+        Assert.Equal(0, await database.Games.CountAsync(game => game.CrewId == crewId));
         Assert.Equal(
             0,
-            await dbContext.CrewMemberStatistics.CountAsync(statistics =>
+            await database.CrewMemberGameStatistics.CountAsync(statistics =>
                 statistics.CrewId == crewId
             )
         );
         Assert.Equal(
             0,
-            await dbContext.CrewDoublesPairingStatistics.CountAsync(statistics =>
+            await database.CrewDoublesPairingGameStatistics.CountAsync(statistics =>
                 statistics.CrewId == crewId
+            )
+        );
+        Assert.Equal(
+            0,
+            await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+                statistics.CrewId == crewId
+            )
+        );
+        Assert.Equal(
+            0,
+            await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+                winStreak.CrewId == crewId
             )
         );
     }
 
-    private static RecordGameHttpRequest CreateRequest(
-        string firstUserId,
-        string secondUserId,
+    private static async Task<RecordGameHttpResponse> RecordGameAsync(
+        HttpClient apiClient,
+        RecordGameHttpRequest request
+    )
+    {
+        using var response = await apiClient.PostAsJsonAsync(
+            "/games",
+            request,
+            TestJsonSerializerOptions.Default
+        );
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<RecordGameHttpResponse>(
+            TestJsonSerializerOptions.Default
+        ) ?? throw new InvalidOperationException("The API returned an empty response.");
+    }
+
+    private static RecordGameHttpRequest CreateSinglesRequest(
+        string firstPlayerId,
+        string secondPlayerId,
         int firstScore,
-        int secondScore)
+        int secondScore
+    )
     {
         return new RecordGameHttpRequest
         {
             Format = GameFormat.Singles,
-            Sides = [
-                CreateSide(firstUserId, firstScore),
-                CreateSide(secondUserId, secondScore),
+            Sides =
+            [
+                CreateSide(firstScore, CreateMemberParticipant(firstPlayerId)),
+                CreateSide(secondScore, CreateMemberParticipant(secondPlayerId)),
             ],
         };
     }
 
-    private static RecordGameSideHttpRequest CreateSide(string userId, int score)
+    private static RecordGameHttpRequest CreateRequest(
+        string firstPlayerId,
+        string secondPlayerId,
+        int firstScore,
+        int secondScore
+    )
     {
-        return CreateSide(score, CreateMemberParticipant(userId));
+        return CreateSinglesRequest(
+            firstPlayerId,
+            secondPlayerId,
+            firstScore,
+            secondScore
+        );
+    }
+
+    private static RecordGameHttpRequest CreateDoublesRequest(
+        int firstScore,
+        string?[] firstPlayerIds,
+        int secondScore,
+        string?[] secondPlayerIds,
+        string firstGuestName = "First guest",
+        string secondGuestName = "Second guest"
+    )
+    {
+        return new RecordGameHttpRequest
+        {
+            Format = GameFormat.Doubles,
+            Sides =
+            [
+                CreateSide(
+                    firstScore,
+                    CreateParticipant(firstPlayerIds[0], firstGuestName),
+                    CreateParticipant(firstPlayerIds[1], firstGuestName)
+                ),
+                CreateSide(
+                    secondScore,
+                    CreateParticipant(secondPlayerIds[0], secondGuestName),
+                    CreateParticipant(secondPlayerIds[1], secondGuestName)
+                ),
+            ],
+        };
     }
 
     private static RecordGameSideHttpRequest CreateSide(
         int score,
-        params RecordGameParticipantHttpRequest[] participants)
+        params RecordGameParticipantHttpRequest[] participants
+    )
     {
         return new RecordGameSideHttpRequest
         {
@@ -1714,135 +1380,76 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         };
     }
 
+    private static RecordGameParticipantHttpRequest CreateParticipant(
+        string? userId,
+        string guestName
+    )
+    {
+        return userId is null
+            ? new RecordGameParticipantHttpRequest { GuestName = guestName }
+            : CreateMemberParticipant(userId);
+    }
+
     private static RecordGameParticipantHttpRequest CreateMemberParticipant(
-        string userId)
+        string userId
+    )
     {
         return new RecordGameParticipantHttpRequest { UserId = userId };
     }
 
     private static RecordGameParticipantHttpRequest CreateGuestParticipant(
-        string guestName)
+        string guestName
+    )
     {
         return new RecordGameParticipantHttpRequest { GuestName = guestName };
     }
 
-    private static void AssertPairingStatistics(
-        CrewDoublesPairingStatistics statistics,
-        Guid crewUuid,
-        long wins,
-        long losses,
-        long pointsScored,
-        long pointsConceded)
-    {
-        Assert.Equal(crewUuid, statistics.CrewUuid);
-        Assert.Equal(wins, statistics.Wins);
-        Assert.Equal(losses, statistics.Losses);
-        Assert.Equal(pointsScored, statistics.PointsScored);
-        Assert.Equal(pointsConceded, statistics.PointsConceded);
-    }
-
-    private static CrewMemberStatistics CreateMemberStatistics(
+    private static Game CreateSinglesGame(
         long crewId,
         Guid crewUuid,
-        string userId,
-        long wins,
-        long losses,
-        long pointsScored,
-        long pointsConceded)
+        string winnerId,
+        string loserId,
+        int winnerScore,
+        int loserScore
+    )
     {
-        var statistics = new CrewMemberStatistics
+        return new Game
         {
             CrewId = crewId,
             CrewUuid = crewUuid,
-            UserId = userId,
-            Wins = wins,
-            Losses = losses,
-            PointsScored = pointsScored,
-            PointsConceded = pointsConceded,
+            Format = GameFormat.Singles,
+            RecorderUserId = winnerId,
+            PlayedAtUtc = DateTimeOffset.UtcNow,
+            Sides =
+            [
+                new GameSide
+                {
+                    SideNumber = 1,
+                    Score = winnerScore,
+                    Participants =
+                    [
+                        new GameParticipant
+                        {
+                            SlotNumber = 1,
+                            UserId = winnerId,
+                        },
+                    ],
+                },
+                new GameSide
+                {
+                    SideNumber = 2,
+                    Score = loserScore,
+                    Participants =
+                    [
+                        new GameParticipant
+                        {
+                            SlotNumber = 1,
+                            UserId = loserId,
+                        },
+                    ],
+                },
+            ],
         };
-        return statistics;
-    }
-
-    private static void AssertStatistics(
-        CrewMemberStatistics statistics,
-        Guid crewUuid,
-        long wins,
-        long losses,
-        long pointsScored,
-        long pointsConceded)
-    {
-        Assert.Equal(crewUuid, statistics.CrewUuid);
-        Assert.Equal(wins, statistics.Wins);
-        Assert.Equal(losses, statistics.Losses);
-        Assert.Equal(pointsScored, statistics.PointsScored);
-        Assert.Equal(pointsConceded, statistics.PointsConceded);
-
-        var gamesPlayed = wins + losses;
-        var pointDifferential = pointsScored - pointsConceded;
-
-        Assert.Equal(gamesPlayed, statistics.GamesPlayed);
-        Assert.Equal(
-            gamesPlayed == 0 ? 0 : (decimal)wins / gamesPlayed,
-            statistics.WinPercentage
-        );
-        Assert.Equal(pointDifferential, statistics.PointDifferential);
-    }
-
-    private static void AssertMemberParticipant(
-        GameParticipant participant,
-        int slotNumber,
-        string userId)
-    {
-        Assert.Equal(slotNumber, participant.SlotNumber);
-        Assert.Equal(userId, participant.UserId);
-        Assert.False(string.IsNullOrWhiteSpace(participant.MemberDisplayName));
-        Assert.Null(participant.GuestName);
-    }
-
-    private static void AssertGuestParticipant(
-        GameParticipant participant,
-        int slotNumber,
-        string guestName)
-    {
-        Assert.Equal(slotNumber, participant.SlotNumber);
-        Assert.Null(participant.UserId);
-        Assert.Null(participant.MemberDisplayName);
-        Assert.Equal(guestName, participant.GuestName);
-    }
-
-    private static void AssertSide(
-        GameSide side,
-        int sideNumber,
-        int score,
-        string userId)
-    {
-        Assert.Equal(sideNumber, side.SideNumber);
-        Assert.Equal(score, side.Score);
-        var participant = Assert.Single(side.Participants);
-        Assert.Equal(1, participant.SlotNumber);
-        Assert.Equal(userId, participant.UserId);
-        Assert.False(string.IsNullOrWhiteSpace(participant.MemberDisplayName));
-        Assert.Null(participant.GuestName);
-    }
-
-    private static void AssertResponseMatchesGame(
-        RecordGameHttpResponse response,
-        Game game)
-    {
-        var responseSides = response.Sides.OrderBy(side => side.SideNumber).ToArray();
-        var gameSides = game.Sides.OrderBy(side => side.SideNumber).ToArray();
-
-        Assert.Equal(gameSides.Length, responseSides.Length);
-
-        for (var index = 0; index < gameSides.Length; index++)
-        {
-            Assert.Equal(gameSides[index].SideNumber, responseSides[index].SideNumber);
-            Assert.Equal(gameSides[index].Score, responseSides[index].Score);
-            Assert.Equal(
-                gameSides[index].Participants[0].UserId,
-                responseSides[index].Participants[0].UserId
-            );
-        }
     }
 
     public enum InvalidGameRequest

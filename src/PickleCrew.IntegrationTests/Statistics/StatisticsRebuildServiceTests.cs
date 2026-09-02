@@ -38,23 +38,31 @@ public sealed class StatisticsRebuildServiceTests(AppHostFixture fixture)
             )
             .Options;
         await using var database = new CrewScopedDbContext(options, crewUserContext);
-        database.CrewMemberStatistics.Add(new CrewMemberStatistics
-        {
-            CrewId = context.Id,
-            CrewUuid = context.Uuid,
-            UserId = $"user_without_game_{Guid.NewGuid():N}",
-            CrewScore = 999,
-        });
-        await database.SaveChangesAsync();
+        await database.CrewMemberGameStatistics
+            .IgnoreQueryFilters()
+            .Where(statistics => statistics.CrewId == context.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(statistics => statistics.CrewScore, 999)
+            );
 
         var rebuildService = new StatisticsRebuildService(database, crewUserContext);
         var result = await rebuildService.RebuildAsync(CancellationToken.None);
 
         Assert.True(result.GamesRecalculated >= 2);
 
-        var memberStatistics = await database.CrewMemberStatistics
+        var memberStatistics = await database.CrewMemberGameStatistics
             .AsNoTracking()
             .Where(statistics => statistics.CrewId == context.Id)
+            .GroupBy(statistics => statistics.UserId)
+            .Select(group => new MemberStatisticsTotals
+            {
+                UserId = group.Key,
+                Wins = group.Sum(statistics => statistics.Wins),
+                Losses = group.Sum(statistics => statistics.Losses),
+                CrewScore = group.Sum(statistics => statistics.CrewScore),
+                PointsScored = group.Sum(statistics => statistics.PointsScored),
+                PointsConceded = group.Sum(statistics => statistics.PointsConceded),
+            })
             .ToDictionaryAsync(statistics => statistics.UserId);
 
         Assert.Equal(4, memberStatistics.Count);
@@ -81,19 +89,6 @@ public sealed class StatisticsRebuildServiceTests(AppHostFixture fixture)
             crewScore: 102,
             pointsScored: 18,
             pointsConceded: 20
-        );
-
-        Assert.Equal(
-            2,
-            await database.CrewDoublesPairingStatistics.CountAsync(statistics =>
-                statistics.CrewId == context.Id
-            )
-        );
-        Assert.Equal(
-            8,
-            await database.CrewMatchupStatistics.CountAsync(statistics =>
-                statistics.CrewId == context.Id
-            )
         );
         Assert.Equal(
             8,
@@ -146,15 +141,30 @@ public sealed class StatisticsRebuildServiceTests(AppHostFixture fixture)
     }
 
     private static void AssertMemberStatistics(
-        CrewMemberStatistics statistics,
-        long crewScore,
-        long pointsScored,
-        long pointsConceded)
+        MemberStatisticsTotals statistics,
+        int crewScore,
+        int pointsScored,
+        int pointsConceded)
     {
         Assert.Equal(1, statistics.Wins);
         Assert.Equal(1, statistics.Losses);
         Assert.Equal(crewScore, statistics.CrewScore);
         Assert.Equal(pointsScored, statistics.PointsScored);
         Assert.Equal(pointsConceded, statistics.PointsConceded);
+    }
+
+    private sealed record MemberStatisticsTotals
+    {
+        public required string UserId { get; init; }
+
+        public required int Wins { get; init; }
+
+        public required int Losses { get; init; }
+
+        public required int CrewScore { get; init; }
+
+        public required int PointsScored { get; init; }
+
+        public required int PointsConceded { get; init; }
     }
 }

@@ -188,13 +188,6 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
             )
             .BuildAsync();
 
-        await using (var database = fixture.CreateDbContext())
-        {
-            await database.CrewDoublesPairingStatistics
-                .Where(statistics => statistics.CrewUuid == context.Uuid)
-                .ExecuteDeleteAsync();
-        }
-
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/friends-or-lovers");
 

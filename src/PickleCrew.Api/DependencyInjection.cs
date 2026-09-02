@@ -121,7 +121,6 @@ internal static class DependencyInjection
     {
         services.AddScoped<CrewStandingsService>();
         services.AddScoped<GameStatisticsService>();
-        services.AddScoped<GameStatisticsServiceV2>();
         services.AddScoped<StatisticsRebuildService>();
 
         var rebuildStatistics = configuration.GetValue<bool>(

@@ -200,13 +200,6 @@ public sealed class GetBestPartnerEndpointTests(AppHostFixture fixture)
             )
             .BuildAsync();
 
-        await using (var database = fixture.CreateDbContext())
-        {
-            await database.CrewDoublesPairingStatistics
-                .Where(statistics => statistics.CrewUuid == context.Uuid)
-                .ExecuteDeleteAsync();
-        }
-
         var result = await GetBestPartnerAsync(context.Administrator);
 
         var bestPartner = Assert.IsType<BestPartnerHttpResponse>(result.BestPartner);
