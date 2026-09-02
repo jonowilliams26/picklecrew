@@ -1,6 +1,6 @@
 namespace PickleCrew.Api.Data;
 
-public sealed class CrewMemberWinStreak
+public sealed class PlayerWinStreak
 {
     public required long CrewId { get; init; }
 

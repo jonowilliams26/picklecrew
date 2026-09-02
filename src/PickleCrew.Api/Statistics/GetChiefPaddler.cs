@@ -64,7 +64,7 @@ internal sealed class GetChiefPaddlerEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var chiefPaddlerStatistics = await database.CrewMemberGameStatistics
+        var chiefPaddlerStatistics = await database.PlayerStatistics
             .Where(statistics => activeMemberUserIds.Contains(statistics.UserId))
             .GroupBy(statistics => statistics.UserId)
             .Select(group => new

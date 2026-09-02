@@ -19,19 +19,13 @@ public class PickleCrewDbContext : DbContext
 
     public DbSet<CrewProvisioningAttempt> CrewProvisioningAttempts => Set<CrewProvisioningAttempt>();
 
-    public DbSet<CrewMemberStatistics> CrewMemberStatistics => Set<CrewMemberStatistics>();
+    public DbSet<PlayerStatistics> PlayerStatistics => Set<PlayerStatistics>();
 
-    public DbSet<CrewDoublesPairingStatistics> CrewDoublesPairingStatistics => Set<CrewDoublesPairingStatistics>();
+    public DbSet<MatchupStatistics> MatchupStatistics => Set<MatchupStatistics>();
 
-    public DbSet<CrewMatchupStatistics> CrewMatchupStatistics => Set<CrewMatchupStatistics>();
+    public DbSet<DoublesPairingStatistics> DoublesPairingStatistics => Set<DoublesPairingStatistics>();
 
-    public DbSet<CrewMemberGameStatistics> CrewMemberGameStatistics => Set<CrewMemberGameStatistics>();
-
-    public DbSet<CrewMatchupGameStatistics> CrewMatchupGameStatistics => Set<CrewMatchupGameStatistics>();
-
-    public DbSet<CrewDoublesPairingGameStatistics> CrewDoublesPairingGameStatistics => Set<CrewDoublesPairingGameStatistics>();
-
-    public DbSet<CrewMemberWinStreak> CrewMemberWinStreaks => Set<CrewMemberWinStreak>();
+    public DbSet<PlayerWinStreak> PlayerWinStreaks => Set<PlayerWinStreak>();
 
     public DbSet<Game> Games => Set<Game>();
 
@@ -58,55 +52,16 @@ public class PickleCrewDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<CrewMemberStatistics>(statistics =>
-        {
-            statistics.HasKey(entity => new
-            {
-                entity.CrewId,
-                entity.UserId,
-            });
-            statistics.HasOne(entity => entity.Crew)
-                .WithMany()
-                .HasForeignKey(entity => entity.CrewId);
-            statistics.Property(entity => entity.Version)
-                .IsRowVersion();
-        });
-
-        modelBuilder.Entity<CrewDoublesPairingStatistics>(statistics =>
-        {
-            statistics.HasKey(entity => new
-            {
-                entity.CrewId,
-                entity.Player1Id,
-                entity.Player2Id,
-            });
-            statistics.HasOne(entity => entity.Crew)
-                .WithMany()
-                .HasForeignKey(entity => entity.CrewId);
-            statistics.Property(entity => entity.Version)
-                .IsRowVersion();
-        });
-
-        modelBuilder.Entity<CrewMatchupStatistics>(statistics =>
-        {
-            statistics.HasKey(entity => new
-            {
-                entity.CrewId,
-                entity.UserId,
-                entity.OpponentUserId,
-            });
-            statistics.HasOne(entity => entity.Crew)
-                .WithMany()
-                .HasForeignKey(entity => entity.CrewId);
-            statistics.Property(entity => entity.Version)
-                .IsRowVersion();
-        });
-
-        modelBuilder.Entity<CrewMemberGameStatistics>(statistics =>
+        modelBuilder.Entity<PlayerStatistics>(statistics =>
         {
             statistics.HasKey(entity => new
             {
                 entity.GameId,
+                entity.UserId,
+            });
+            statistics.HasIndex(entity => new
+            {
+                entity.CrewId,
                 entity.UserId,
             });
             statistics.HasOne(entity => entity.Game)
@@ -117,11 +72,17 @@ public class PickleCrewDbContext : DbContext
                 .HasForeignKey(entity => entity.CrewId);
         });
 
-        modelBuilder.Entity<CrewMatchupGameStatistics>(statistics =>
+        modelBuilder.Entity<MatchupStatistics>(statistics =>
         {
             statistics.HasKey(entity => new
             {
                 entity.GameId,
+                entity.UserId,
+                entity.OpponentUserId,
+            });
+            statistics.HasIndex(entity => new
+            {
+                entity.CrewId,
                 entity.UserId,
                 entity.OpponentUserId,
             });
@@ -133,13 +94,25 @@ public class PickleCrewDbContext : DbContext
                 .HasForeignKey(entity => entity.CrewId);
         });
 
-        modelBuilder.Entity<CrewDoublesPairingGameStatistics>(statistics =>
+        modelBuilder.Entity<DoublesPairingStatistics>(statistics =>
         {
             statistics.HasKey(entity => new
             {
                 entity.GameId,
                 entity.Player1Id,
                 entity.Player2Id,
+            });
+            statistics.HasIndex(entity => new
+            {
+                entity.CrewId,
+                entity.Player1Id,
+                entity.Player2Id,
+            });
+            statistics.HasIndex(entity => new
+            {
+                entity.CrewId,
+                entity.Player2Id,
+                entity.Player1Id,
             });
             statistics.HasOne(entity => entity.Game)
                 .WithMany()
@@ -149,7 +122,7 @@ public class PickleCrewDbContext : DbContext
                 .HasForeignKey(entity => entity.CrewId);
         });
 
-        modelBuilder.Entity<CrewMemberWinStreak>(winStreak =>
+        modelBuilder.Entity<PlayerWinStreak>(winStreak =>
         {
             winStreak.HasKey(entity => new
             {
@@ -190,19 +163,13 @@ internal sealed class CrewScopedDbContext(
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<CrewMemberStatistics>()
+        modelBuilder.Entity<PlayerStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewDoublesPairingStatistics>()
+        modelBuilder.Entity<MatchupStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewMatchupStatistics>()
+        modelBuilder.Entity<DoublesPairingStatistics>()
             .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewMemberGameStatistics>()
-            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewMatchupGameStatistics>()
-            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewDoublesPairingGameStatistics>()
-            .HasQueryFilter(statistics => statistics.CrewId == CrewId);
-        modelBuilder.Entity<CrewMemberWinStreak>()
+        modelBuilder.Entity<PlayerWinStreak>()
             .HasQueryFilter(winStreak => winStreak.CrewId == CrewId);
         modelBuilder.Entity<Game>()
             .HasQueryFilter(game => game.CrewId == CrewId);

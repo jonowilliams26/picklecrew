@@ -38,7 +38,7 @@ public sealed class GetFriendsOrLoversEndpointTests(AppHostFixture fixture)
         Assert.Null(result.Pairing);
 
         await using var database = fixture.CreateDbContext();
-        Assert.False(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
+        Assert.False(await database.DoublesPairingStatistics.AnyAsync(statistics =>
             statistics.CrewId == context.Id
         ));
     }

@@ -69,7 +69,7 @@ internal sealed class GetNemesisEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberIds = activeMembersByUserId.Keys.ToArray();
-        var matchup = await database.CrewMatchupGameStatistics
+        var matchup = await database.MatchupStatistics
             .Where(statistics =>
                 statistics.UserId == userId
                 && activeMemberIds.Contains(statistics.OpponentUserId)

@@ -1,6 +1,6 @@
 namespace PickleCrew.Api.Data;
 
-public sealed class CrewDoublesPairingGameStatistics
+public sealed class MatchupStatistics
 {
     public required long GameId { get; init; }
 
@@ -10,9 +10,9 @@ public sealed class CrewDoublesPairingGameStatistics
 
     public required Guid CrewUuid { get; init; }
 
-    public required string Player1Id { get; init; }
+    public required string UserId { get; init; }
 
-    public required string Player2Id { get; init; }
+    public required string OpponentUserId { get; init; }
 
     public Game Game { get; init; } = null!;
 

@@ -177,7 +177,7 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, chiefPaddler.ThatsAPaddlin);
 
         await using var verificationDatabase = fixture.CreateDbContext();
-        var historicalCount = await verificationDatabase.CrewMemberGameStatistics
+        var historicalCount = await verificationDatabase.PlayerStatistics
             .AsNoTracking()
             .Where(statistics =>
                 statistics.CrewId == context.Id

@@ -36,7 +36,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                 var won = x.Score > opposingSide.Score;
                 var pointDifferential = x.Score - opposingSide.Score;
 
-                return new CrewMemberGameStatistics
+                return new PlayerStatistics
                 {
                     Game = game,
                     GameId = game.Id,
@@ -56,7 +56,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             })
             .ToArray();
 
-        database.CrewMemberGameStatistics.AddRange(statistics);
+        database.PlayerStatistics.AddRange(statistics);
     }
 
     private void CalculateDoublesPairingStatistics(Game game)
@@ -76,7 +76,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                     side.Participants[1].UserId!
                 );
 
-                return new CrewDoublesPairingGameStatistics
+                return new DoublesPairingStatistics
                 {
                     Game = game,
                     GameId = game.Id,
@@ -95,7 +95,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             })
             .ToArray();
 
-        database.CrewDoublesPairingGameStatistics.AddRange(statistics);
+        database.DoublesPairingStatistics.AddRange(statistics);
     }
 
     private void CalculateMatchupStatistics(Game game)
@@ -111,7 +111,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
 
                 return side.Participants
                     .Where(participant => participant.UserId is not null)
-                    .SelectMany(participant => opposingPlayers.Select(opponentId => new CrewMatchupGameStatistics
+                    .SelectMany(participant => opposingPlayers.Select(opponentId => new MatchupStatistics
                     {
                         Game = game,
                         GameId = game.Id,
@@ -130,7 +130,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             })
             .ToArray();
 
-        database.CrewMatchupGameStatistics.AddRange(statistics);
+        database.MatchupStatistics.AddRange(statistics);
     }
 
     private async Task CalculateWinStreaksAsync(Game game, CancellationToken cancellationToken)
@@ -152,7 +152,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
             .Where(x => !string.IsNullOrWhiteSpace(x.UserId))
             .ToDictionary(x => x.UserId, x => x.Won);
 
-        var winStreaksByUserId = await database.CrewMemberWinStreaks
+        var winStreaksByUserId = await database.PlayerWinStreaks
             .Where(x => resultsByUserId.Keys.Contains(x.UserId))
             .ToDictionaryAsync(x => x.UserId, cancellationToken);
 
@@ -160,7 +160,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
         {
             if (!winStreaksByUserId.TryGetValue(userId, out var winStreak))
             {
-                winStreak = new CrewMemberWinStreak
+                winStreak = new PlayerWinStreak
                 {
                     CrewId = game.CrewId,
                     CrewUuid = game.CrewUuid,
@@ -171,7 +171,7 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                     LongestWinStreakStartedAtUtc = won ? game.PlayedAtUtc : null,
                 };
 
-                database.CrewMemberWinStreaks.Add(winStreak);
+                database.PlayerWinStreaks.Add(winStreak);
                 continue;
             }
 

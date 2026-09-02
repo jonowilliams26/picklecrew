@@ -78,7 +78,7 @@ internal sealed class GetBiggestRivalsEndpoint : IEndpoint
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var rivalry = await database.CrewMatchupGameStatistics
+        var rivalry = await database.MatchupStatistics
             .Where(statistics =>
                 activeUserIds.Contains(statistics.UserId)
                 && activeUserIds.Contains(statistics.OpponentUserId)

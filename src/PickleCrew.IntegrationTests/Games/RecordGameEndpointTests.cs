@@ -77,19 +77,19 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         var game = await database.Games
             .AsNoTracking()
             .SingleAsync(candidate => candidate.Uuid == recordedGame.GameId);
-        var memberStatistics = await database.CrewMemberGameStatistics
+        var memberStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.Uuid)
             .ToDictionaryAsync(statistics => statistics.UserId);
-        var matchupStatistics = await database.CrewMatchupGameStatistics
+        var matchupStatistics = await database.MatchupStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.Uuid)
             .ToArrayAsync();
-        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+        var pairingStatistics = await database.DoublesPairingStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.Uuid)
             .ToArrayAsync();
-        var winStreaks = await database.CrewMemberWinStreaks
+        var winStreaks = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak => winStreak.CrewUuid == context.Uuid)
             .ToDictionaryAsync(winStreak => winStreak.UserId);
@@ -515,16 +515,16 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, await database.Games.CountAsync(game =>
             game.CrewUuid == context.Uuid
         ));
-        Assert.Equal(4, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+        Assert.Equal(4, await database.PlayerStatistics.CountAsync(statistics =>
             statistics.CrewUuid == context.Uuid
         ));
-        Assert.Equal(4, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+        Assert.Equal(4, await database.MatchupStatistics.CountAsync(statistics =>
             statistics.CrewUuid == context.Uuid
         ));
-        Assert.Equal(2, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+        Assert.Equal(2, await database.PlayerStatistics.CountAsync(statistics =>
             statistics.GameUuid == firstGame.GameId
         ));
-        Assert.Equal(2, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+        Assert.Equal(2, await database.PlayerStatistics.CountAsync(statistics =>
             statistics.GameUuid == secondGame.GameId
         ));
     }
@@ -557,12 +557,12 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var memberIds = await database.CrewMemberGameStatistics
+        var memberIds = await database.PlayerStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.GameId)
             .Select(statistics => statistics.UserId)
             .ToArrayAsync();
-        var winStreakMemberIds = await database.CrewMemberWinStreaks
+        var winStreakMemberIds = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak => winStreak.CrewUuid == context.Uuid)
             .Select(winStreak => winStreak.UserId)
@@ -608,13 +608,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             .Single(participant => participant.GuestName is not null);
 
         Assert.Equal("Jamie Kitchen", guest.GuestName);
-        Assert.Equal(1, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+        Assert.Equal(1, await database.PlayerStatistics.CountAsync(statistics =>
             statistics.GameUuid == recordedGame.GameId
         ));
-        Assert.Equal(0, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+        Assert.Equal(0, await database.MatchupStatistics.CountAsync(statistics =>
             statistics.GameUuid == recordedGame.GameId
         ));
-        Assert.Equal(1, await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+        Assert.Equal(1, await database.PlayerWinStreaks.CountAsync(winStreak =>
             winStreak.CrewUuid == context.Uuid
         ));
     }
@@ -656,7 +656,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             .Where(game => game.CrewUuid == context.Uuid)
             .OrderBy(game => game.Id)
             .ToArrayAsync();
-        var winStreak = await database.CrewMemberWinStreaks
+        var winStreak = await database.PlayerWinStreaks
             .AsNoTracking()
             .SingleAsync(candidate =>
                 candidate.CrewUuid == context.Uuid
@@ -707,7 +707,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
             .Where(game => game.CrewUuid == context.Uuid)
             .OrderBy(game => game.Id)
             .ToArrayAsync();
-        var winStreak = await database.CrewMemberWinStreaks
+        var winStreak = await database.PlayerWinStreaks
             .AsNoTracking()
             .SingleAsync(candidate =>
                 candidate.CrewUuid == context.Uuid
@@ -754,19 +754,19 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var memberStatistics = await database.CrewMemberGameStatistics
+        var memberStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .Where(statistics => statistics.CrewUuid == context.Uuid)
             .ToArrayAsync();
-        var matchupStatistics = await database.CrewMatchupGameStatistics
+        var matchupStatistics = await database.MatchupStatistics
             .AsNoTracking()
             .Where(statistics => statistics.CrewUuid == context.Uuid)
             .ToArrayAsync();
-        var pairingStatistics = await database.CrewDoublesPairingGameStatistics
+        var pairingStatistics = await database.DoublesPairingStatistics
             .AsNoTracking()
             .Where(statistics => statistics.CrewUuid == context.Uuid)
             .ToArrayAsync();
-        var winStreaks = await database.CrewMemberWinStreaks
+        var winStreaks = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak => winStreak.CrewUuid == context.Uuid)
             .ToArrayAsync();
@@ -830,15 +830,15 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var memberStatistics = await database.CrewMemberGameStatistics
+        var memberStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.GameId)
             .ToDictionaryAsync(statistics => statistics.UserId);
-        var matchupStatistics = await database.CrewMatchupGameStatistics
+        var matchupStatistics = await database.MatchupStatistics
             .AsNoTracking()
             .Where(statistics => statistics.GameUuid == game.GameId)
             .ToArrayAsync();
-        var winStreaks = await database.CrewMemberWinStreaks
+        var winStreaks = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak => winStreak.CrewUuid == context.Uuid)
             .ToDictionaryAsync(winStreak => winStreak.UserId);
@@ -847,7 +847,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, matchupStatistics.Length);
         Assert.Equal(2, winStreaks.Count);
         Assert.Empty(
-            await database.CrewDoublesPairingGameStatistics
+            await database.DoublesPairingStatistics
                 .AsNoTracking()
                 .Where(statistics => statistics.GameUuid == game.GameId)
                 .ToArrayAsync()
@@ -886,7 +886,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var pairing = await database.CrewDoublesPairingGameStatistics
+        var pairing = await database.DoublesPairingStatistics
             .AsNoTracking()
             .SingleAsync(statistics => statistics.GameUuid == game.GameId);
         var key = CrewDoublesPairingKey.Create(
@@ -900,13 +900,13 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, pairing.Losses);
         Assert.Equal(11, pairing.PointsScored);
         Assert.Equal(8, pairing.PointsConceded);
-        Assert.Equal(3, await database.CrewMemberGameStatistics.CountAsync(statistics =>
+        Assert.Equal(3, await database.PlayerStatistics.CountAsync(statistics =>
             statistics.GameUuid == game.GameId
         ));
-        Assert.Equal(4, await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+        Assert.Equal(4, await database.MatchupStatistics.CountAsync(statistics =>
             statistics.GameUuid == game.GameId
         ));
-        Assert.Equal(3, await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+        Assert.Equal(3, await database.PlayerWinStreaks.CountAsync(winStreak =>
             winStreak.CrewUuid == context.Uuid
         ));
     }
@@ -944,7 +944,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         );
 
         await using var database = fixture.CreateDbContext();
-        var pairings = await database.CrewDoublesPairingGameStatistics
+        var pairings = await database.DoublesPairingStatistics
             .AsNoTracking()
             .Where(statistics => statistics.CrewUuid == context.Uuid)
             .ToArrayAsync();
@@ -1021,18 +1021,18 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         await using var database = fixture.CreateDbContext();
         var pairingKey = CrewDoublesPairingKey.Create(firstPlayerId, secondPlayerId);
-        var pairings = await database.CrewDoublesPairingGameStatistics
+        var pairings = await database.DoublesPairingStatistics
             .AsNoTracking()
             .Where(statistics =>
                 statistics.Player1Id == pairingKey.Player1Id
                 && statistics.Player2Id == pairingKey.Player2Id
             )
             .ToDictionaryAsync(statistics => statistics.CrewUuid);
-        var firstPlayerStatistics = await database.CrewMemberGameStatistics
+        var firstPlayerStatistics = await database.PlayerStatistics
             .AsNoTracking()
             .Where(statistics => statistics.UserId == firstPlayerId)
             .ToDictionaryAsync(statistics => statistics.CrewUuid);
-        var firstPlayerStreaks = await database.CrewMemberWinStreaks
+        var firstPlayerStreaks = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak => winStreak.UserId == firstPlayerId)
             .ToDictionaryAsync(winStreak => winStreak.CrewUuid);
@@ -1093,7 +1093,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
 
         await using (var competingDatabase = fixture.CreateDbContext())
         {
-            var competingWinStreak = await competingDatabase.CrewMemberWinStreaks
+            var competingWinStreak = await competingDatabase.PlayerWinStreaks
                 .SingleAsync(winStreak =>
                     winStreak.CrewId == context.Id
                     && winStreak.UserId == winnerId
@@ -1119,22 +1119,22 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
                 .ToArrayAsync(),
             gameUuid => gameUuid == uncommittedGame.Uuid
         );
-        Assert.Equal(2, await verificationDatabase.CrewMemberGameStatistics.CountAsync(
+        Assert.Equal(2, await verificationDatabase.PlayerStatistics.CountAsync(
             statistics => statistics.CrewId == context.Id
         ));
-        Assert.Equal(2, await verificationDatabase.CrewMatchupGameStatistics.CountAsync(
+        Assert.Equal(2, await verificationDatabase.MatchupStatistics.CountAsync(
             statistics => statistics.CrewId == context.Id
         ));
-        Assert.False(await verificationDatabase.CrewMemberGameStatistics.AnyAsync(
+        Assert.False(await verificationDatabase.PlayerStatistics.AnyAsync(
             statistics => statistics.GameUuid == uncommittedGame.Uuid
         ));
-        Assert.False(await verificationDatabase.CrewMatchupGameStatistics.AnyAsync(
+        Assert.False(await verificationDatabase.MatchupStatistics.AnyAsync(
             statistics => statistics.GameUuid == uncommittedGame.Uuid
         ));
     }
 
     private static void AssertMemberGameStatistics(
-        CrewMemberGameStatistics statistics,
+        PlayerStatistics statistics,
         Game game,
         int wins,
         int losses,
@@ -1162,7 +1162,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     }
 
     private static void AssertMatchupGameStatistics(
-        CrewMatchupGameStatistics statistics,
+        MatchupStatistics statistics,
         Game game,
         int wins,
         int losses,
@@ -1186,7 +1186,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     }
 
     private static void AssertPairingGameStatistics(
-        CrewDoublesPairingGameStatistics[] allStatistics,
+        DoublesPairingStatistics[] allStatistics,
         Game game,
         string firstPlayerId,
         string secondPlayerId,
@@ -1234,7 +1234,7 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
     }
 
     private static void AssertGameBasedWinStreak(
-        CrewMemberWinStreak winStreak,
+        PlayerWinStreak winStreak,
         Game game,
         bool won
     )
@@ -1266,25 +1266,25 @@ public sealed class RecordGameEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, await database.Games.CountAsync(game => game.CrewId == crewId));
         Assert.Equal(
             0,
-            await database.CrewMemberGameStatistics.CountAsync(statistics =>
+            await database.PlayerStatistics.CountAsync(statistics =>
                 statistics.CrewId == crewId
             )
         );
         Assert.Equal(
             0,
-            await database.CrewDoublesPairingGameStatistics.CountAsync(statistics =>
+            await database.DoublesPairingStatistics.CountAsync(statistics =>
                 statistics.CrewId == crewId
             )
         );
         Assert.Equal(
             0,
-            await database.CrewMatchupGameStatistics.CountAsync(statistics =>
+            await database.MatchupStatistics.CountAsync(statistics =>
                 statistics.CrewId == crewId
             )
         );
         Assert.Equal(
             0,
-            await database.CrewMemberWinStreaks.CountAsync(winStreak =>
+            await database.PlayerWinStreaks.CountAsync(winStreak =>
                 winStreak.CrewId == crewId
             )
         );

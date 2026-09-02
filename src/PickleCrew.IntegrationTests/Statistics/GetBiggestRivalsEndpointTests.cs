@@ -259,7 +259,7 @@ public sealed class GetBiggestRivalsEndpointTests(AppHostFixture fixture)
         Assert.Equal(2m / 3m, administrator.WinPercentage, precision: 20);
 
         await using var database = fixture.CreateDbContext();
-        Assert.True(await database.CrewMatchupGameStatistics.AnyAsync(matchup =>
+        Assert.True(await database.MatchupStatistics.AnyAsync(matchup =>
             matchup.CrewId == context.Id
             && (matchup.UserId == inactiveMemberId
                 || matchup.OpponentUserId == inactiveMemberId)

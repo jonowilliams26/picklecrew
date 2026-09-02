@@ -56,7 +56,44 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.ToTable("Crews");
                 });
 
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingGameStatistics", b =>
+            modelBuilder.Entity("PickleCrew.Api.Data.CrewProvisioningAttempt", b =>
+                {
+                    b.Property<Guid>("CrewUuid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CrewName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WorkOsMembershipId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkOsOrganizationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkOsUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("CrewUuid");
+
+                    b.HasIndex("WorkOsUserId", "RequestId")
+                        .IsUnique();
+
+                    b.ToTable("CrewProvisioningAttempts");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.DoublesPairingStatistics", b =>
                 {
                     b.Property<long>("GameId")
                         .HasColumnType("bigint");
@@ -96,332 +133,11 @@ namespace PickleCrew.Api.Data.Database.Migrations
 
                     b.HasKey("GameId", "Player1Id", "Player2Id");
 
-                    b.HasIndex("CrewId");
+                    b.HasIndex("CrewId", "Player1Id", "Player2Id");
 
-                    b.ToTable("CrewDoublesPairingGameStatistics");
-                });
+                    b.HasIndex("CrewId", "Player2Id", "Player1Id");
 
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingStatistics", b =>
-                {
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Player1Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Player2Id")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("GamesPlayed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Losses")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointDifferential")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsConceded")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsScored")
-                        .HasColumnType("bigint");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.Property<decimal>("WinPercentage")
-                        .HasColumnType("numeric");
-
-                    b.Property<long>("Wins")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("CrewId", "Player1Id", "Player2Id");
-
-                    b.ToTable("CrewDoublesPairingStatistics");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMatchupGameStatistics", b =>
-                {
-                    b.Property<long>("GameId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OpponentUserId")
-                        .HasColumnType("text");
-
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("GameUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Losses")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("PlayedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PointDifferential")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PointsConceded")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PointsScored")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Wins")
-                        .HasColumnType("integer");
-
-                    b.HasKey("GameId", "UserId", "OpponentUserId");
-
-                    b.HasIndex("CrewId");
-
-                    b.ToTable("CrewMatchupGameStatistics");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMatchupStatistics", b =>
-                {
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OpponentUserId")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("GamesPlayed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Losses")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointDifferential")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsConceded")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsScored")
-                        .HasColumnType("bigint");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.Property<decimal>("WinPercentage")
-                        .HasColumnType("numeric");
-
-                    b.Property<long>("Wins")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("CrewId", "UserId", "OpponentUserId");
-
-                    b.ToTable("CrewMatchupStatistics");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberGameStatistics", b =>
-                {
-                    b.Property<long>("GameId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("CrewScore")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("GameUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Losses")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("PlayedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PointDifferential")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PointsConceded")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PointsScored")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ThatsAPaddlin")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Wins")
-                        .HasColumnType("integer");
-
-                    b.HasKey("GameId", "UserId");
-
-                    b.HasIndex("CrewId");
-
-                    b.ToTable("CrewMemberGameStatistics");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
-                {
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<long>("CrewScore")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("CurrentWinStreak")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("GamesPlayed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("LongestWinStreak")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("LongestWinStreakEndedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("LongestWinStreakStartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Losses")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointDifferential")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsConceded")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PointsScored")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ThatsAPaddlin")
-                        .HasColumnType("bigint");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.Property<decimal>("WinPercentage")
-                        .HasColumnType("numeric");
-
-                    b.Property<long>("Wins")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("CrewId", "UserId");
-
-                    b.ToTable("CrewMemberStatistics");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberWinStreak", b =>
-                {
-                    b.Property<long>("CrewId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CrewUuid")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("CurrentWinStreak")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("LongestWinStreak")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("LongestWinStreakEndedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("LongestWinStreakStartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("CrewId", "UserId");
-
-                    b.ToTable("CrewMemberWinStreaks");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewProvisioningAttempt", b =>
-                {
-                    b.Property<Guid>("CrewUuid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CrewName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("RequestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("StartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("WorkOsMembershipId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WorkOsOrganizationId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WorkOsUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("CrewUuid");
-
-                    b.HasIndex("WorkOsUserId", "RequestId")
-                        .IsUnique();
-
-                    b.ToTable("CrewProvisioningAttempts");
+                    b.ToTable("DoublesPairingStatistics");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.Game", b =>
@@ -488,6 +204,136 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.ToTable("Games");
                 });
 
+            modelBuilder.Entity("PickleCrew.Api.Data.MatchupStatistics", b =>
+                {
+                    b.Property<long>("GameId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OpponentUserId")
+                        .HasColumnType("text");
+
+                    b.Property<long>("CrewId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Losses")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PlayedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PointDifferential")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsConceded")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsScored")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Wins")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GameId", "UserId", "OpponentUserId");
+
+                    b.HasIndex("CrewId", "UserId", "OpponentUserId");
+
+                    b.ToTable("MatchupStatistics");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.PlayerStatistics", b =>
+                {
+                    b.Property<long>("GameId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<long>("CrewId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("CrewScore")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Losses")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PlayedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PointDifferential")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsConceded")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsScored")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ThatsAPaddlin")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Wins")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GameId", "UserId");
+
+                    b.HasIndex("CrewId", "UserId");
+
+                    b.ToTable("PlayerStatistics");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.PlayerWinStreak", b =>
+                {
+                    b.Property<long>("CrewId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CrewUuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CurrentWinStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LongestWinStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("LongestWinStreakEndedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LongestWinStreakStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("CrewId", "UserId");
+
+                    b.ToTable("PlayerWinStreaks");
+                });
+
             modelBuilder.Entity("PickleCrew.Api.Data.Crew", b =>
                 {
                     b.HasOne("PickleCrew.Api.Data.CrewProvisioningAttempt", null)
@@ -497,7 +343,7 @@ namespace PickleCrew.Api.Data.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingGameStatistics", b =>
+            modelBuilder.Entity("PickleCrew.Api.Data.DoublesPairingStatistics", b =>
                 {
                     b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
                         .WithMany()
@@ -514,91 +360,58 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Navigation("Crew");
 
                     b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewDoublesPairingStatistics", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMatchupGameStatistics", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PickleCrew.Api.Data.Game", "Game")
-                        .WithMany()
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
-
-                    b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMatchupStatistics", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberGameStatistics", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PickleCrew.Api.Data.Game", "Game")
-                        .WithMany()
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
-
-                    b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberStatistics", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
-                });
-
-            modelBuilder.Entity("PickleCrew.Api.Data.CrewMemberWinStreak", b =>
-                {
-                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
-                        .WithMany()
-                        .HasForeignKey("CrewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Crew");
                 });
 
             modelBuilder.Entity("PickleCrew.Api.Data.Game", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
+                        .WithMany()
+                        .HasForeignKey("CrewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Crew");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.MatchupStatistics", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
+                        .WithMany()
+                        .HasForeignKey("CrewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PickleCrew.Api.Data.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Crew");
+
+                    b.Navigation("Game");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.PlayerStatistics", b =>
+                {
+                    b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
+                        .WithMany()
+                        .HasForeignKey("CrewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PickleCrew.Api.Data.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Crew");
+
+                    b.Navigation("Game");
+                });
+
+            modelBuilder.Entity("PickleCrew.Api.Data.PlayerWinStreak", b =>
                 {
                     b.HasOne("PickleCrew.Api.Data.Crew", "Crew")
                         .WithMany()

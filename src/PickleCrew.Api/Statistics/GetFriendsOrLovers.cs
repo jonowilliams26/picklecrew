@@ -78,7 +78,7 @@ internal sealed class GetFriendsOrLoversEndpoint : IEndpoint
         );
         var activeUserIds = activeMembersByUserId.Keys.ToArray();
 
-        var statistics = await database.CrewDoublesPairingGameStatistics
+        var statistics = await database.DoublesPairingStatistics
             .Where(candidate =>
                 activeUserIds.Contains(candidate.Player1Id)
                 && activeUserIds.Contains(candidate.Player2Id)

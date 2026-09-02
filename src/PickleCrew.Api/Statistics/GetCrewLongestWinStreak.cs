@@ -68,7 +68,7 @@ internal sealed class GetCrewLongestWinStreakEndpoint : IEndpoint
             cancellationToken
         );
         var activeMemberUserIds = activeMembersByUserId.Keys.ToArray();
-        var recordHolderStatistics = await database.CrewMemberWinStreaks
+        var recordHolderStatistics = await database.PlayerWinStreaks
             .AsNoTracking()
             .Where(winStreak =>
                 activeMemberUserIds.Contains(winStreak.UserId)

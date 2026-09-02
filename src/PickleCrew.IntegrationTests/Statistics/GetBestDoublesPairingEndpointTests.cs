@@ -159,7 +159,7 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
         Assert.Null(result.Pairing);
 
         await using var database = fixture.CreateDbContext();
-        Assert.False(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
+        Assert.False(await database.DoublesPairingStatistics.AnyAsync(statistics =>
             statistics.CrewId == context.Id
         ));
     }
@@ -229,7 +229,7 @@ public sealed class GetBestDoublesPairingEndpointTests(AppHostFixture fixture)
         Assert.Equal(1, pairing.Losses);
 
         await using var database = fixture.CreateDbContext();
-        Assert.True(await database.CrewDoublesPairingGameStatistics.AnyAsync(statistics =>
+        Assert.True(await database.DoublesPairingStatistics.AnyAsync(statistics =>
             statistics.CrewId == context.Id
             && (statistics.Player1Id == inactiveMemberId
                 || statistics.Player2Id == inactiveMemberId)
