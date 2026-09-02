@@ -48,6 +48,19 @@ internal sealed class WorkOsCrewService(
         );
     }
 
+    public Task<bool> ChangeCrewMemberRoleAsync(
+        string userId,
+        string roleSlug,
+        CancellationToken cancellationToken)
+    {
+        return workOs.UpdateOrganizationMembershipRoleAsync(
+            crewUserContext.OrganizationId,
+            userId,
+            roleSlug,
+            cancellationToken
+        );
+    }
+
     public Task<bool> RemoveCrewMemberAsync(
         string userId,
         CancellationToken cancellationToken)

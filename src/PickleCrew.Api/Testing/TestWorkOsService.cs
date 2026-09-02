@@ -192,6 +192,39 @@ internal sealed class TestWorkOsService : IWorkOsService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<bool> UpdateOrganizationMembershipRoleAsync(
+        string organizationId,
+        string userId,
+        string roleSlug,
+        CancellationToken cancellationToken)
+    {
+        var membershipId = await FindActiveMembershipIdAsync(
+            userId,
+            organizationId,
+            cancellationToken
+        );
+
+        if (membershipId is null)
+        {
+            return false;
+        }
+
+        using var response = await client.PutAsJsonAsync(
+            $"/memberships/{Uri.EscapeDataString(membershipId)}",
+            new UpdateMembershipRoleHttpRequest { Role = roleSlug },
+            cancellationToken
+        );
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return true;
+    }
+
     public async Task<bool> DeactivateOrganizationMembershipAsync(
         string organizationId,
         string userId,
@@ -289,6 +322,11 @@ internal sealed class TestWorkOsService : IWorkOsService
         public required string Role { get; init; }
 
         public required string InviterUserId { get; init; }
+    }
+
+    private sealed record UpdateMembershipRoleHttpRequest
+    {
+        public required string Role { get; init; }
     }
 
     private sealed record IdentifierHttpResponse

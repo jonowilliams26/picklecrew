@@ -39,6 +39,12 @@ internal interface IWorkOsService
         string inviterUserId,
         CancellationToken cancellationToken);
 
+    Task<bool> UpdateOrganizationMembershipRoleAsync(
+        string organizationId,
+        string userId,
+        string roleSlug,
+        CancellationToken cancellationToken);
+
     Task<bool> DeactivateOrganizationMembershipAsync(
         string organizationId,
         string userId,
@@ -236,6 +242,49 @@ internal sealed class WorkOsService(WorkOSClient client)
             },
             cancellationToken
         );
+    }
+
+    public async Task<bool> UpdateOrganizationMembershipRoleAsync(
+        string organizationId,
+        string userId,
+        string roleSlug,
+        CancellationToken cancellationToken)
+    {
+        var membershipId = await FindActiveMembershipIdAsync(
+            userId,
+            organizationId,
+            cancellationToken
+        );
+
+        if (membershipId is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            await client.OrganizationMembership.UpdateAsync(
+                membershipId,
+                new OrganizationMembershipUpdateOptions
+                {
+                    Role = new OrganizationMembershipRoleSingle
+                    {
+                        RoleSlug = roleSlug,
+                    },
+                },
+                new RequestOptions
+                {
+                    MaxRetries = 0,
+                },
+                cancellationToken
+            );
+
+            return true;
+        }
+        catch (WorkOS.NotFoundException)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> DeactivateOrganizationMembershipAsync(

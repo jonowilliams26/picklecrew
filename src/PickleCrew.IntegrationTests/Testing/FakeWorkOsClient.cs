@@ -127,6 +127,20 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         );
     }
 
+    public async Task UpdateMembershipRoleAsync(
+        string membershipId,
+        FakeMembershipRole role,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await client.PutAsJsonAsync(
+            $"/memberships/{Uri.EscapeDataString(membershipId)}",
+            new UpdateMembershipRoleHttpRequest { Role = role },
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task DeactivateMembershipAsync(
         string membershipId,
         CancellationToken cancellationToken = default)
@@ -537,6 +551,11 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         public required FakeMembershipStatus Status { get; init; }
     }
 
+    private sealed record UpdateMembershipRoleHttpRequest
+    {
+        public required FakeMembershipRole Role { get; init; }
+    }
+
     private sealed record CreateInvitationHttpRequest
     {
         public string? Id { get; init; }
@@ -640,6 +659,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
+    UpdateMembership,
     DeactivateMembership,
     ListActiveMembers,
     ListPendingInvitations,
