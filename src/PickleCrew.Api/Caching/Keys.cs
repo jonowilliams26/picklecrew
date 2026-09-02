@@ -76,6 +76,7 @@ internal enum CrewStatisticsCacheResource
 internal enum PersonalStatisticsCacheResource
 {
     BestPartner,
+    EasyWin,
     Nemesis,
     PersonalStatistics,
     RecentGames,
@@ -107,6 +108,7 @@ internal static class StatisticsCacheResourceExtensions
         return resource switch
         {
             PersonalStatisticsCacheResource.BestPartner => "best-partner",
+            PersonalStatisticsCacheResource.EasyWin => "easy-win",
             PersonalStatisticsCacheResource.Nemesis => "nemesis",
             PersonalStatisticsCacheResource.PersonalStatistics => "personal-statistics",
             PersonalStatisticsCacheResource.RecentGames => "recent-games",
