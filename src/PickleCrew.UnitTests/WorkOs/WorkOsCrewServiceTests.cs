@@ -234,6 +234,13 @@ public sealed class WorkOsCrewServiceTests
             throw new NotSupportedException();
         }
 
+        public Task DeleteOrganizationAsync(
+            string organizationId,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
         public Task<string?> FindActiveMembershipIdAsync(
             string userId,
             string organizationId,

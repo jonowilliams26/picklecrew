@@ -15,6 +15,10 @@ internal interface IWorkOsService
         string externalId,
         CancellationToken cancellationToken);
 
+    Task DeleteOrganizationAsync(
+        string organizationId,
+        CancellationToken cancellationToken);
+
     Task<string?> FindActiveMembershipIdAsync(
         string userId,
         string organizationId,
@@ -86,6 +90,27 @@ internal sealed class WorkOsService(WorkOSClient client)
             cancellationToken: cancellationToken);
 
         return organization.Id;
+    }
+
+    public async Task DeleteOrganizationAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await client.Organizations.DeleteAsync(
+                organizationId,
+                new RequestOptions
+                {
+                    MaxRetries = 0,
+                },
+                cancellationToken
+            );
+        }
+        catch (WorkOS.NotFoundException)
+        {
+            // A retry may reach WorkOS after the organization was already deleted.
+        }
     }
 
     public async Task<string?> FindActiveMembershipIdAsync(

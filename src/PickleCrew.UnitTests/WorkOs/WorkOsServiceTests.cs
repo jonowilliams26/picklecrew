@@ -62,6 +62,61 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
+    public async Task DeleteOrganizationAsync_WhenRequestSucceeds_ShouldDeleteOrganization()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.NoContent, string.Empty)
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await service.DeleteOrganizationAsync(
+            "org_123",
+            CancellationToken.None
+        );
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Delete, request.Method);
+        Assert.Equal("/organizations/org_123", request.RequestUri.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task DeleteOrganizationAsync_WhenWorkOsReturnsServerError_ShouldNotRetryMutation()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.InternalServerError, "{\"message\":\"WorkOS failed.\"}")
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await Assert.ThrowsAsync<ServerException>(
+            () => service.DeleteOrganizationAsync(
+                "org_123",
+                CancellationToken.None
+            )
+        );
+
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
+    public async Task DeleteOrganizationAsync_WhenOrganizationWasAlreadyDeleted_ShouldSucceed()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.NotFound, "{\"message\":\"Organization not found.\"}")
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await service.DeleteOrganizationAsync(
+            "org_123",
+            CancellationToken.None
+        );
+
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
     public async Task UpdateOrganizationMembershipRoleAsync_WhenMembershipIsActive_ShouldUpdateRole()
     {
         var handler = new RecordingHttpMessageHandler(

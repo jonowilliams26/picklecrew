@@ -13,6 +13,9 @@ A named group that users belong to within Picklecrew.
 - A newly created crew becomes its creator's active crew.
 - After creating a crew, its creator may invite friends or skip the invitation step.
 - The invitation step is offered only as part of the uninterrupted crew-creation flow; after a refresh or later sign-in, the creator's active crew membership takes them to the dashboard instead.
+- A crew administrator may permanently delete their active crew after confirming its exact name.
+- Deleting a crew deletes its games and statistics and cannot be undone.
+- After deleting a crew, the administrator is signed out.
 
 ### Relationships
 
