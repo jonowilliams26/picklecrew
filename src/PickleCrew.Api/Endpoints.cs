@@ -36,6 +36,7 @@ internal static class Endpoints
         endpoints.MapGroup(string.Empty)
             .WithCrewUserContext()
             .MapEndpoint<GetCrewMembersEndpoint>()
+            .MapEndpoint<ChangeCrewNameEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>()
             .MapEndpoint<ChangeCrewMemberRoleEndpoint>()
             .MapEndpoint<RemoveCrewMemberEndpoint>()

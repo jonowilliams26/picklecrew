@@ -62,6 +62,49 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
+    public async Task UpdateOrganizationNameAsync_WhenRequestSucceeds_ShouldUpdateName()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.OK, CreateOrganizationResponse("Dink Dynasty"))
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await service.UpdateOrganizationNameAsync(
+            "org_123",
+            "Dink Dynasty",
+            CancellationToken.None
+        );
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Put, request.Method);
+        Assert.Equal("/organizations/org_123", request.RequestUri.AbsolutePath);
+
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal("Dink Dynasty", body.RootElement.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task UpdateOrganizationNameAsync_WhenWorkOsReturnsServerError_ShouldNotRetryMutation()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.InternalServerError, "{\"message\":\"WorkOS failed.\"}")
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await Assert.ThrowsAsync<ServerException>(
+            () => service.UpdateOrganizationNameAsync(
+                "org_123",
+                "Dink Dynasty",
+                CancellationToken.None
+            )
+        );
+
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
     public async Task DeleteOrganizationAsync_WhenRequestSucceeds_ShouldDeleteOrganization()
     {
         var handler = new RecordingHttpMessageHandler(
@@ -453,6 +496,21 @@ public sealed class WorkOsServiceTests
         Assert.Equal(emailAddress, member.EmailAddress);
         Assert.Equal(roleSlug, member.RoleSlug);
         Assert.Equal(profilePictureUrl, member.ProfilePictureUrl);
+    }
+
+    private static string CreateOrganizationResponse(string name)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            id = "org_123",
+            name,
+            @object = "organization",
+            domains = Array.Empty<object>(),
+            external_id = "crew_123",
+            metadata = new Dictionary<string, string>(),
+            created_at = "2026-08-14T00:00:00Z",
+            updated_at = "2026-08-14T00:00:00Z",
+        });
     }
 
     private static string CreateMembershipListResponse(
