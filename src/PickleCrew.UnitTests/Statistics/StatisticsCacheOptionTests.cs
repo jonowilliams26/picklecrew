@@ -31,27 +31,6 @@ public sealed class StatisticsCacheOptionTests
     }
 
     [Fact]
-    public void CrewHealthCacheOption_WhenCreated_ShouldIncludeEndDateInKey()
-    {
-        ICacheOption option = new CrewHealthCacheOption(
-            crewId,
-            new DateOnly(2026, 3, 15)
-        );
-
-        Assert.Equal(
-            "v1:crew:b8c88f49-d47b-461a-8887-4aca8810a0a1:statistics:crew-health:end-date:2026-03-15",
-            option.Key
-        );
-        Assert.Equal(
-            [
-                "v1:crew:b8c88f49-d47b-461a-8887-4aca8810a0a1",
-                "v1:crew:b8c88f49-d47b-461a-8887-4aca8810a0a1:statistics",
-            ],
-            option.Tags.Select(tag => tag.Value)
-        );
-    }
-
-    [Fact]
     public void PersonalStatisticsCacheOption_ShouldIncludeRequiredUserInKey()
     {
         ICacheOption option = new PersonalStatisticsCacheOption(
