@@ -178,6 +178,10 @@ export type GetGameRecordingOptionsHttpResponse = {
     members: Array<GameRecordingMemberHttpResponse>;
 };
 
+export type GetIceManHttpResponse = {
+    iceMan: null | IceManHttpResponse;
+};
+
 export type GetLimpWristSyndromeHttpResponse = {
     limpWristSyndrome: null | LimpWristSyndromeHttpResponse;
 };
@@ -205,6 +209,10 @@ export type GetPersonalStatisticsHttpResponse = {
     activeCrewMemberCount: number;
 };
 
+export type GetPointMachineHttpResponse = {
+    pointMachine: null | PointMachineHttpResponse;
+};
+
 export type GetRecentGamesHttpResponse = {
     games: Array<RecentGameItemHttpResponse>;
     wins: number;
@@ -225,6 +233,13 @@ export type HttpValidationProblemDetails = {
      * The trace identifier for the request.
      */
     traceId: string;
+};
+
+export type IceManHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    clutchWins: number;
 };
 
 export type LimpWristSyndromeHttpResponse = {
@@ -265,6 +280,15 @@ export type PaginatedHttpResponseOfGameHistoryItemHttpResponse = {
     pageSize: number;
     totalCount: number;
     totalPages: number;
+};
+
+export type PointMachineHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    pointsScored: number;
+    gamesPlayed: number;
+    averagePointsScored: number | string;
 };
 
 export type ProblemDetails = {
@@ -903,6 +927,43 @@ export type GetFriendsOrLoversResponses = {
 
 export type GetFriendsOrLoversResponse = GetFriendsOrLoversResponses[keyof GetFriendsOrLoversResponses];
 
+export type GetIceManData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/ice-man';
+};
+
+export type GetIceManErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetIceManError = GetIceManErrors[keyof GetIceManErrors];
+
+export type GetIceManResponses = {
+    /**
+     * OK
+     */
+    200: GetIceManHttpResponse;
+};
+
+export type GetIceManResponse = GetIceManResponses[keyof GetIceManResponses];
+
 export type GetLimpWristSyndromeData = {
     body?: never;
     path?: never;
@@ -939,6 +1000,43 @@ export type GetLimpWristSyndromeResponses = {
 };
 
 export type GetLimpWristSyndromeResponse = GetLimpWristSyndromeResponses[keyof GetLimpWristSyndromeResponses];
+
+export type GetPointMachineData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/point-machine';
+};
+
+export type GetPointMachineErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetPointMachineError = GetPointMachineErrors[keyof GetPointMachineErrors];
+
+export type GetPointMachineResponses = {
+    /**
+     * OK
+     */
+    200: GetPointMachineHttpResponse;
+};
+
+export type GetPointMachineResponse = GetPointMachineResponses[keyof GetPointMachineResponses];
 
 export type GetNemesisData = {
     body?: never;

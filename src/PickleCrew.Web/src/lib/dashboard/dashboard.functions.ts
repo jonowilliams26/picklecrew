@@ -6,6 +6,7 @@ import {
   getBiggestRivals as getBiggestRivalsRequest,
   getBrickWall as getBrickWallRequest,
   getChiefPaddler as getChiefPaddlerRequest,
+  getIceMan as getIceManRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getEasyWin as getEasyWinRequest,
@@ -13,6 +14,7 @@ import {
   getLimpWristSyndrome as getLimpWristSyndromeRequest,
   getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
+  getPointMachine as getPointMachineRequest,
   getRecentGames as getRecentGamesRequest,
 } from '~/lib/api/generated/sdk.gen'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
@@ -38,8 +40,10 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         brickWall,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
+        pointMachine,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
         getEasyWinRequest({ client }),
@@ -52,8 +56,10 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBiggestRivalsRequest({ client }),
         getBrickWallRequest({ client }),
         getChiefPaddlerRequest({ client }),
+        getIceManRequest({ client }),
         getFriendsOrLoversRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
+        getPointMachineRequest({ client }),
       ])
       const results = [
         personalStatistics,
@@ -67,8 +73,10 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         brickWall,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
+        pointMachine,
       ]
 
       if (
@@ -83,8 +91,10 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals.error ||
         brickWall.error ||
         chiefPaddler.error ||
+        iceMan.error ||
         friendsOrLovers.error ||
-        limpWristSyndrome.error
+        limpWristSyndrome.error ||
+        pointMachine.error
       ) {
         const isForbidden = results.some(
           (result) =>
@@ -113,8 +123,10 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals: biggestRivals.data,
         brickWall: brickWall.data,
         chiefPaddler: chiefPaddler.data,
+        iceMan: iceMan.data,
         friendsOrLovers: friendsOrLovers.data,
         limpWristSyndrome: limpWristSyndrome.data,
+        pointMachine: pointMachine.data,
       })
     } catch {
       return failure({
