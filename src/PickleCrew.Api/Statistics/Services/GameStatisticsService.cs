@@ -135,28 +135,17 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
 
     private async Task CalculateWinStreaksAsync(Game game, CancellationToken cancellationToken)
     {
-        var resultsByUserId = game.Sides
-            .SelectMany(
-                side => side.Participants,
-                (side, participant) =>
-                {
-                    var opposingSide = game.Sides.First(otherSide => otherSide != side);
-                    var won = side.Score > opposingSide.Score;
-                    return new
-                    {
-                        UserId = participant.UserId ?? "",
-                        Won = won
-                    };
-                }
-            )
-            .Where(x => !string.IsNullOrWhiteSpace(x.UserId))
-            .ToDictionary(x => x.UserId, x => x.Won);
+        var userIds = game.Sides
+            .SelectMany(side => side.Participants)
+            .Select(participant => participant.UserId ?? "")
+            .Where(userId => !string.IsNullOrWhiteSpace(userId))
+            .ToArray();
 
         var winStreaksByUserId = await database.PlayerWinStreaks
-            .Where(x => resultsByUserId.Keys.Contains(x.UserId))
-            .ToDictionaryAsync(x => x.UserId, cancellationToken);
+            .Where(winStreak => userIds.Contains(winStreak.UserId))
+            .ToDictionaryAsync(winStreak => winStreak.UserId, cancellationToken);
 
-        foreach (var (userId, won) in resultsByUserId)
+        foreach (var userId in userIds)
         {
             if (!winStreaksByUserId.TryGetValue(userId, out var winStreak))
             {
@@ -165,44 +154,12 @@ internal sealed class GameStatisticsService(CrewScopedDbContext database)
                     CrewId = game.CrewId,
                     CrewUuid = game.CrewUuid,
                     UserId = userId,
-                    CurrentWinStreak = won ? 1 : 0,
-                    CurrentWinStreakStartedAtUtc = won ? game.PlayedAtUtc : null,
-                    LongestWinStreak = won ? 1 : 0,
-                    LongestWinStreakStartedAtUtc = won ? game.PlayedAtUtc : null,
                 };
 
                 database.PlayerWinStreaks.Add(winStreak);
-                continue;
             }
 
-            if (won)
-            {
-                winStreak.CurrentWinStreak++;
-                winStreak.CurrentWinStreakStartedAtUtc ??= game.PlayedAtUtc;
-
-                if (winStreak.CurrentWinStreak > winStreak.LongestWinStreak)
-                {
-                    winStreak.LongestWinStreak = winStreak.CurrentWinStreak;
-                    winStreak.LongestWinStreakStartedAtUtc = winStreak.CurrentWinStreakStartedAtUtc;
-                    winStreak.LongestWinStreakEndedAtUtc = null;
-                }
-            }
-            else
-            {
-                var endedRecordSettingStreak =
-                    winStreak.CurrentWinStreak > 0 &&
-                    winStreak.CurrentWinStreak == winStreak.LongestWinStreak &&
-                    winStreak.CurrentWinStreakStartedAtUtc == winStreak.LongestWinStreakStartedAtUtc &&
-                    winStreak.LongestWinStreakEndedAtUtc is null;
-
-                if (endedRecordSettingStreak)
-                {
-                    winStreak.LongestWinStreakEndedAtUtc = game.PlayedAtUtc;
-                }
-
-                winStreak.CurrentWinStreak = 0;
-                winStreak.CurrentWinStreakStartedAtUtc = null;
-            }
+            winStreak.ApplyGameResult(game);
         }
     }
 }

@@ -91,6 +91,28 @@ export type GameHistoryResult = Result<
   GameHistoryForbiddenError | GameHistoryUnavailableError
 >
 
+export type GameDeletionForbiddenError = Readonly<{
+  type: 'game-deletion-forbidden-error'
+  message: string
+}>
+
+export type GameDeletionNotFoundError = Readonly<{
+  type: 'game-deletion-not-found-error'
+  message: string
+}>
+
+export type GameDeletionUnavailableError = Readonly<{
+  type: 'game-deletion-unavailable-error'
+  message: string
+}>
+
+export type GameDeletionResult = Result<
+  null,
+  | GameDeletionForbiddenError
+  | GameDeletionNotFoundError
+  | GameDeletionUnavailableError
+>
+
 export function createInitialGameFormValues(): GameFormValues {
   return {
     format: 'singles',
