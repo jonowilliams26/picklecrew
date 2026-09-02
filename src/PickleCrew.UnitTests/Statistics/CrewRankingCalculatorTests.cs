@@ -69,7 +69,7 @@ public sealed class CrewRankingCalculatorTests
 
     private static CrewMemberStatisticsTotals CreateStatistics(
         string userId,
-        long crewScore)
+        int crewScore)
     {
         return new CrewMemberStatisticsTotals
         {
@@ -79,8 +79,6 @@ public sealed class CrewRankingCalculatorTests
             GamesPlayed = 0,
             WinPercentage = 0,
             ThatsAPaddlin = 0,
-            CurrentWinStreak = 0,
-            LongestWinStreak = 0,
             PointsScored = 0,
             PointsConceded = 0,
             PointDifferential = 0,

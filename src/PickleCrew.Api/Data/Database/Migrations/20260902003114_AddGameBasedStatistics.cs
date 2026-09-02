@@ -122,9 +122,9 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     CrewId = table.Column<long>(type: "bigint", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false),
                     CrewUuid = table.Column<Guid>(type: "uuid", nullable: false),
-                    CurrentWinStreak = table.Column<long>(type: "bigint", nullable: false),
+                    CurrentWinStreak = table.Column<int>(type: "integer", nullable: false),
                     CurrentWinStreakStartedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    LongestWinStreak = table.Column<long>(type: "bigint", nullable: false),
+                    LongestWinStreak = table.Column<int>(type: "integer", nullable: false),
                     LongestWinStreakStartedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     LongestWinStreakEndedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)

@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -64,38 +63,27 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
             .WithMember(id: lowerCrewScoreId, displayName: "Lower Score")
             .WithMember(id: lowerUserId, displayName: "Zulu Leader")
             .WithMember(id: higherUserId, displayName: "Alpha Leader")
+            .WithSinglesGame(
+                side1: (lowerCrewScoreId, 11),
+                side2: ("Lower Score Opponent", 0)
+            )
+            .WithSinglesGame(
+                side1: (lowerUserId, 11),
+                side2: ("Lower Identifier Paddlin Opponent", 0)
+            )
+            .WithSinglesGame(
+                side1: (lowerUserId, 11),
+                side2: ("Lower Identifier Opponent", 7)
+            )
+            .WithSinglesGame(
+                side1: (higherUserId, 11),
+                side2: ("Higher Identifier Paddlin Opponent", 0)
+            )
+            .WithSinglesGame(
+                side1: (higherUserId, 11),
+                side2: ("Higher Identifier Opponent", 7)
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = lowerCrewScoreId,
-                    ThatsAPaddlin = 1,
-                    CrewScore = 111,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = lowerUserId,
-                    ThatsAPaddlin = 1,
-                    CrewScore = 215,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = higherUserId,
-                    ThatsAPaddlin = 1,
-                    CrewScore = 215,
-                }
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/chief-paddler");
@@ -149,31 +137,32 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
                     (11, 0),
                 ]
             )
+            .WithSinglesGames(
+                side1: inactiveLeaderId,
+                side2: "Former Opponent",
+                scores:
+                [
+                    (11, 0),
+                    (11, 0),
+                    (11, 0),
+                ]
+            )
             .BuildAsync();
-        var otherCrew = await fixture.CreateCrewBuilder()
+        var otherCrewAdministratorId = $"user_test_{Guid.NewGuid():N}";
+        await fixture.CreateCrewBuilder()
             .WithName("Other Chief Paddler Crew")
+            .WithAdministrator(id: otherCrewAdministratorId)
+            .WithSinglesGames(
+                side1: otherCrewAdministratorId,
+                side2: "Other Crew Opponent",
+                scores:
+                [
+                    (11, 0),
+                    (11, 0),
+                    (11, 0),
+                ]
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = inactiveLeaderId,
-                    ThatsAPaddlin = 100,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = otherCrew.Id,
-                    CrewUuid = otherCrew.Uuid,
-                    UserId = otherCrew.Administrator.UserId,
-                    ThatsAPaddlin = 200,
-                }
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/chief-paddler");
@@ -188,14 +177,13 @@ public sealed class GetChiefPaddlerEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, chiefPaddler.ThatsAPaddlin);
 
         await using var verificationDatabase = fixture.CreateDbContext();
-        var historicalCount = await verificationDatabase.CrewMemberStatistics
+        var historicalCount = await verificationDatabase.CrewMemberGameStatistics
             .AsNoTracking()
             .Where(statistics =>
                 statistics.CrewId == context.Id
                 && statistics.UserId == inactiveLeaderId
             )
-            .Select(statistics => statistics.ThatsAPaddlin)
-            .SingleAsync();
-        Assert.Equal(100, historicalCount);
+            .SumAsync(statistics => statistics.ThatsAPaddlin);
+        Assert.Equal(3, historicalCount);
     }
 }

@@ -190,6 +190,7 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
             Role = "admin",
         };
         var members = new List<TestIdentity>(memberDefinitions.Count);
+        var membershipIdsToDeactivate = new List<string>();
 
         foreach (var definition in memberDefinitions)
         {
@@ -200,14 +201,21 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
                 profilePictureUrl: definition.ProfilePictureUrl,
                 cancellationToken: cancellationToken
             );
+            var membershipId = $"membership_test_{Guid.NewGuid():N}";
             await fakeWorkOs.CreateMembershipAsync(
-                $"membership_test_{Guid.NewGuid():N}",
+                membershipId,
                 definition.Id,
                 crew.OrganizationId,
                 definition.Role,
-                definition.Status,
+                FakeMembershipStatus.Active,
                 cancellationToken
             );
+
+            if (definition.Status == FakeMembershipStatus.Inactive)
+            {
+                membershipIdsToDeactivate.Add(membershipId);
+            }
+
             members.Add(new TestIdentity
             {
                 UserId = definition.Id,
@@ -221,6 +229,14 @@ internal sealed class CrewTestDataBuilder(AppHostFixture fixture)
             administrator,
             cancellationToken
         );
+
+        foreach (var membershipId in membershipIdsToDeactivate)
+        {
+            await fakeWorkOs.DeactivateMembershipAsync(
+                membershipId,
+                cancellationToken
+            );
+        }
 
         await using var database = fixture.CreateDbContext();
         var databaseId = await database.Crews

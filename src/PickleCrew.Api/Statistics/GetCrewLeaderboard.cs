@@ -21,11 +21,11 @@ public sealed record CrewLeaderboardEntryHttpResponse
 
     public required int Rank { get; init; }
 
-    public required long Wins { get; init; }
+    public required int Wins { get; init; }
 
-    public required long Losses { get; init; }
+    public required int Losses { get; init; }
 
-    public required long CrewScore { get; init; }
+    public required int CrewScore { get; init; }
 }
 
 internal sealed class GetCrewLeaderboardEndpoint : IEndpoint

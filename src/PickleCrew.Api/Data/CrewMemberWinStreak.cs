@@ -10,11 +10,11 @@ public sealed class CrewMemberWinStreak
 
     public Crew Crew { get; init; } = null!;
 
-    public long CurrentWinStreak { get; set; }
+    public int CurrentWinStreak { get; set; }
 
     public DateTimeOffset? CurrentWinStreakStartedAtUtc { get; set; }
 
-    public long LongestWinStreak { get; set; }
+    public int LongestWinStreak { get; set; }
 
     public DateTimeOffset? LongestWinStreakStartedAtUtc { get; set; }
 

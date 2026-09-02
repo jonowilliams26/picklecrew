@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -103,43 +102,30 @@ public sealed class GetCrewLongestWinStreakEndpointTests(AppHostFixture fixture)
     {
         var earlierRecordHolderId = $"user_test_{Guid.NewGuid():N}";
         var laterRecordHolderId = $"user_test_{Guid.NewGuid():N}";
-        var earlierStartedAtUtc = new DateTimeOffset(
-            2026,
-            1,
-            1,
-            12,
-            0,
-            0,
-            TimeSpan.Zero
-        );
-        var laterStartedAtUtc = earlierStartedAtUtc.AddDays(1);
         var context = await fixture.CreateCrewBuilder()
             .WithMember(id: earlierRecordHolderId, displayName: "Earlier Record")
             .WithMember(id: laterRecordHolderId, displayName: "Later Record")
+            .WithSinglesGames(
+                side1: earlierRecordHolderId,
+                side2: "Earlier Record Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                ]
+            )
+            .WithSinglesGames(
+                side1: laterRecordHolderId,
+                side2: "Later Record Opponent",
+                scores:
+                [
+                    (11, 7),
+                    (11, 7),
+                    (11, 7),
+                ]
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = earlierRecordHolderId,
-                    LongestWinStreak = 3,
-                    LongestWinStreakStartedAtUtc = earlierStartedAtUtc,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = laterRecordHolderId,
-                    LongestWinStreak = 3,
-                    LongestWinStreakStartedAtUtc = laterStartedAtUtc,
-                }
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync("/statistics/longest-win-streak");
@@ -154,7 +140,7 @@ public sealed class GetCrewLongestWinStreakEndpointTests(AppHostFixture fixture)
         Assert.Equal(laterRecordHolderId, longestWinStreak.UserId);
         Assert.Equal("Later Record", longestWinStreak.DisplayName);
         Assert.Equal(3, longestWinStreak.Wins);
-        Assert.Equal(laterStartedAtUtc, longestWinStreak.StartedAtUtc);
+        Assert.Equal(context.Games[3].PlayedAtUtc, longestWinStreak.StartedAtUtc);
     }
 
     [Fact]

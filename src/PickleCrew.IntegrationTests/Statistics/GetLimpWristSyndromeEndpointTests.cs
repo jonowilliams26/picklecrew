@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using PickleCrew.Api.Data;
 using PickleCrew.Api.Statistics;
 using PickleCrew.IntegrationTests.Testing;
 using Xunit;
@@ -62,41 +61,40 @@ public sealed class GetLimpWristSyndromeEndpointTests(AppHostFixture fixture)
             .WithMember(id: lowerUserId, displayName: "Selected Holder")
             .WithMember(id: higherUserId, displayName: "Higher Identifier")
             .WithMember(id: betterDifferentialId, displayName: "Better Differential")
+            .WithSinglesGames(
+                side1: lowerUserId,
+                side2: "Selected Holder Opponent",
+                scores:
+                [
+                    (8, 11),
+                    (7, 11),
+                    (7, 11),
+                    (7, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: higherUserId,
+                side2: "Higher Identifier Opponent",
+                scores:
+                [
+                    (8, 11),
+                    (7, 11),
+                    (7, 11),
+                    (7, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: betterDifferentialId,
+                side2: "Better Differential Opponent",
+                scores:
+                [
+                    (9, 11),
+                    (9, 11),
+                    (8, 11),
+                    (8, 11),
+                ]
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = lowerUserId,
-                    Losses = 4,
-                    PointsScored = 20,
-                    PointsConceded = 35,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = higherUserId,
-                    Losses = 4,
-                    PointsScored = 18,
-                    PointsConceded = 33,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = betterDifferentialId,
-                    Losses = 4,
-                    PointsScored = 24,
-                    PointsConceded = 34,
-                }
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync(
@@ -148,40 +146,41 @@ public sealed class GetLimpWristSyndromeEndpointTests(AppHostFixture fixture)
                 status: FakeMembershipStatus.Inactive,
                 displayName: "Former Holder"
             )
+            .WithSinglesGames(
+                side1: activeHolderId,
+                side2: "Active Holder Opponent",
+                scores:
+                [
+                    (5, 11),
+                    (5, 11),
+                ]
+            )
+            .WithSinglesGames(
+                side1: inactiveHolderId,
+                side2: "Former Holder Opponent",
+                scores:
+                [
+                    (0, 11),
+                    (0, 11),
+                    (0, 11),
+                ]
+            )
             .BuildAsync();
-        var otherCrew = await fixture.CreateCrewBuilder()
+        var otherCrewAdministratorId = $"user_test_{Guid.NewGuid():N}";
+        await fixture.CreateCrewBuilder()
             .WithName("Other Limp Wrist Crew")
+            .WithAdministrator(id: otherCrewAdministratorId)
+            .WithSinglesGames(
+                side1: otherCrewAdministratorId,
+                side2: "Other Crew Opponent",
+                scores:
+                [
+                    (0, 11),
+                    (0, 11),
+                    (0, 11),
+                ]
+            )
             .BuildAsync();
-
-        await using (var database = fixture.CreateDbContext())
-        {
-            database.CrewMemberStatistics.AddRange(
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = activeHolderId,
-                    Losses = 2,
-                    PointsScored = 10,
-                    PointsConceded = 22,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = context.Id,
-                    CrewUuid = context.Uuid,
-                    UserId = inactiveHolderId,
-                    Losses = 100,
-                },
-                new CrewMemberStatistics
-                {
-                    CrewId = otherCrew.Id,
-                    CrewUuid = otherCrew.Uuid,
-                    UserId = otherCrew.Administrator.UserId,
-                    Losses = 200,
-                }
-            );
-            await database.SaveChangesAsync();
-        }
 
         using var apiClient = fixture.CreateApiClient(context.Administrator);
         using var response = await apiClient.GetAsync(
@@ -200,14 +199,13 @@ public sealed class GetLimpWristSyndromeEndpointTests(AppHostFixture fixture)
         Assert.Equal(2, holder.Losses);
 
         await using var verificationDatabase = fixture.CreateDbContext();
-        var historicalLosses = await verificationDatabase.CrewMemberStatistics
+        var historicalLosses = await verificationDatabase.CrewMemberGameStatistics
             .AsNoTracking()
             .Where(statistics =>
                 statistics.CrewId == context.Id
                 && statistics.UserId == inactiveHolderId
             )
-            .Select(statistics => statistics.Losses)
-            .SingleAsync();
-        Assert.Equal(100, historicalLosses);
+            .SumAsync(statistics => statistics.Losses);
+        Assert.Equal(3, historicalLosses);
     }
 }

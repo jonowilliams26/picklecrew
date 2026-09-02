@@ -13,7 +13,7 @@ using PickleCrew.Api.Data.Database;
 namespace PickleCrew.Api.Data.Database.Migrations
 {
     [DbContext(typeof(PickleCrewDbContext))]
-    [Migration("20260901215721_AddGameBasedStatistics")]
+    [Migration("20260902003114_AddGameBasedStatistics")]
     partial class AddGameBasedStatistics
     {
         /// <inheritdoc />
@@ -367,14 +367,14 @@ namespace PickleCrew.Api.Data.Database.Migrations
                     b.Property<Guid>("CrewUuid")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("CurrentWinStreak")
-                        .HasColumnType("bigint");
+                    b.Property<int>("CurrentWinStreak")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("CurrentWinStreakStartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("LongestWinStreak")
-                        .HasColumnType("bigint");
+                    b.Property<int>("LongestWinStreak")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("LongestWinStreakEndedAtUtc")
                         .HasColumnType("timestamp with time zone");
