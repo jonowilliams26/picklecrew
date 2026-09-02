@@ -56,6 +56,11 @@ internal interface ICrewService
         string emailAddress,
         CancellationToken cancellationToken);
 
+    Task<bool> ChangeCrewMemberRoleAsync(
+        string userId,
+        string roleSlug,
+        CancellationToken cancellationToken);
+
     Task<bool> RemoveCrewMemberAsync(
         string userId,
         CancellationToken cancellationToken);

@@ -37,6 +37,7 @@ internal static class Endpoints
             .WithCrewUserContext()
             .MapEndpoint<GetCrewMembersEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>()
+            .MapEndpoint<ChangeCrewMemberRoleEndpoint>()
             .MapEndpoint<RemoveCrewMemberEndpoint>()
             .MapEndpoint<LeaveCrewEndpoint>()
             .MapEndpoint<DeleteCrewEndpoint>();
@@ -49,6 +50,7 @@ internal static class Endpoints
         app.MapGroup("/games")
             .WithTags("Games")
             .WithCrewUserContext()
+            .MapEndpoint<DeleteGameEndpoint>()
             .MapEndpoint<GetGameRecordingOptionsEndpoint>()
             .MapEndpoint<GetGamesEndpoint>()
             .MapEndpoint<RecordGameEndpoint>();

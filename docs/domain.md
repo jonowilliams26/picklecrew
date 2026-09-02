@@ -60,6 +60,8 @@ A person who uses Picklecrew.
 - Active roster entries display the member's assigned role; pending invitation recipients are identified as pending and are not active crew members.
 - Expired, revoked, accepted, and otherwise non-pending crew invitations do not appear as invitation recipients in the roster.
 - Crew roster entries are ordered alphabetically by display name or invitation email address.
+- A crew administrator may assign the `admin` or `member` role to another active crew member.
+- A crew administrator may not change their own role.
 - A crew administrator may remove another active member from the crew.
 - A crew administrator may not remove themselves from the crew.
 - Any active crew member may leave their active crew after confirming the crew's exact name, unless they are the crew's only active administrator.
@@ -379,6 +381,7 @@ A completed pickleball game with a final score between two sides.
 - An administrator may edit a game's format, participants, guest names, and scores, but not its played date and time.
 - An edited game must satisfy the same validation rules as a newly recorded game.
 - Deleting a game removes all of its contributions from crew member statistics.
+- Deleting a game recalculates win streaks from the crew's remaining games.
 - A recorded game contributes to each participating crew member's statistics, including when they play with or against guests.
 - Game statistics are calculated within the owning crew only.
 - A user's last-ten game summary contains at most their ten newest games in the active crew in which they participated.

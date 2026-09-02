@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { createApiClient } from '~/lib/api/api.server'
 import {
+  deleteGame as deleteGameRequest,
   getGameRecordingOptions as getGameRecordingOptionsRequest,
   getGames as getGamesRequest,
   recordGame as recordGameRequest,
@@ -9,6 +10,7 @@ import type { RecordGameHttpRequest } from '~/lib/api/generated/types.gen'
 import { getProblemDetailsMessage } from '~/lib/api/problem-details'
 import { authenticatedMiddleware } from '~/lib/auth/auth.middleware'
 import type {
+  GameDeletionResult,
   GameHistoryResult,
   GameRecordingOptionsResult,
   GameRecordingSubmissionResult,
@@ -48,6 +50,51 @@ export const getGames = createServerFn({ method: 'GET' })
       return failure({
         type: 'game-history-unavailable-error',
         message: 'Game history could not be loaded. Try again.',
+      })
+    }
+  })
+
+export const deleteGame = createServerFn({ method: 'POST' })
+  .middleware([authenticatedMiddleware])
+  .validator((data: { gameId: string }) => data)
+  .handler(async ({ context, data }): Promise<GameDeletionResult> => {
+    try {
+      const client = createApiClient({
+        accessToken: context.auth.accessToken,
+      })
+      const result = await deleteGameRequest({
+        client,
+        path: { gameId: data.gameId },
+      })
+
+      if (!result.error) {
+        return success(null)
+      }
+
+      const status = result.response?.status
+
+      if (status === 401 || status === 403) {
+        return failure({
+          type: 'game-deletion-forbidden-error',
+          message: 'Only crew administrators can delete games.',
+        })
+      }
+
+      if (status === 404) {
+        return failure({
+          type: 'game-deletion-not-found-error',
+          message: 'This game no longer exists.',
+        })
+      }
+
+      return failure({
+        type: 'game-deletion-unavailable-error',
+        message: 'The game could not be deleted. Try again.',
+      })
+    } catch {
+      return failure({
+        type: 'game-deletion-unavailable-error',
+        message: 'The game could not be deleted. Try again.',
       })
     }
   })

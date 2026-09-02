@@ -70,6 +70,24 @@ public sealed class WorkOsCrewServiceTests
     }
 
     [Fact]
+    public async Task ChangeCrewMemberRoleAsync_WhenCalled_ShouldUseActiveCrewOrganization()
+    {
+        var workOs = new RecordingWorkOsService();
+        var service = CreateService(workOs);
+
+        var wasChanged = await service.ChangeCrewMemberRoleAsync(
+            "user_changed",
+            "admin",
+            CancellationToken.None
+        );
+
+        Assert.True(wasChanged);
+        Assert.Equal("org_active", workOs.UpdatedMembershipOrganizationId);
+        Assert.Equal("user_changed", workOs.UpdatedMembershipUserId);
+        Assert.Equal("admin", workOs.UpdatedMembershipRoleSlug);
+    }
+
+    [Fact]
     public async Task RemoveCrewMemberAsync_WhenCalled_ShouldUseActiveCrewOrganization()
     {
         var workOs = new RecordingWorkOsService();
@@ -191,6 +209,12 @@ public sealed class WorkOsCrewServiceTests
 
         public string? InviterUserId { get; private set; }
 
+        public string? UpdatedMembershipOrganizationId { get; private set; }
+
+        public string? UpdatedMembershipUserId { get; private set; }
+
+        public string? UpdatedMembershipRoleSlug { get; private set; }
+
         public string? DeactivatedMembershipOrganizationId { get; private set; }
 
         public string? DeactivatedMembershipUserId { get; private set; }
@@ -266,6 +290,19 @@ public sealed class WorkOsCrewServiceTests
             InviterUserId = inviterUserId;
 
             return Task.CompletedTask;
+        }
+
+        public Task<bool> UpdateOrganizationMembershipRoleAsync(
+            string organizationId,
+            string userId,
+            string roleSlug,
+            CancellationToken cancellationToken)
+        {
+            UpdatedMembershipOrganizationId = organizationId;
+            UpdatedMembershipUserId = userId;
+            UpdatedMembershipRoleSlug = roleSlug;
+
+            return Task.FromResult(true);
         }
 
         public Task<bool> DeactivateOrganizationMembershipAsync(
