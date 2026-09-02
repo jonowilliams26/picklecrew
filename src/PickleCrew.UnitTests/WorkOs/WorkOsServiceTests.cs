@@ -62,6 +62,98 @@ public sealed class WorkOsServiceTests
     }
 
     [Fact]
+    public async Task UpdateOrganizationMembershipRoleAsync_WhenMembershipIsActive_ShouldUpdateRole()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (
+                HttpStatusCode.OK,
+                CreateMembershipListResponse(
+                    "user_123",
+                    "member@example.com"
+                )
+            ),
+            (
+                HttpStatusCode.OK,
+                CreateMembershipResponse(
+                    "user_123",
+                    "member@example.com",
+                    "active",
+                    "admin"
+                )
+            )
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        var wasUpdated = await service.UpdateOrganizationMembershipRoleAsync(
+            "org_123",
+            "user_123",
+            "admin",
+            CancellationToken.None
+        );
+
+        Assert.True(wasUpdated);
+        Assert.Equal(2, handler.Requests.Count);
+        var request = handler.Requests[1];
+        Assert.Equal(HttpMethod.Put, request.Method);
+        Assert.Equal(
+            "/user_management/organization_memberships/membership_user_123",
+            request.RequestUri.AbsolutePath
+        );
+
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal("admin", body.RootElement.GetProperty("role_slug").GetString());
+    }
+
+    [Fact]
+    public async Task UpdateOrganizationMembershipRoleAsync_WhenWorkOsReturnsServerError_ShouldNotRetryMutation()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (
+                HttpStatusCode.OK,
+                CreateMembershipListResponse(
+                    "user_123",
+                    "member@example.com"
+                )
+            ),
+            (HttpStatusCode.InternalServerError, "{\"message\":\"WorkOS failed.\"}")
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        await Assert.ThrowsAsync<ServerException>(
+            () => service.UpdateOrganizationMembershipRoleAsync(
+                "org_123",
+                "user_123",
+                "admin",
+                CancellationToken.None
+            )
+        );
+
+        Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task UpdateOrganizationMembershipRoleAsync_WhenMembershipIsNotActive_ShouldReturnFalse()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            (HttpStatusCode.OK, CreateEmptyMembershipListResponse())
+        );
+        using var client = CreateClient(handler);
+        var service = new WorkOsService(client);
+
+        var wasUpdated = await service.UpdateOrganizationMembershipRoleAsync(
+            "org_123",
+            "user_123",
+            "admin",
+            CancellationToken.None
+        );
+
+        Assert.False(wasUpdated);
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
     public async Task DeactivateOrganizationMembershipAsync_WhenMembershipIsActive_ShouldDeactivateMembership()
     {
         var handler = new RecordingHttpMessageHandler(
@@ -367,7 +459,8 @@ public sealed class WorkOsServiceTests
     private static string CreateMembershipResponse(
         string userId,
         string emailAddress,
-        string status)
+        string status,
+        string roleSlug = "member")
     {
         return JsonSerializer.Serialize(new
         {
@@ -377,7 +470,7 @@ public sealed class WorkOsServiceTests
             status,
             role = new
             {
-                slug = "member",
+                slug = roleSlug,
             },
             user = new
             {

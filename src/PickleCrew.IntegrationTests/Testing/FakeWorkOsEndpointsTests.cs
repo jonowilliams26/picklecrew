@@ -76,6 +76,38 @@ public sealed class FakeWorkOsEndpointsTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task UpdateMembershipRole_WhenMembershipIsActive_ShouldChangeRole()
+    {
+        var identity = TestIdentity.Create();
+        var membershipId = $"om_test_{Guid.NewGuid():N}";
+        using var client = fixture.CreateFakeWorkOsClient();
+
+        await client.CreateUserAsync(identity.UserId, identity.EmailAddress);
+        await client.CreateOrganizationAsync(
+            identity.OrganizationId!,
+            "Kitchen Legends",
+            $"crew_test_{Guid.NewGuid():N}"
+        );
+        await client.CreateMembershipAsync(
+            membershipId,
+            identity.UserId,
+            identity.OrganizationId!,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+
+        await client.UpdateMembershipRoleAsync(
+            membershipId,
+            FakeMembershipRole.Admin
+        );
+
+        var member = Assert.Single(
+            await client.ListActiveMembersAsync(identity.OrganizationId!)
+        );
+        Assert.Equal(FakeMembershipRole.Admin, member.Role);
+    }
+
+    [Fact]
     public async Task DeactivateMembership_WhenMembershipIsActive_ShouldMakeMembershipInactive()
     {
         var identity = TestIdentity.Create();

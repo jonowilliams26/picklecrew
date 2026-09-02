@@ -31,6 +31,10 @@ export type BrickWallHttpResponse = {
     averagePointsConceded: number | string;
 };
 
+export type ChangeCrewMemberRoleHttpRequestBody = {
+    role: CrewMemberRole;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -74,6 +78,8 @@ export type CrewMemberHttpResponse = {
     role?: null | string;
     profilePictureUrl?: null | string;
 };
+
+export type CrewMemberRole = 'admin' | 'member';
 
 export type CrewRosterEntryStatus = 'active' | 'pending';
 
@@ -512,6 +518,63 @@ export type SendCrewInvitationResponses = {
 };
 
 export type SendCrewInvitationResponse = SendCrewInvitationResponses[keyof SendCrewInvitationResponses];
+
+export type ChangeCrewMemberRoleData = {
+    body: ChangeCrewMemberRoleHttpRequestBody;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/crews/members/{userId}/role';
+};
+
+export type ChangeCrewMemberRoleErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ChangeCrewMemberRoleError = ChangeCrewMemberRoleErrors[keyof ChangeCrewMemberRoleErrors];
+
+export type ChangeCrewMemberRoleResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ChangeCrewMemberRoleResponse = ChangeCrewMemberRoleResponses[keyof ChangeCrewMemberRoleResponses];
 
 export type RemoveCrewMemberData = {
     body?: never;

@@ -256,6 +256,140 @@
         }
       }
     },
+    "/crews/members/{userId}/role": {
+      "patch": {
+        "tags": [
+          "Crews"
+        ],
+        "summary": "Changes another active crew member's role.",
+        "operationId": "ChangeCrewMemberRole",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeCrewMemberRoleHttpRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "required": [
+                    "traceId"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "title": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "status": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ],
+                      "format": "int32"
+                    },
+                    "detail": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "instance": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "traceId": {
+                      "type": "string",
+                      "description": "The trace identifier for the request."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/crews/members/{userId}": {
       "delete": {
         "tags": [
@@ -1983,6 +2117,17 @@
           }
         }
       },
+      "ChangeCrewMemberRoleHttpRequestBody": {
+        "required": [
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/CrewMemberRole"
+          }
+        }
+      },
       "ChiefPaddlerHttpResponse": {
         "required": [
           "userId",
@@ -2146,6 +2291,12 @@
             ]
           }
         }
+      },
+      "CrewMemberRole": {
+        "enum": [
+          "admin",
+          "member"
+        ]
       },
       "CrewRosterEntryStatus": {
         "enum": [

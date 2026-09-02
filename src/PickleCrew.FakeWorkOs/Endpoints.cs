@@ -13,6 +13,7 @@ internal static class Endpoints
         app.MapPut("/users/{userId}", UpdateUser);
         app.MapPost("/organizations", CreateOrganization);
         app.MapPost("/memberships", CreateMembership);
+        app.MapPut("/memberships/{membershipId}", UpdateMembershipRole);
         app.MapPost("/memberships/{membershipId}/deactivate", DeactivateMembership);
         app.MapPost("/invitations", CreateInvitation);
         app.MapPost("/faults", FailOperation);
@@ -155,6 +156,32 @@ internal static class Endpoints
             $"/memberships/{membership.Id}",
             new IdentifierHttpResponse { Id = membership.Id }
         );
+    }
+
+    private static Results<NoContent, NotFound, ProblemHttpResult>
+        UpdateMembershipRole(
+            string membershipId,
+            UpdateMembershipRoleHttpRequest request,
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
+    {
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.UpdateMembership
+        ))
+        {
+            return CreateFaultProblem(FakeWorkOsOperation.UpdateMembership);
+        }
+
+        var membership = state.UpdateMembershipRole(
+            membershipId,
+            request.Role
+        );
+
+        return membership is null
+            ? TypedResults.NotFound()
+            : TypedResults.NoContent();
     }
 
     private static Results<NoContent, NotFound, ProblemHttpResult>
@@ -448,6 +475,11 @@ public sealed record CreateMembershipHttpRequest
     public MembershipStatus Status { get; init; } = MembershipStatus.Active;
 }
 
+public sealed record UpdateMembershipRoleHttpRequest
+{
+    public required MembershipRole Role { get; init; }
+}
+
 public sealed record CreateInvitationHttpRequest
 {
     public string? Id { get; init; }
@@ -541,6 +573,7 @@ public enum FakeWorkOsOperation
     CreateOrganization,
     FindActiveMembership,
     CreateMembership,
+    UpdateMembership,
     DeactivateMembership,
     ListActiveMembers,
     ListPendingInvitations,
