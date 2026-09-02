@@ -13,6 +13,7 @@ internal static class Endpoints
         app.MapPut("/users/{userId}", UpdateUser);
         app.MapPost("/organizations", CreateOrganization);
         app.MapPut("/organizations/{organizationId}", UpdateOrganizationName);
+        app.MapDelete("/organizations/{organizationId}", DeleteOrganization);
         app.MapPost("/memberships", CreateMembership);
         app.MapPut("/memberships/{membershipId}", UpdateMembershipRole);
         app.MapPost("/memberships/{membershipId}/deactivate", DeactivateMembership);
@@ -155,6 +156,28 @@ internal static class Endpoints
         return organization is null
             ? TypedResults.NotFound()
             : TypedResults.Ok(ToHttpResponse(organization));
+    }
+
+    private static Results<NoContent, NotFound, ProblemHttpResult>
+        DeleteOrganization(
+            string organizationId,
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
+    {
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.DeleteOrganization
+        ))
+        {
+            return CreateFaultProblem(FakeWorkOsOperation.DeleteOrganization);
+        }
+
+        var organization = state.DeleteOrganization(organizationId);
+
+        return organization is null
+            ? TypedResults.NotFound()
+            : TypedResults.NoContent();
     }
 
     private static Results<Created<IdentifierHttpResponse>, ProblemHttpResult>
@@ -637,6 +660,7 @@ public enum FakeWorkOsOperation
     FindOrganizationByExternalId,
     CreateOrganization,
     UpdateOrganization,
+    DeleteOrganization,
     FindActiveMembership,
     CreateMembership,
     UpdateMembership,

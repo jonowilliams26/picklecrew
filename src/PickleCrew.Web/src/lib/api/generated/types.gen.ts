@@ -91,6 +91,10 @@ export type CrewMemberRole = 'admin' | 'member';
 
 export type CrewRosterEntryStatus = 'active' | 'pending';
 
+export type DeleteCrewHttpRequest = {
+    crewName: string;
+};
+
 export type DoublesPairingHttpResponse = {
     players: Array<DoublesPairingPlayerHttpResponse>;
     wins: number;
@@ -396,6 +400,10 @@ export type RecordGameSideHttpRequest = {
     participants: Array<RecordGameParticipantHttpRequest>;
 };
 
+export type ResetCrewStatisticsHttpRequest = {
+    confirmation: string;
+};
+
 export type RivalPlayerHttpResponse = {
     userId: string;
     displayName: string;
@@ -414,6 +422,47 @@ export type SendCrewInvitationHttpResponse = {
     status: CrewInvitationOutcomeStatus;
     message?: null | string;
 };
+
+export type DeleteCrewData = {
+    body: DeleteCrewHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews';
+};
+
+export type DeleteCrewErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteCrewError = DeleteCrewErrors[keyof DeleteCrewErrors];
+
+export type DeleteCrewResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteCrewResponse = DeleteCrewResponses[keyof DeleteCrewResponses];
 
 export type CreateCrewData = {
     body: CreateCrewHttpRequest;
@@ -1615,3 +1664,44 @@ export type GetRecentGamesResponses = {
 };
 
 export type GetRecentGamesResponse = GetRecentGamesResponses[keyof GetRecentGamesResponses];
+
+export type ResetCrewStatisticsData = {
+    body: ResetCrewStatisticsHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/statistics/reset';
+};
+
+export type ResetCrewStatisticsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ResetCrewStatisticsError = ResetCrewStatisticsErrors[keyof ResetCrewStatisticsErrors];
+
+export type ResetCrewStatisticsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResetCrewStatisticsResponse = ResetCrewStatisticsResponses[keyof ResetCrewStatisticsResponses];

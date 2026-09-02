@@ -14,6 +14,9 @@ A named group that users belong to within Picklecrew.
 - Only a crew administrator may change the crew's name.
 - After creating a crew, its creator may invite friends or skip the invitation step.
 - The invitation step is offered only as part of the uninterrupted crew-creation flow; after a refresh or later sign-in, the creator's active crew membership takes them to the dashboard instead.
+- A crew administrator may permanently delete their active crew after confirming its exact name.
+- Deleting a crew deletes its games and statistics and cannot be undone.
+- After deleting a crew, the administrator is signed out.
 
 ### Relationships
 
@@ -101,6 +104,8 @@ A crew member's all-time cumulative game results within one crew.
 - A crew's longest win streak is the greatest longest win streak held by one of its crew members.
 - When active crew members hold equal longest win streaks, the member whose record-setting streak started most recently holds the crew's longest win streak.
 - Recorded games are the source for date-range and doubles-pairing statistics.
+- A crew administrator may reset the active crew's statistics after entering the exact confirmation phrase `reset statistics`.
+- Resetting crew statistics permanently deletes every recorded game and all statistics for the active crew.
 
 ### Relationships
 

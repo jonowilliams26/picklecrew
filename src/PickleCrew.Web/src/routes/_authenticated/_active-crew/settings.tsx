@@ -7,6 +7,9 @@ import {
   CircleAlertIcon,
   LogOut,
   Pencil,
+  RotateCcw,
+  Trash2,
+  TriangleAlert,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -42,22 +45,29 @@ import {
 import { Input } from '~/components/ui/input'
 import { Separator } from '~/components/ui/separator'
 import { Spinner } from '~/components/ui/spinner'
+import { toast } from '~/components/ui/toast'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '~/components/ui/tooltip'
+import { validateCrewDeletionConfirmation } from '~/lib/crews/crew-deletion'
 import {
   formatMembershipDuration,
   getCrewLeavingDisabledReason,
   validateCrewLeavingConfirmation,
 } from '~/lib/crews/crew-leaving'
-import { changeCrewName } from '~/lib/crews/crews.functions'
+import { changeCrewName, deleteCrew } from '~/lib/crews/crews.functions'
 import { validateCrewName } from '~/lib/crews/crews'
 import {
   getCrewLeavingEligibility,
   leaveCrew,
 } from '~/lib/crews/membership.functions'
+import { resetCrewStatistics } from '~/lib/statistics/statistics.functions'
+import {
+  statisticsResetConfirmationPhrase,
+  validateStatisticsResetConfirmation,
+} from '~/lib/statistics/statistics-reset'
 
 export const Route = createFileRoute(
   '/_authenticated/_active-crew/settings',
@@ -191,12 +201,36 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Danger zone</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TriangleAlert
+                aria-hidden="true"
+                className="size-4 text-destructive"
+              />
+              Danger zone
+            </CardTitle>
             <CardDescription>
-              Actions here affect your access to {activeCrew.name}.
+              Actions here affect {activeCrew.name} or your access to it.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col">
+            {activeCrew.role === 'admin' ? (
+              <>
+                <div className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-6">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <h3 className="font-semibold">Reset crew statistics</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Permanently delete every game and all statistics for this
+                      crew. This cannot be undone.
+                    </p>
+                  </div>
+                  <div className="self-end sm:ml-auto">
+                    <ResetCrewStatisticsDialog crewName={activeCrew.name} />
+                  </div>
+                </div>
+                <Separator />
+              </>
+            ) : null}
+
             <div className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <h3 className="font-semibold">Leave this crew</h3>
@@ -216,6 +250,22 @@ function SettingsPage() {
                 />
               </div>
             </div>
+
+            <Authorized role="admin">
+              <Separator />
+              <div className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-6">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <h3 className="font-semibold">Delete this crew</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete the crew, including all games and
+                    statistics. This action cannot be undone.
+                  </p>
+                </div>
+                <div className="self-end sm:ml-auto">
+                  <DeleteCrewDialog crewName={activeCrew.name} />
+                </div>
+              </div>
+            </Authorized>
           </CardContent>
         </Card>
       </div>
@@ -409,6 +459,171 @@ function MembershipDetail({
   )
 }
 
+function ResetCrewStatisticsDialog({ crewName }: { crewName: string }) {
+  const resetCrewStatisticsServerFn = useServerFn(resetCrewStatistics)
+  const [isOpen, setIsOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [confirmationError, setConfirmationError] = useState<string>()
+  const [submissionError, setSubmissionError] = useState<string>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const hasValidConfirmation =
+    confirmation === statisticsResetConfirmationPhrase
+
+  const resetForm = () => {
+    setConfirmation('')
+    setConfirmationError(undefined)
+    setSubmissionError(undefined)
+    setIsSubmitting(false)
+  }
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsOpen(nextOpen)
+
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
+  const submitStatisticsReset = async () => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await resetCrewStatisticsServerFn({
+        data: { confirmation },
+      })
+
+      if (!result.ok) {
+        if (result.error.type === 'invalid-statistics-reset-confirmation') {
+          setConfirmationError(result.error.message)
+        } else {
+          setSubmissionError(result.error.message)
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      setIsOpen(false)
+      resetForm()
+      toast.add({
+        type: 'success',
+        title: 'Statistics reset',
+        description: `Every game and all statistics for ${crewName} were deleted.`,
+      })
+    } catch {
+      setSubmissionError('Crew statistics could not be reset. Try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger render={<Button type="button" variant="destructive" />}>
+        <RotateCcw data-icon="inline-start" />
+        Reset statistics
+      </DialogTrigger>
+      <DialogContent>
+        <form
+          className="flex flex-col gap-6"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (isSubmitting) {
+              return
+            }
+
+            setConfirmationError(undefined)
+            setSubmissionError(undefined)
+            const validation = validateStatisticsResetConfirmation({
+              confirmation,
+            })
+
+            if (!validation.ok) {
+              setConfirmationError(validation.error.message)
+              return
+            }
+
+            void submitStatisticsReset()
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Reset statistics for {crewName}?</DialogTitle>
+            <DialogDescription>
+              Every game and all statistics for this crew will be permanently
+              deleted. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <Field
+              data-invalid={confirmationError !== undefined || undefined}
+              data-disabled={isSubmitting || undefined}
+            >
+              <FieldLabel
+                className="gap-0.5"
+                htmlFor="reset-statistics-confirmation"
+              >
+                Enter <strong>{statisticsResetConfirmationPhrase}</strong> to
+                confirm
+              </FieldLabel>
+              <Input
+                id="reset-statistics-confirmation"
+                name="confirmation"
+                value={confirmation}
+                onChange={(event) => {
+                  setConfirmation(event.target.value)
+                  setConfirmationError(undefined)
+                  setSubmissionError(undefined)
+                }}
+                autoComplete="off"
+                autoFocus
+                required
+                aria-invalid={confirmationError !== undefined || undefined}
+                disabled={isSubmitting}
+              />
+              <FieldError>{confirmationError}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          {submissionError ? (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertTitle>Statistics not reset</AlertTitle>
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" />}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={isSubmitting || !hasValidConfirmation}
+            >
+              {isSubmitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <RotateCcw data-icon="inline-start" />
+              )}
+              {isSubmitting ? 'Resetting…' : 'Reset statistics'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function LeaveCrewAction({
   crewName,
   disabledReason,
@@ -593,6 +808,164 @@ function LeaveCrewDialog({ crewName }: { crewName: string }) {
                 <LogOut data-icon="inline-start" />
               )}
               {isSubmitting ? 'Leaving…' : 'Leave crew'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DeleteCrewDialog({ crewName }: { crewName: string }) {
+  const deleteCrewServerFn = useServerFn(deleteCrew)
+  const [isOpen, setIsOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [confirmationError, setConfirmationError] = useState<string>()
+  const [submissionError, setSubmissionError] = useState<string>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const hasValidConfirmation = confirmation === crewName
+
+  const resetForm = () => {
+    setConfirmation('')
+    setConfirmationError(undefined)
+    setSubmissionError(undefined)
+    setIsSubmitting(false)
+  }
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsOpen(nextOpen)
+
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
+  const submitCrewDeletion = async () => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await deleteCrewServerFn({
+        data: { crewName: confirmation },
+      })
+
+      if (!result.ok) {
+        if (result.error.type === 'invalid-crew-deletion-confirmation') {
+          setConfirmationError(result.error.message)
+        } else {
+          setSubmissionError(result.error.message)
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      window.location.assign('/api/auth/sign-out')
+    } catch {
+      setSubmissionError('This crew could not be deleted. Try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger render={<Button type="button" variant="destructive" />}>
+        <Trash2 data-icon="inline-start" />
+        Delete crew
+      </DialogTrigger>
+      <DialogContent>
+        <form
+          className="flex flex-col gap-6"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (isSubmitting) {
+              return
+            }
+
+            setConfirmationError(undefined)
+            setSubmissionError(undefined)
+            const validation = validateCrewDeletionConfirmation({
+              confirmation,
+              crewName,
+            })
+
+            if (!validation.ok) {
+              setConfirmationError(validation.error.message)
+              return
+            }
+
+            void submitCrewDeletion()
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete {crewName}?</DialogTitle>
+            <DialogDescription>
+              You will be signed out. This permanently deletes the crew and all
+              its games and statistics. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <Field
+              data-invalid={confirmationError !== undefined || undefined}
+              data-disabled={isSubmitting || undefined}
+            >
+              <FieldLabel
+                className="gap-0.5"
+                htmlFor="delete-crew-confirmation"
+              >
+                Enter <strong>{crewName}</strong> to confirm
+              </FieldLabel>
+              <Input
+                id="delete-crew-confirmation"
+                name="confirmation"
+                value={confirmation}
+                onChange={(event) => {
+                  setConfirmation(event.target.value)
+                  setConfirmationError(undefined)
+                  setSubmissionError(undefined)
+                }}
+                autoComplete="off"
+                autoFocus
+                required
+                aria-invalid={confirmationError !== undefined || undefined}
+                disabled={isSubmitting}
+              />
+              <FieldError>{confirmationError}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          {submissionError ? (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertTitle>Crew not deleted</AlertTitle>
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" />}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={isSubmitting || !hasValidConfirmation}
+            >
+              {isSubmitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Trash2 data-icon="inline-start" />
+              )}
+              {isSubmitting ? 'Deleting…' : 'Delete crew'}
             </Button>
           </DialogFooter>
         </form>

@@ -76,6 +76,21 @@ internal sealed class TestWorkOsService : IWorkOsService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task DeleteOrganizationAsync(
+        string organizationId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await client.DeleteAsync(
+            $"/organizations/{Uri.EscapeDataString(organizationId)}",
+            cancellationToken
+        );
+
+        if (response.StatusCode != HttpStatusCode.NotFound)
+        {
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
     public Task<string?> FindActiveMembershipIdAsync(
         string userId,
         string organizationId,
