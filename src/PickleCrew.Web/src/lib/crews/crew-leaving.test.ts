@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   formatMembershipDuration,
+  getCrewLeavingDisabledReason,
   validateCrewLeavingConfirmation,
 } from './crew-leaving.ts'
 
@@ -30,6 +31,14 @@ test('rejects confirmation with different casing or whitespace', () => {
     }).ok,
     false,
   )
+})
+
+test('explains why a sole administrator cannot leave', () => {
+  assert.equal(
+    getCrewLeavingDisabledReason({ canLeave: false }),
+    'Assign another crew member as an administrator before leaving this crew.',
+  )
+  assert.equal(getCrewLeavingDisabledReason({ canLeave: true }), undefined)
 })
 
 test('formats membership duration using its largest useful unit', () => {

@@ -12,19 +12,50 @@ public sealed record LeaveCrewHttpRequest
     public required string CrewName { get; init; }
 }
 
+public sealed record GetCrewLeavingEligibilityHttpResponse
+{
+    public required bool CanLeave { get; init; }
+}
+
 internal sealed class LeaveCrewEndpoint : IEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapPost("/leave", HandleAsync)
+        app.MapGet("/leave-eligibility", GetEligibilityAsync)
+            .WithName("GetCrewLeavingEligibility")
+            .WithSummary("Gets whether the current member may leave the active crew.");
+
+        app.MapPost("/leave", LeaveAsync)
             .WithName("LeaveCrew")
             .WithSummary("Leaves the active crew after confirming its name.");
     }
 
     private static async Task<Results<
+        Ok<GetCrewLeavingEligibilityHttpResponse>,
+        NotFound>> GetEligibilityAsync(
+        ICrewService crewService,
+        CancellationToken cancellationToken)
+    {
+        var eligibility = await crewService.GetCrewLeavingEligibilityAsync(
+            cancellationToken
+        );
+
+        if (eligibility == CrewLeavingEligibility.MembershipNotFound)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(new GetCrewLeavingEligibilityHttpResponse
+        {
+            CanLeave = eligibility == CrewLeavingEligibility.Eligible,
+        });
+    }
+
+    private static async Task<Results<
         NoContent,
         ValidationProblem,
-        NotFound>> HandleAsync(
+        NotFound,
+        Conflict>> LeaveAsync(
         LeaveCrewHttpRequest request,
         CrewUserContext crewUserContext,
         PickleCrewDbContext database,
@@ -45,13 +76,16 @@ internal sealed class LeaveCrewEndpoint : IEndpoint
             });
         }
 
-        var wasMembershipDeactivated = await crewService.LeaveCrewAsync(
-            cancellationToken
-        );
+        var outcome = await crewService.LeaveCrewAsync(cancellationToken);
 
-        if (!wasMembershipDeactivated)
+        if (outcome == LeaveCrewOutcome.MembershipNotFound)
         {
             return TypedResults.NotFound();
+        }
+
+        if (outcome == LeaveCrewOutcome.SoleAdministrator)
+        {
+            return TypedResults.Conflict();
         }
 
         await cache.RemoveByTagAsync(

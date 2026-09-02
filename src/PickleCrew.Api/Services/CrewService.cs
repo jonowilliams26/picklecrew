@@ -27,6 +27,20 @@ internal sealed record CrewRoster
     public required PendingCrewInvitation[] PendingInvitations { get; init; }
 }
 
+internal enum CrewLeavingEligibility
+{
+    Eligible,
+    MembershipNotFound,
+    SoleAdministrator,
+}
+
+internal enum LeaveCrewOutcome
+{
+    Left,
+    MembershipNotFound,
+    SoleAdministrator,
+}
+
 internal interface ICrewService
 {
     Task<ActiveCrewMember[]> ListActiveCrewMembersAsync(
@@ -46,6 +60,9 @@ internal interface ICrewService
         string userId,
         CancellationToken cancellationToken);
 
-    Task<bool> LeaveCrewAsync(
+    Task<CrewLeavingEligibility> GetCrewLeavingEligibilityAsync(
+        CancellationToken cancellationToken);
+
+    Task<LeaveCrewOutcome> LeaveCrewAsync(
         CancellationToken cancellationToken);
 }

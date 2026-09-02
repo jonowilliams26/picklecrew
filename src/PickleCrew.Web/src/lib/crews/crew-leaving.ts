@@ -1,3 +1,4 @@
+import type { GetCrewLeavingEligibilityHttpResponse } from '../api/generated/types.gen.ts'
 import { failure, success, type Result } from '../results.ts'
 
 export type InvalidCrewLeavingConfirmationError = Readonly<{
@@ -20,13 +21,36 @@ type CrewLeavingUnavailableError = Readonly<{
   message: string
 }>
 
+type CrewLeavingSoleAdministratorError = Readonly<{
+  type: 'crew-leaving-sole-administrator-error'
+  message: string
+}>
+
 export type CrewLeavingResult = Result<
   void,
   | InvalidCrewLeavingConfirmationError
   | CrewLeavingForbiddenError
   | CrewLeavingNotFoundError
+  | CrewLeavingSoleAdministratorError
   | CrewLeavingUnavailableError
 >
+
+export type CrewLeavingEligibilityResult = Result<
+  GetCrewLeavingEligibilityHttpResponse,
+  | CrewLeavingForbiddenError
+  | CrewLeavingNotFoundError
+  | CrewLeavingUnavailableError
+>
+
+export function getCrewLeavingDisabledReason({
+  canLeave,
+}: {
+  canLeave: boolean
+}): string | undefined {
+  return canLeave
+    ? undefined
+    : 'Assign another crew member as an administrator before leaving this crew.'
+}
 
 export function validateCrewLeavingConfirmation({
   confirmation,

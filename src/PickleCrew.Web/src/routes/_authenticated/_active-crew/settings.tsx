@@ -41,15 +41,27 @@ import { Input } from '~/components/ui/input'
 import { Separator } from '~/components/ui/separator'
 import { Spinner } from '~/components/ui/spinner'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip'
+import {
   formatMembershipDuration,
+  getCrewLeavingDisabledReason,
   validateCrewLeavingConfirmation,
 } from '~/lib/crews/crew-leaving'
-import { leaveCrew } from '~/lib/crews/crew-leaving.functions'
+import {
+  getCrewLeavingEligibility,
+  leaveCrew,
+} from '~/lib/crews/membership.functions'
 
 export const Route = createFileRoute(
   '/_authenticated/_active-crew/settings',
 )({
-  loader: () => ({ now: new Date().toISOString() }),
+  loader: async () => ({
+    now: new Date().toISOString(),
+    crewLeavingEligibility: await getCrewLeavingEligibility(),
+  }),
   component: SettingsPage,
 })
 
@@ -89,7 +101,7 @@ function formatJoinedDate({ joinedAt }: { joinedAt: string }): string {
 
 function SettingsPage() {
   const { activeCrew } = authenticatedRoute.useLoaderData()
-  const { now } = Route.useLoaderData()
+  const { now, crewLeavingEligibility } = Route.useLoaderData()
   const { user } = useAuth()
 
   if (!activeCrew || !user) {
@@ -102,6 +114,11 @@ function SettingsPage() {
     joinedAt: activeCrew.joinedAt,
     now: new Date(now),
   })
+  const crewLeavingDisabledReason = crewLeavingEligibility.ok
+    ? getCrewLeavingDisabledReason({
+        canLeave: crewLeavingEligibility.value.canLeave,
+      })
+    : crewLeavingEligibility.error.message
 
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden p-5 md:p-8 md:pb-10 xl:p-10">
@@ -175,12 +192,19 @@ function SettingsPage() {
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <h3 className="font-semibold">Leave this crew</h3>
                 <p className="text-sm text-muted-foreground">
-                  You will be signed out and lose access to the crew. Your
-                  historical games and statistics will remain.
+                  {crewLeavingDisabledReason ?? (
+                    <>
+                      You will be signed out and lose access to the crew. Your
+                      historical games and statistics will remain.
+                    </>
+                  )}
                 </p>
               </div>
               <div className="self-end sm:ml-auto">
-                <LeaveCrewDialog crewName={activeCrew.name} />
+                <LeaveCrewAction
+                  crewName={activeCrew.name}
+                  disabledReason={crewLeavingDisabledReason}
+                />
               </div>
             </div>
           </CardContent>
@@ -218,6 +242,40 @@ function MembershipDetail({
         </span>
       </div>
     </div>
+  )
+}
+
+function LeaveCrewAction({
+  crewName,
+  disabledReason,
+}: {
+  crewName: string
+  disabledReason?: string
+}) {
+  if (!disabledReason) {
+    return <LeaveCrewDialog crewName={crewName} />
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            className="inline-flex"
+            tabIndex={0}
+            aria-label={disabledReason}
+          />
+        }
+      >
+        <Button type="button" variant="destructive" disabled>
+          <LogOut data-icon="inline-start" />
+          Leave crew
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{disabledReason}</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -264,13 +322,13 @@ function LeaveCrewDialog({ crewName }: { crewName: string }) {
         } else {
           setSubmissionError(result.error.message)
         }
+        setIsSubmitting(false)
         return
       }
 
       window.location.assign('/api/auth/sign-out')
     } catch {
       setSubmissionError('This crew could not be left. Try again.')
-    } finally {
       setIsSubmitting(false)
     }
   }

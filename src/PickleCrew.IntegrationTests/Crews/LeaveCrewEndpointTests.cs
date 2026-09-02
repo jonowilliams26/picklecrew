@@ -56,12 +56,22 @@ public sealed class LeaveCrewEndpointTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task LeaveCrew_WhenAdministratorConfirmsCrewName_ShouldDeactivateOwnMembership()
+    public async Task LeaveCrew_WhenAnotherAdministratorIsActive_ShouldDeactivateOwnMembership()
     {
         var context = await fixture.CreateCrewBuilder()
             .WithName("Kitchen Legends")
+            .WithMember(role: FakeMembershipRole.Admin)
             .BuildAsync();
         using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var eligibilityResponse = await apiClient.GetAsync(
+            "/crews/leave-eligibility"
+        );
+        Assert.Equal(HttpStatusCode.OK, eligibilityResponse.StatusCode);
+        var eligibility = await eligibilityResponse.Content
+            .ReadFromJsonAsync<GetCrewLeavingEligibilityHttpResponse>();
+        Assert.NotNull(eligibility);
+        Assert.True(eligibility.CanLeave);
 
         using var response = await apiClient.PostAsJsonAsync(
             "/crews/leave",
@@ -79,6 +89,42 @@ public sealed class LeaveCrewEndpointTests(AppHostFixture fixture)
             context.OrganizationId
         );
         Assert.Null(activeMembershipId);
+    }
+
+    [Fact]
+    public async Task LeaveCrew_WhenCurrentUserIsSoleAdministrator_ShouldReturnConflictAndKeepMembershipActive()
+    {
+        var context = await fixture.CreateCrewBuilder()
+            .WithName("Kitchen Legends")
+            .WithMember()
+            .BuildAsync();
+        using var apiClient = fixture.CreateApiClient(context.Administrator);
+
+        using var eligibilityResponse = await apiClient.GetAsync(
+            "/crews/leave-eligibility"
+        );
+        Assert.Equal(HttpStatusCode.OK, eligibilityResponse.StatusCode);
+        var eligibility = await eligibilityResponse.Content
+            .ReadFromJsonAsync<GetCrewLeavingEligibilityHttpResponse>();
+        Assert.NotNull(eligibility);
+        Assert.False(eligibility.CanLeave);
+
+        using var response = await apiClient.PostAsJsonAsync(
+            "/crews/leave",
+            new LeaveCrewHttpRequest
+            {
+                CrewName = "Kitchen Legends",
+            }
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        var activeMembershipId = await fakeWorkOs.FindActiveMembershipAsync(
+            context.Administrator.UserId,
+            context.OrganizationId
+        );
+        Assert.NotNull(activeMembershipId);
     }
 
     [Fact]

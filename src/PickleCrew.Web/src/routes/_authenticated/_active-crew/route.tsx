@@ -64,7 +64,6 @@ const navigationItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Games', icon: ClipboardList, to: '/games' },
   { label: 'Crew', icon: UsersRound, to: '/crew' },
-  { label: 'Settings', icon: Settings, to: '/settings' },
 ] as const
 
 function getDisplayName({ user }: { user: User }): string {
@@ -408,6 +407,20 @@ function ActiveCrewSidebar({
                     </span>
                     <span className="truncate font-normal">{user.email}</span>
                   </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to="/settings"
+                        onClick={closeMobileNavigation}
+                      />
+                    }
+                  >
+                    <Settings aria-hidden="true" />
+                    Settings
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
