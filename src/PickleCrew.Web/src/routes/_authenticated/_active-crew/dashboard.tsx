@@ -3,6 +3,8 @@ import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
 import {
+  BrickWall,
+  CalendarDays,
   CircleAlert,
   Crown,
   Flame,
@@ -13,12 +15,14 @@ import {
   History,
   Medal,
   Skull,
+  Snowflake,
   Swords,
   Target,
   Trophy,
   TrendingDown,
   TrendingUp,
   UsersRound,
+  Zap,
   type LucideIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -35,6 +39,11 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip'
 import type {
   CrewLeaderboardEntryHttpResponse,
   DoublesPairingPlayerHttpResponse,
@@ -42,7 +51,11 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
+  buildCrewHealthCalendar,
+  formatAveragePoints,
+  formatAveragePointsConceded,
   formatCount,
+  formatCrewHealthDay,
   formatPercentage,
   formatRecord,
   formatSignedNumber,
@@ -52,6 +65,7 @@ import {
   getFriendsOrLoversCardDetails,
   getInitials,
   type BestPartnerPresentation,
+  type CrewHealthCalendar,
   type DashboardData,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
@@ -71,25 +85,27 @@ const avatarStyles = [
   'bg-paper text-ink',
 ] as const
 
-const dashboardStatCardVariants = cva(
-  'dashboard-stat-card relative border-2 border-ink',
-  {
-    variants: {
-      tone: {
-        aqua: 'bg-aqua text-ink shadow-[7px_8px_0_var(--ink)]',
-        cream: 'bg-cream text-ink shadow-[7px_8px_0_var(--ink)]',
-        ink: 'bg-ink text-cream shadow-[7px_8px_0_var(--orange)]',
-        lime: 'bg-lime text-ink shadow-[7px_8px_0_var(--ink)]',
-        orange: 'bg-orange text-ink shadow-[7px_8px_0_var(--ink)]',
-        paper: 'bg-paper text-ink shadow-[7px_8px_0_var(--ink)]',
-        purple: 'bg-purple text-white shadow-[7px_8px_0_var(--ink)]',
-      },
+const dashboardStatCardVariants = cva('relative border-2 border-ink', {
+  variants: {
+    interactive: {
+      true: 'dashboard-stat-card',
+      false: '',
     },
-    defaultVariants: {
-      tone: 'cream',
+    tone: {
+      aqua: 'bg-aqua text-ink shadow-[7px_8px_0_var(--ink)]',
+      cream: 'bg-cream text-ink shadow-[7px_8px_0_var(--ink)]',
+      ink: 'bg-ink text-cream shadow-[7px_8px_0_var(--orange)]',
+      lime: 'bg-lime text-ink shadow-[7px_8px_0_var(--ink)]',
+      orange: 'bg-orange text-ink shadow-[7px_8px_0_var(--ink)]',
+      paper: 'bg-paper text-ink shadow-[7px_8px_0_var(--ink)]',
+      purple: 'bg-purple text-white shadow-[7px_8px_0_var(--ink)]',
     },
   },
-)
+  defaultVariants: {
+    interactive: true,
+    tone: 'cream',
+  },
+})
 
 const dashboardCardIconVariants = cva(
   'grid place-items-center rounded-full border-2 [&_svg]:size-5',
@@ -172,6 +188,30 @@ const dashboardCardTextVariants = cva('', {
   },
 })
 
+const crewHealthIntensities = [0, 1, 2, 3, 4] as const
+
+const crewHealthDayVariants = cva(
+  'block rounded-[3px] border border-ink/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
+  {
+    variants: {
+      intensity: {
+        0: 'bg-ink/10',
+        1: 'bg-lime/30',
+        2: 'bg-lime/55',
+        3: 'bg-lime/80',
+        4: 'bg-ink',
+      },
+      layout: {
+        calendar: 'aspect-square w-full',
+        legend: 'size-3',
+      },
+    },
+    defaultVariants: {
+      layout: 'calendar',
+    },
+  },
+)
+
 const dashboardAvatarFallbackVariants = cva('font-heading font-black', {
   variants: {
     size: {
@@ -225,16 +265,21 @@ function DashboardPage() {
 
   const {
     personalStatistics,
+    easyWin: easyWinResponse,
     nemesis: nemesisResponse,
     recentGames,
+    crewHealth,
     leaderboard,
     longestWinStreak: longestWinStreakResponse,
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
     biggestRivals,
+    brickWall: brickWallResponse,
     chiefPaddler: chiefPaddlerResponse,
+    iceMan: iceManResponse,
     friendsOrLovers,
     limpWristSyndrome: limpWristSyndromeResponse,
+    pointMachine: pointMachineResponse,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -249,6 +294,7 @@ function DashboardPage() {
     losses: recentGames.losses,
   })
   const recentGameCount = recentGames.games.length
+  const crewHealthCalendar = buildCrewHealthCalendar({ crewHealth })
   const hasLeaderboardGames = leaderboard.entries.some(
     (member) => member.wins + member.losses > 0,
   )
@@ -258,7 +304,9 @@ function DashboardPage() {
   const rivalry = biggestRivals.rivalry
   const firstRival = rivalry?.players[0]
   const secondRival = rivalry?.players[1]
+  const brickWall = brickWallResponse.brickWall
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const iceMan = iceManResponse.iceMan
   const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
@@ -266,8 +314,10 @@ function DashboardPage() {
   const friendsOrLoversDetails = getFriendsOrLoversCardDetails({
     friendsOrLovers,
   })
+  const easyWin = easyWinResponse.easyWin
   const nemesis = nemesisResponse.nemesis
   const limpWristSyndrome = limpWristSyndromeResponse.limpWristSyndrome
+  const pointMachine = pointMachineResponse.pointMachine
 
   if (
     pairing &&
@@ -311,6 +361,7 @@ function DashboardPage() {
               <CrewRankCard statistics={personalStatistics} />
               <CurrentStreakCard statistics={personalStatistics} />
               <PointDifferentialCard statistics={personalStatistics} />
+              <AverageMarginCard statistics={personalStatistics} />
 
               <RecentGamesCard
                 recentGameCount={recentGameCount}
@@ -319,6 +370,8 @@ function DashboardPage() {
               />
 
               <NemesisCard nemesis={nemesis} />
+
+              <EasyWinCard easyWin={easyWin} />
 
               <ThatsAPaddlinCard statistics={personalStatistics} />
 
@@ -381,13 +434,21 @@ function DashboardPage() {
               secondRival={secondRival}
             />
 
+            <PointMachineCard pointMachine={pointMachine} />
+
             <LimpWristSyndromeCard
               limpWristSyndrome={limpWristSyndrome}
             />
 
+            <BrickWallCard brickWall={brickWall} />
+
+            <IceManCard iceMan={iceMan} />
+
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
             <ChiefPaddlerCard chiefPaddler={chiefPaddler} />
+
+            <CrewHealthCard calendar={crewHealthCalendar} />
           </div>
         </section>
       </div>
@@ -397,13 +458,17 @@ function DashboardPage() {
 
 function DashboardStatCard({
   className,
+  interactive,
   tone,
   ...props
 }: ComponentProps<typeof Card> &
   VariantProps<typeof dashboardStatCardVariants>) {
   return (
     <Card
-      className={cn(dashboardStatCardVariants({ tone }), className)}
+      className={cn(
+        dashboardStatCardVariants({ interactive, tone }),
+        className,
+      )}
       {...props}
     />
   )
@@ -585,7 +650,7 @@ function WinPercentageCard({
 }) {
   return (
     <DashboardStatCard
-      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-5 xl:row-span-2"
+      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-4 xl:row-span-2"
       tone="lime"
     >
       <DashboardCardHeader
@@ -658,7 +723,7 @@ function RecentGamesCard({
   recentRecord: string
 }) {
   return (
-    <DashboardStatCard className="sm:col-span-2 xl:col-span-4" tone="cream">
+    <DashboardStatCard className="sm:col-span-2 xl:col-span-3" tone="cream">
       <DashboardCardHeader
         description={
           recentGameCount === 0
@@ -733,7 +798,7 @@ function NemesisCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
       tone="orange"
     >
       <DashboardCardHeader
@@ -759,6 +824,158 @@ function NemesisCard({
         />
       )}
       <DashboardDecorativeIcon icon={Skull} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function EasyWinCard({
+  easyWin,
+}: {
+  easyWin: DashboardData['easyWin']['easyWin']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
+      tone="lime"
+    >
+      <DashboardCardHeader
+        description="The opponent you’ve beaten the most"
+        icon={Trophy}
+        iconSize="small"
+        iconTone="cream"
+        title="Your easy win"
+      />
+      {easyWin ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-aqua text-ink"
+          metadata="They can’t catch a break"
+          metric={easyWin.wins.toLocaleString('en-AU')}
+          metricLabel={`${easyWin.wins === 1 ? 'win' : 'wins'} against them`}
+          person={easyWin}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games against an active crew member to find your easy win."
+          title="Nobody’s easy yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Trophy} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function CrewHealthCard({ calendar }: { calendar: CrewHealthCalendar }) {
+  return (
+    <DashboardStatCard
+      className="min-h-[280px] xl:col-span-12 xl:row-start-7"
+      interactive={false}
+      tone="cream"
+    >
+      <DashboardCardHeader
+        description="Games played across the last 365 days"
+        icon={CalendarDays}
+        iconTone="lime"
+        title="Crew health"
+        titleVariant="heading"
+      />
+      <CardContent className="relative z-1">
+        <div className="overflow-x-auto pb-2">
+          <div className="flex w-full min-w-[52rem] gap-3">
+            <div className="mt-6 grid grid-rows-7 gap-1 text-[8px] font-black text-muted-foreground uppercase">
+              <span>Sun</span>
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div
+                className="grid h-4 gap-1 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
+                style={{
+                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
+                }}
+                aria-hidden="true"
+              >
+                {calendar.monthLabels.map((month) => (
+                  <span
+                    className="col-span-3"
+                    key={`${month.label}-${month.weekIndex}`}
+                    style={{ gridColumnStart: month.weekIndex + 1 }}
+                  >
+                    {month.label}
+                  </span>
+                ))}
+              </div>
+              <div
+                className="grid grid-rows-[repeat(7,auto)] gap-1"
+                style={{
+                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
+                }}
+                role="group"
+                aria-label={`${formatCount({ count: calendar.totalGames, singular: 'game' })} played across ${formatCount({ count: calendar.activeDayCount, singular: 'active day' })} in the last 365 days`}
+              >
+                {calendar.days.map((day) => {
+                  const label = formatCrewHealthDay(day)
+                  const className = crewHealthDayVariants({
+                    intensity: day.intensity,
+                  })
+                  const style = {
+                    gridColumnStart: day.weekIndex + 1,
+                    gridRowStart: day.dayOfWeek + 1,
+                  }
+
+                  return day.gameCount > 0 ? (
+                    <Tooltip key={day.date}>
+                      <TooltipTrigger
+                        aria-label={label}
+                        className={className}
+                        style={style}
+                        type="button"
+                      />
+                      <TooltipContent>{label}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className={className}
+                      key={day.date}
+                      style={style}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="relative z-1 flex-wrap justify-between gap-4">
+        <span className={dashboardCardTextVariants({ role: 'metadata' })}>
+          {formatCount({ count: calendar.totalGames, singular: 'game' })} ·{' '}
+          {formatCount({
+            count: calendar.activeDayCount,
+            singular: 'active day',
+          })}
+        </span>
+        <div
+          className="flex items-center gap-2 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
+          aria-label="Activity intensity from less to more"
+        >
+          <span>Less</span>
+          {crewHealthIntensities.map((intensity) => (
+            <span
+              aria-hidden="true"
+              className={crewHealthDayVariants({
+                intensity,
+                layout: 'legend',
+              })}
+              key={intensity}
+            />
+          ))}
+          <span>More</span>
+        </div>
+      </CardFooter>
     </DashboardStatCard>
   )
 }
@@ -1054,6 +1271,44 @@ function BiggestRivalsCard({
   )
 }
 
+function PointMachineCard({
+  pointMachine,
+}: {
+  pointMachine: DashboardData['pointMachine']['pointMachine']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-5"
+      tone="orange"
+    >
+      <DashboardCardHeader
+        description="Highest all-time average points scored per game"
+        icon={Zap}
+        iconTone="lime"
+        tilt="counterclockwise"
+        title="Point Machine"
+      />
+      {pointMachine ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={`${formatCount({ count: pointMachine.pointsScored, singular: 'point' })} across ${formatCount({ count: pointMachine.gamesPlayed, singular: 'game' })}`}
+          metric={formatAveragePoints({
+            value: pointMachine.averagePointsScored,
+          })}
+          metricLabel="points per game"
+          person={pointMachine}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games and somebody will set the pace."
+          title="No Point Machine yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Zap} />
+    </DashboardStatCard>
+  )
+}
+
 function LimpWristSyndromeCard({
   limpWristSyndrome,
 }: {
@@ -1089,6 +1344,90 @@ function LimpWristSyndromeCard({
         direction="counterclockwise"
         icon={Hand}
       />
+    </DashboardStatCard>
+  )
+}
+
+function BrickWallCard({
+  brickWall,
+}: {
+  brickWall: DashboardData['brickWall']['brickWall']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-5"
+      tone="aqua"
+    >
+      <DashboardCardHeader
+        description="Lowest average points conceded per game"
+        icon={BrickWall}
+        iconTone="orange"
+        title="Brick wall"
+      />
+      {brickWall ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={
+            <>
+              {formatCount({
+                count: brickWall.pointsConceded,
+                singular: 'point',
+              })}{' '}
+              conceded across{' '}
+              {formatCount({
+                count: brickWall.gamesPlayed,
+                singular: 'game',
+              })}
+            </>
+          }
+          metric={formatAveragePointsConceded({
+            value: brickWall.averagePointsConceded,
+          })}
+          metricLabel="points conceded per game"
+          person={brickWall}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games and see who gives away the fewest points."
+          title="No wall yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={BrickWall} />
+    </DashboardStatCard>
+  )
+}
+
+function IceManCard({
+  iceMan,
+}: {
+  iceMan: DashboardData['iceMan']['iceMan']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-6"
+      tone="purple"
+    >
+      <DashboardCardHeader
+        description="The clutch win master. Most wins with the other side scoring 9 or more."
+        icon={Snowflake}
+        iconTone="aqua-on-dark"
+        title="The Ice Man"
+      />
+      {iceMan ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-orange text-ink"
+          metadata="Ice in their veins"
+          metric={iceMan.clutchWins.toLocaleString('en-AU')}
+          metricLabel={iceMan.clutchWins === 1 ? 'clutch win' : 'clutch wins'}
+          person={iceMan}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Win a game after the other side reaches 9 points to claim it."
+          title="No clutch wins yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Snowflake} />
     </DashboardStatCard>
   )
 }
@@ -1185,7 +1524,7 @@ function BestPartnerCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
       tone="paper"
     >
       <DashboardCardHeader
@@ -1370,7 +1709,7 @@ function CrewRankCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-3"
+      className="xl:col-span-4"
       description="Your place on the crew leaderboard"
       detail={`of ${formatCount({
         count: statistics.activeCrewMemberCount,
@@ -1418,16 +1757,36 @@ function PointDifferentialCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-3"
+      className="xl:col-span-4"
       description="Points scored minus points conceded"
       detail={`${statistics.pointsScored.toLocaleString('en-AU')} for · ${statistics.pointsConceded.toLocaleString('en-AU')} against`}
       eyebrow="Point differential"
-      icon={
-        statistics.pointDifferential < 0 ? TrendingDown : TrendingUp
-      }
+      icon={statistics.pointDifferential < 0 ? TrendingDown : TrendingUp}
       iconTone="cream"
       tone="aqua"
       value={formatSignedNumber({ value: statistics.pointDifferential })}
+    />
+  )
+}
+
+function AverageMarginCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-4"
+      description="Average signed point differential per game"
+      detail={`${formatSignedNumber({ value: statistics.pointDifferential })} across ${formatCount({ count: statistics.gamesPlayed, singular: 'game' })}`}
+      eyebrow="Average margin"
+      icon={Number(statistics.averageMargin) < 0 ? TrendingDown : TrendingUp}
+      iconTone="cream"
+      tone="aqua"
+      value={formatSignedNumber({
+        value: statistics.averageMargin,
+        maximumFractionDigits: 1,
+      })}
     />
   )
 }
@@ -1439,7 +1798,7 @@ function ThatsAPaddlinCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
+      className="xl:col-span-3"
       description="11–0 wins. Zero points. Zero mercy."
       emptyState={
         statistics.thatsAPaddlin === 0

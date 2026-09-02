@@ -1067,6 +1067,67 @@
         }
       }
     },
+    "/statistics/brick-wall": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Brick Wall for the active Crew.",
+        "operationId": "GetBrickWall",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBrickWallHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/chief-paddler": {
       "get": {
         "tags": [
@@ -1121,6 +1182,128 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetChiefPaddlerHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/crew-health": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets daily Game activity for the active Crew over the last year.",
+        "operationId": "GetCrewHealth",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCrewHealthHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/easy-win": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the signed-in user's Easy Win for the active Crew.",
+        "operationId": "GetEasyWin",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEasyWinHttpResponse"
                 }
               }
             }
@@ -1189,6 +1372,67 @@
         }
       }
     },
+    "/statistics/ice-man": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Ice Man for the active Crew.",
+        "operationId": "GetIceMan",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetIceManHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/limp-wrist-syndrome": {
       "get": {
         "tags": [
@@ -1243,6 +1487,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetLimpWristSyndromeHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/point-machine": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Point Machine for the active Crew.",
+        "operationId": "GetPointMachine",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPointMachineHttpResponse"
                 }
               }
             }
@@ -1637,6 +1942,47 @@
           }
         }
       },
+      "BrickWallHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "gamesPlayed",
+          "pointsConceded",
+          "averagePointsConceded"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsConceded": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "ChiefPaddlerHttpResponse": {
         "required": [
           "userId",
@@ -1697,6 +2043,23 @@
           },
           "organizationId": {
             "type": "string"
+          }
+        }
+      },
+      "CrewHealthDayHttpResponse": {
+        "required": [
+          "date",
+          "gameCount"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "gameCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -1861,6 +2224,33 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "EasyWinHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "wins"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2083,6 +2473,24 @@
           }
         }
       },
+      "GetBrickWallHttpResponse": {
+        "required": [
+          "brickWall"
+        ],
+        "type": "object",
+        "properties": {
+          "brickWall": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BrickWallHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetChiefPaddlerHttpResponse": {
         "required": [
           "chiefPaddler"
@@ -2098,6 +2506,30 @@
                 "$ref": "#/components/schemas/ChiefPaddlerHttpResponse"
               }
             ]
+          }
+        }
+      },
+      "GetCrewHealthHttpResponse": {
+        "required": [
+          "startDate",
+          "endDate",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrewHealthDayHttpResponse"
+            }
           }
         }
       },
@@ -2144,6 +2576,24 @@
           }
         }
       },
+      "GetEasyWinHttpResponse": {
+        "required": [
+          "easyWin"
+        ],
+        "type": "object",
+        "properties": {
+          "easyWin": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EasyWinHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetFriendsOrLoversHttpResponse": {
         "required": [
           "pairing"
@@ -2173,6 +2623,24 @@
             "items": {
               "$ref": "#/components/schemas/GameRecordingMemberHttpResponse"
             }
+          }
+        }
+      },
+      "GetIceManHttpResponse": {
+        "required": [
+          "iceMan"
+        ],
+        "type": "object",
+        "properties": {
+          "iceMan": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IceManHttpResponse"
+              }
+            ]
           }
         }
       },
@@ -2227,6 +2695,7 @@
           "pointsScored",
           "pointsConceded",
           "pointDifferential",
+          "averageMargin",
           "crewScore",
           "crewRank",
           "activeCrewMemberCount"
@@ -2298,6 +2767,14 @@
             "type": "integer",
             "format": "int32"
           },
+          "averageMargin": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
           "crewScore": {
             "type": "integer",
             "format": "int32"
@@ -2309,6 +2786,24 @@
           "activeCrewMemberCount": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "GetPointMachineHttpResponse": {
+        "required": [
+          "pointMachine"
+        ],
+        "type": "object",
+        "properties": {
+          "pointMachine": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PointMachineHttpResponse"
+              }
+            ]
           }
         }
       },
@@ -2390,6 +2885,33 @@
           "traceId": {
             "type": "string",
             "description": "The trace identifier for the request."
+          }
+        }
+      },
+      "IceManHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "clutchWins"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clutchWins": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2568,6 +3090,47 @@
           "totalPages": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "PointMachineHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "pointsScored",
+          "gamesPlayed",
+          "averagePointsScored"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsScored": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },

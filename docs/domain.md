@@ -19,6 +19,16 @@ A named group that users belong to within Picklecrew.
 - Each crew corresponds to exactly one WorkOS organization.
 - Each WorkOS organization corresponds to exactly one crew.
 
+## Crew health
+
+A Crew's recent Game activity shown as a calendar.
+
+### Business rules
+
+- Crew health includes only Games recorded for that Crew within the preceding year.
+- Each calendar day shows how many Games were played on that day.
+- Calendar color intensity increases as more Games are played on a day.
+
 ## User
 
 A person who uses Picklecrew.
@@ -72,6 +82,7 @@ A crew member's all-time cumulative game results within one crew.
 - Losing crew members and guests do not gain **That's a Paddlin**.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
+- Average margin equals point differential divided by games played and is zero when no games have been played.
 - Win percentage equals wins divided by games played and is zero when no games have been played.
 - A crew member gains 100 Crew score points plus their side's point differential when they win a game.
 - A loss does not change a crew member's Crew score.
@@ -91,6 +102,23 @@ A crew member's all-time cumulative game results within one crew.
 ### Relationships
 
 - Each crew member's statistics belong to exactly one crew and one user.
+
+## Brick Wall
+
+The active crew member with the lowest all-time average points conceded per game in one crew.
+
+### Business rules
+
+- A member must have played at least three games to qualify as Brick Wall.
+- Average points conceded equals total points conceded divided by games played.
+- The qualifying active member with the lowest average points conceded is Brick Wall.
+- Exactly one Brick Wall is selected; tied members are resolved by user identifier.
+- Former members cannot be the current Brick Wall, while their historical personal statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one Brick Wall.
 
 ## Chief Paddler
 
@@ -123,6 +151,40 @@ The active crew member who holds the crew's bragging-rights statistic for the mo
 ### Relationships
 
 - A crew has zero or one **limp wrist syndrome** holder.
+
+## Point Machine
+
+The active crew member with the highest all-time average points scored per game in the crew.
+
+### Business rules
+
+- Average points scored equals a crew member's total points scored divided by their games played.
+- An active crew member qualifies after playing at least three games.
+- The qualifying active member with the highest average points scored is the **Point Machine**.
+- Tied members are resolved by most games played, then by user identifier.
+- Former members cannot be the current Point Machine, while their historical personal statistics remain preserved.
+- Statistics from another crew do not affect the selection.
+
+### Relationships
+
+- A crew has zero or one Point Machine.
+
+## The Ice Man
+
+The active crew member who holds the crew's bragging-rights award for the most all-time clutch wins.
+
+### Business rules
+
+- A clutch win is a win where the opposing side scores 9 or more points.
+- A crew has no Ice Man when every active member has zero clutch wins.
+- The active member with the highest positive clutch-win count is the Ice Man.
+- Exactly one Ice Man is selected; tied members are resolved by highest Crew score, then by user identifier.
+- Former members cannot be the current Ice Man, while their historical clutch wins remain preserved.
+- Statistics from another crew do not affect the award.
+
+### Relationships
+
+- A crew has zero or one Ice Man.
 
 ## Matchup statistics
 
@@ -162,6 +224,23 @@ A crew member's active opposing crew member against whom they have the most all-
 
 - Each crew member has zero or one Nemesis in each crew.
 - Each Nemesis identifies exactly one opposing crew member.
+
+## Easy Win
+
+A crew member's active opposing crew member against whom they have the most all-time wins within one crew.
+
+### Business rules
+
+- An Easy Win is calculated separately for each crew from the crew member's directional matchup statistics.
+- An opponent must have played at least three games against the crew member to qualify as their Easy Win.
+- A crew member has no Easy Win until they have defeated a qualifying active opposing crew member.
+- Guests and former crew members cannot be an Easy Win.
+- Tied opponents are resolved by user identifier.
+
+### Relationships
+
+- Each crew member has zero or one Easy Win in each crew.
+- Each Easy Win identifies exactly one opposing crew member.
 
 ## Biggest rivalry
 

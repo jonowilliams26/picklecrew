@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLeavingEligibilityData, GetCrewLeavingEligibilityErrors, GetCrewLeavingEligibilityResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, LeaveCrewData, LeaveCrewErrors, LeaveCrewResponses, RecordGameData, RecordGameErrors, RecordGameResponses, RemoveCrewMemberData, RemoveCrewMemberErrors, RemoveCrewMemberResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
+import type { CreateCrewData, CreateCrewErrors, CreateCrewResponses, GetBestDoublesPairingData, GetBestDoublesPairingErrors, GetBestDoublesPairingResponses, GetBestPartnerData, GetBestPartnerErrors, GetBestPartnerResponses, GetBiggestRivalsData, GetBiggestRivalsErrors, GetBiggestRivalsResponses, GetBrickWallData, GetBrickWallErrors, GetBrickWallResponses, GetChiefPaddlerData, GetChiefPaddlerErrors, GetChiefPaddlerResponses, GetCrewHealthData, GetCrewHealthErrors, GetCrewHealthResponses, GetCrewLeaderboardData, GetCrewLeaderboardErrors, GetCrewLeaderboardResponses, GetCrewLeavingEligibilityData, GetCrewLeavingEligibilityErrors, GetCrewLeavingEligibilityResponses, GetCrewLongestWinStreakData, GetCrewLongestWinStreakErrors, GetCrewLongestWinStreakResponses, GetCrewMembersData, GetCrewMembersErrors, GetCrewMembersResponses, GetEasyWinData, GetEasyWinErrors, GetEasyWinResponses, GetFriendsOrLoversData, GetFriendsOrLoversErrors, GetFriendsOrLoversResponses, GetGameRecordingOptionsData, GetGameRecordingOptionsErrors, GetGameRecordingOptionsResponses, GetGamesData, GetGamesErrors, GetGamesResponses, GetIceManData, GetIceManErrors, GetIceManResponses, GetLimpWristSyndromeData, GetLimpWristSyndromeErrors, GetLimpWristSyndromeResponses, GetNemesisData, GetNemesisErrors, GetNemesisResponses, GetPersonalStatisticsData, GetPersonalStatisticsErrors, GetPersonalStatisticsResponses, GetPointMachineData, GetPointMachineErrors, GetPointMachineResponses, GetRecentGamesData, GetRecentGamesErrors, GetRecentGamesResponses, LeaveCrewData, LeaveCrewErrors, LeaveCrewResponses, RecordGameData, RecordGameErrors, RecordGameResponses, RemoveCrewMemberData, RemoveCrewMemberErrors, RemoveCrewMemberResponses, SendCrewInvitationData, SendCrewInvitationErrors, SendCrewInvitationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -107,9 +107,24 @@ export const getBestPartner = <ThrowOnError extends boolean = false>(options?: O
 export const getBiggestRivals = <ThrowOnError extends boolean = false>(options?: Options<GetBiggestRivalsData, ThrowOnError>): RequestResult<GetBiggestRivalsResponses, GetBiggestRivalsErrors, ThrowOnError> => (options?.client ?? client).get<GetBiggestRivalsResponses, GetBiggestRivalsErrors, ThrowOnError>({ url: '/statistics/biggest-rivals', ...options });
 
 /**
+ * Gets the Brick Wall for the active Crew.
+ */
+export const getBrickWall = <ThrowOnError extends boolean = false>(options?: Options<GetBrickWallData, ThrowOnError>): RequestResult<GetBrickWallResponses, GetBrickWallErrors, ThrowOnError> => (options?.client ?? client).get<GetBrickWallResponses, GetBrickWallErrors, ThrowOnError>({ url: '/statistics/brick-wall', ...options });
+
+/**
  * Gets the Chief Paddler for the active Crew.
  */
 export const getChiefPaddler = <ThrowOnError extends boolean = false>(options?: Options<GetChiefPaddlerData, ThrowOnError>): RequestResult<GetChiefPaddlerResponses, GetChiefPaddlerErrors, ThrowOnError> => (options?.client ?? client).get<GetChiefPaddlerResponses, GetChiefPaddlerErrors, ThrowOnError>({ url: '/statistics/chief-paddler', ...options });
+
+/**
+ * Gets daily Game activity for the active Crew over the last year.
+ */
+export const getCrewHealth = <ThrowOnError extends boolean = false>(options?: Options<GetCrewHealthData, ThrowOnError>): RequestResult<GetCrewHealthResponses, GetCrewHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetCrewHealthResponses, GetCrewHealthErrors, ThrowOnError>({ url: '/statistics/crew-health', ...options });
+
+/**
+ * Gets the signed-in user's Easy Win for the active Crew.
+ */
+export const getEasyWin = <ThrowOnError extends boolean = false>(options?: Options<GetEasyWinData, ThrowOnError>): RequestResult<GetEasyWinResponses, GetEasyWinErrors, ThrowOnError> => (options?.client ?? client).get<GetEasyWinResponses, GetEasyWinErrors, ThrowOnError>({ url: '/statistics/easy-win', ...options });
 
 /**
  * Gets the active Crew pairing that has played the most Games together.
@@ -117,9 +132,19 @@ export const getChiefPaddler = <ThrowOnError extends boolean = false>(options?: 
 export const getFriendsOrLovers = <ThrowOnError extends boolean = false>(options?: Options<GetFriendsOrLoversData, ThrowOnError>): RequestResult<GetFriendsOrLoversResponses, GetFriendsOrLoversErrors, ThrowOnError> => (options?.client ?? client).get<GetFriendsOrLoversResponses, GetFriendsOrLoversErrors, ThrowOnError>({ url: '/statistics/friends-or-lovers', ...options });
 
 /**
+ * Gets the Ice Man for the active Crew.
+ */
+export const getIceMan = <ThrowOnError extends boolean = false>(options?: Options<GetIceManData, ThrowOnError>): RequestResult<GetIceManResponses, GetIceManErrors, ThrowOnError> => (options?.client ?? client).get<GetIceManResponses, GetIceManErrors, ThrowOnError>({ url: '/statistics/ice-man', ...options });
+
+/**
  * Gets the limp wrist syndrome holder for the active Crew.
  */
 export const getLimpWristSyndrome = <ThrowOnError extends boolean = false>(options?: Options<GetLimpWristSyndromeData, ThrowOnError>): RequestResult<GetLimpWristSyndromeResponses, GetLimpWristSyndromeErrors, ThrowOnError> => (options?.client ?? client).get<GetLimpWristSyndromeResponses, GetLimpWristSyndromeErrors, ThrowOnError>({ url: '/statistics/limp-wrist-syndrome', ...options });
+
+/**
+ * Gets the Point Machine for the active Crew.
+ */
+export const getPointMachine = <ThrowOnError extends boolean = false>(options?: Options<GetPointMachineData, ThrowOnError>): RequestResult<GetPointMachineResponses, GetPointMachineErrors, ThrowOnError> => (options?.client ?? client).get<GetPointMachineResponses, GetPointMachineErrors, ThrowOnError>({ url: '/statistics/point-machine', ...options });
 
 /**
  * Gets the signed-in user's Nemesis for the active Crew.

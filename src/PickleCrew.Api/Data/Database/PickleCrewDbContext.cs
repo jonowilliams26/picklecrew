@@ -139,6 +139,11 @@ public class PickleCrewDbContext : DbContext
         modelBuilder.Entity<Game>(game =>
         {
             game.HasIndex(entity => entity.Uuid).IsUnique();
+            game.HasIndex(entity => new
+            {
+                entity.CrewId,
+                entity.PlayedAtUtc,
+            });
             game.Property(entity => entity.Format).HasConversion<string>();
             game.HasOne(entity => entity.Crew)
                 .WithMany()
