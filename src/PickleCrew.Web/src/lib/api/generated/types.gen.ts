@@ -498,6 +498,59 @@ export type RemoveCrewMemberResponses = {
 
 export type RemoveCrewMemberResponse = RemoveCrewMemberResponses[keyof RemoveCrewMemberResponses];
 
+export type DeleteGameData = {
+    body?: never;
+    path: {
+        gameId: string;
+    };
+    query?: never;
+    url: '/games/{gameId}';
+};
+
+export type DeleteGameErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: {
+        type?: null | string;
+        title?: null | string;
+        status?: null | number;
+        detail?: null | string;
+        instance?: null | string;
+        /**
+         * The trace identifier for the request.
+         */
+        traceId: string;
+    };
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteGameError = DeleteGameErrors[keyof DeleteGameErrors];
+
+export type DeleteGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
+
 export type GetGameRecordingOptionsData = {
     body?: never;
     path?: never;
