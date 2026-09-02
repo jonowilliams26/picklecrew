@@ -38,7 +38,8 @@ internal static class Endpoints
             .MapEndpoint<GetCrewMembersEndpoint>()
             .MapEndpoint<SendCrewInvitationEndpoint>()
             .MapEndpoint<RemoveCrewMemberEndpoint>()
-            .MapEndpoint<LeaveCrewEndpoint>();
+            .MapEndpoint<LeaveCrewEndpoint>()
+            .MapEndpoint<DeleteCrewEndpoint>();
 
         return app;
     }

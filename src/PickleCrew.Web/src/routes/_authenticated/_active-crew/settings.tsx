@@ -6,10 +6,13 @@ import {
   CalendarDays,
   CircleAlertIcon,
   LogOut,
+  Trash2,
+  TriangleAlert,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
+import { Authorized } from '~/components/authorized'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Badge } from '~/components/ui/badge'
@@ -45,6 +48,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '~/components/ui/tooltip'
+import { validateCrewDeletionConfirmation } from '~/lib/crews/crew-deletion'
+import { deleteCrew } from '~/lib/crews/crews.functions'
 import {
   formatMembershipDuration,
   getCrewLeavingDisabledReason,
@@ -182,7 +187,13 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Danger zone</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TriangleAlert
+                aria-hidden="true"
+                className="size-4 text-destructive"
+              />
+              Danger zone
+            </CardTitle>
             <CardDescription>
               Actions here affect your access to {activeCrew.name}.
             </CardDescription>
@@ -207,6 +218,22 @@ function SettingsPage() {
                 />
               </div>
             </div>
+
+            <Authorized role="admin">
+              <Separator />
+              <div className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-6">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <h3 className="font-semibold">Delete this crew</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete the crew, including all games and
+                    statistics. This action cannot be undone.
+                  </p>
+                </div>
+                <div className="self-end sm:ml-auto">
+                  <DeleteCrewDialog crewName={activeCrew.name} />
+                </div>
+              </div>
+            </Authorized>
           </CardContent>
         </Card>
       </div>
@@ -429,6 +456,164 @@ function LeaveCrewDialog({ crewName }: { crewName: string }) {
                 <LogOut data-icon="inline-start" />
               )}
               {isSubmitting ? 'Leaving…' : 'Leave crew'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DeleteCrewDialog({ crewName }: { crewName: string }) {
+  const deleteCrewServerFn = useServerFn(deleteCrew)
+  const [isOpen, setIsOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [confirmationError, setConfirmationError] = useState<string>()
+  const [submissionError, setSubmissionError] = useState<string>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const hasValidConfirmation = confirmation === crewName
+
+  const resetForm = () => {
+    setConfirmation('')
+    setConfirmationError(undefined)
+    setSubmissionError(undefined)
+    setIsSubmitting(false)
+  }
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsOpen(nextOpen)
+
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
+  const submitCrewDeletion = async () => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await deleteCrewServerFn({
+        data: { crewName: confirmation },
+      })
+
+      if (!result.ok) {
+        if (result.error.type === 'invalid-crew-deletion-confirmation') {
+          setConfirmationError(result.error.message)
+        } else {
+          setSubmissionError(result.error.message)
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      window.location.assign('/api/auth/sign-out')
+    } catch {
+      setSubmissionError('This crew could not be deleted. Try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger render={<Button type="button" variant="destructive" />}>
+        <Trash2 data-icon="inline-start" />
+        Delete crew
+      </DialogTrigger>
+      <DialogContent>
+        <form
+          className="flex flex-col gap-6"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (isSubmitting) {
+              return
+            }
+
+            setConfirmationError(undefined)
+            setSubmissionError(undefined)
+            const validation = validateCrewDeletionConfirmation({
+              confirmation,
+              crewName,
+            })
+
+            if (!validation.ok) {
+              setConfirmationError(validation.error.message)
+              return
+            }
+
+            void submitCrewDeletion()
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete {crewName}?</DialogTitle>
+            <DialogDescription>
+              You will be signed out. This permanently deletes the crew and all
+              its games and statistics. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <Field
+              data-invalid={confirmationError !== undefined || undefined}
+              data-disabled={isSubmitting || undefined}
+            >
+              <FieldLabel
+                className="gap-0.5"
+                htmlFor="delete-crew-confirmation"
+              >
+                Enter <strong>{crewName}</strong> to confirm
+              </FieldLabel>
+              <Input
+                id="delete-crew-confirmation"
+                name="confirmation"
+                value={confirmation}
+                onChange={(event) => {
+                  setConfirmation(event.target.value)
+                  setConfirmationError(undefined)
+                  setSubmissionError(undefined)
+                }}
+                autoComplete="off"
+                autoFocus
+                required
+                aria-invalid={confirmationError !== undefined || undefined}
+                disabled={isSubmitting}
+              />
+              <FieldError>{confirmationError}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          {submissionError ? (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertTitle>Crew not deleted</AlertTitle>
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" />}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={isSubmitting || !hasValidConfirmation}
+            >
+              {isSubmitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Trash2 data-icon="inline-start" />
+              )}
+              {isSubmitting ? 'Deleting…' : 'Delete crew'}
             </Button>
           </DialogFooter>
         </form>
