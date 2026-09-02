@@ -82,6 +82,7 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(62, result.PointsScored);
         Assert.Equal(49, result.PointsConceded);
         Assert.Equal(13, result.PointDifferential);
+        Assert.Equal(13m / 6m, result.AverageMargin, precision: 20);
         Assert.Equal(417, result.CrewScore);
         Assert.Equal(2, result.CrewRank);
         Assert.Equal(3, result.ActiveCrewMemberCount);
@@ -180,9 +181,33 @@ public sealed class GetPersonalStatisticsEndpointTests(AppHostFixture fixture)
         Assert.Equal(0, result.PointsScored);
         Assert.Equal(0, result.PointsConceded);
         Assert.Equal(0, result.PointDifferential);
+        Assert.Equal(0, result.AverageMargin);
         Assert.Equal(0, result.CrewScore);
         Assert.Equal(1, result.CrewRank);
         Assert.Equal(1, result.ActiveCrewMemberCount);
+    }
+
+    [Fact]
+    public async Task GetPersonalStatistics_WhenPointDifferentialIsNegative_ShouldReturnNegativeAverageMargin()
+    {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .WithSinglesGames(
+                side1: administratorId,
+                side2: "Winning Opponent",
+                scores:
+                [
+                    (6, 11),
+                    (9, 11),
+                ]
+            )
+            .BuildAsync();
+
+        var statistics = await GetPersonalStatisticsAsync(context.Administrator);
+
+        Assert.Equal(-7, statistics.PointDifferential);
+        Assert.Equal(-3.5m, statistics.AverageMargin);
     }
 
     private async Task<GetPersonalStatisticsHttpResponse> GetPersonalStatisticsAsync(

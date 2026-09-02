@@ -68,6 +68,7 @@ A crew member's all-time cumulative game results within one crew.
 - Losing crew members and guests do not gain **That's a Paddlin**.
 - Games played equals wins plus losses.
 - Point differential equals points scored minus points conceded.
+- Average margin equals point differential divided by games played and is zero when no games have been played.
 - Win percentage equals wins divided by games played and is zero when no games have been played.
 - A crew member gains 100 Crew score points plus their side's point differential when they win a game.
 - A loss does not change a crew member's Crew score.

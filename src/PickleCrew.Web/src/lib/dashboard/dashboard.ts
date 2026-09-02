@@ -84,8 +84,19 @@ export function formatPercentage({
   return Math.round(Number(value) * 100)
 }
 
-export function formatSignedNumber({ value }: { value: number }): string {
-  return value > 0 ? `+${value.toLocaleString('en-AU')}` : value.toLocaleString('en-AU')
+export function formatSignedNumber({
+  value,
+  maximumFractionDigits = 0,
+}: {
+  value: number | string
+  maximumFractionDigits?: number
+}): string {
+  const numericValue = Number(value)
+  const formattedValue = numericValue.toLocaleString('en-AU', {
+    maximumFractionDigits,
+  })
+
+  return numericValue > 0 ? `+${formattedValue}` : formattedValue
 }
 
 export function formatRecord({

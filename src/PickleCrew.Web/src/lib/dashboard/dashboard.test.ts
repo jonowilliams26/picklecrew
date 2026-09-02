@@ -19,10 +19,18 @@ describe('dashboard formatting', () => {
     assert.equal(formatPercentage({ value: 0 }), 0)
   })
 
-  test('formats signed point differentials', () => {
+  test('formats signed point differentials and average margins', () => {
     assert.equal(formatSignedNumber({ value: 72 }), '+72')
     assert.equal(formatSignedNumber({ value: 0 }), '0')
     assert.equal(formatSignedNumber({ value: -12 }), '-12')
+    assert.equal(
+      formatSignedNumber({ value: 13 / 6, maximumFractionDigits: 1 }),
+      '+2.2',
+    )
+    assert.equal(
+      formatSignedNumber({ value: '-3.5', maximumFractionDigits: 1 }),
+      '-3.5',
+    )
   })
 
   test('formats win-loss records', () => {
