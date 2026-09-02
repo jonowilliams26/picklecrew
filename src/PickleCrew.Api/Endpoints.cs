@@ -49,6 +49,7 @@ internal static class Endpoints
         app.MapGroup("/games")
             .WithTags("Games")
             .WithCrewUserContext()
+            .MapEndpoint<DeleteGameEndpoint>()
             .MapEndpoint<GetGameRecordingOptionsEndpoint>()
             .MapEndpoint<GetGamesEndpoint>()
             .MapEndpoint<RecordGameEndpoint>();

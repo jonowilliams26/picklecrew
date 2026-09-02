@@ -378,6 +378,7 @@ A completed pickleball game with a final score between two sides.
 - An administrator may edit a game's format, participants, guest names, and scores, but not its played date and time.
 - An edited game must satisfy the same validation rules as a newly recorded game.
 - Deleting a game removes all of its contributions from crew member statistics.
+- Deleting a game recalculates win streaks from the crew's remaining games.
 - A recorded game contributes to each participating crew member's statistics, including when they play with or against guests.
 - Game statistics are calculated within the owning crew only.
 - A user's last-ten game summary contains at most their ten newest games in the active crew in which they participated.

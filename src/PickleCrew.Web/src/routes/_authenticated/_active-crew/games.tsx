@@ -4,18 +4,23 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
   ClipboardList,
   Crown,
+  MoreHorizontal,
   Plus,
+  Trash2,
   UserRound,
   UsersRound,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
+import { Authorized } from '~/components/authorized'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import {
   Avatar,
@@ -33,6 +38,22 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -46,12 +67,14 @@ import {
   PaginationItem,
 } from '~/components/ui/pagination'
 import { Separator } from '~/components/ui/separator'
+import { Spinner } from '~/components/ui/spinner'
+import { toast } from '~/components/ui/toast'
 import type {
   GameHistoryItemHttpResponse,
   GameHistoryParticipantHttpResponse,
   GameHistorySideHttpResponse,
 } from '~/lib/api/generated/types.gen'
-import { getGames } from '~/lib/games/games.functions'
+import { deleteGame, getGames } from '~/lib/games/games.functions'
 import { cn } from '~/lib/utils'
 
 const gamesSearchSchema = z.object({
@@ -214,10 +237,15 @@ function GameResultCard({ game }: { game: GameHistoryItemHttpResponse }) {
           <CalendarDays className="size-3.5" aria-hidden="true" />
           <LocalPlayedAt playedAtUtc={game.playedAtUtc} />
         </div>
-        <Badge variant="outline">
-          <FormatIcon data-icon="inline-start" />
-          {formatName}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">
+            <FormatIcon data-icon="inline-start" />
+            {formatName}
+          </Badge>
+          <Authorized role="admin">
+            <GameDeleteActions gameId={game.gameId} />
+          </Authorized>
+        </div>
       </CardHeader>
       <CardContent className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-3 p-4 md:gap-7 md:p-6">
         <ResultSide
@@ -233,6 +261,138 @@ function GameResultCard({ game }: { game: GameHistoryItemHttpResponse }) {
         />
       </CardContent>
     </Card>
+  )
+}
+
+function GameDeleteActions({ gameId }: { gameId: string }) {
+  const deleteGameServerFn = useServerFn(deleteGame)
+  const router = useRouter()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionError, setSubmissionError] = useState<string>()
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsDialogOpen(nextOpen)
+
+    if (!nextOpen) {
+      setSubmissionError(undefined)
+    }
+  }
+
+  const submitDeletion = async () => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await deleteGameServerFn({ data: { gameId } })
+
+      if (!result.ok) {
+        setSubmissionError(result.error.message)
+        return
+      }
+
+      setIsDialogOpen(false)
+      toast.add({
+        type: 'success',
+        title: 'Game deleted',
+        description: 'The game and its statistics have been removed.',
+      })
+      void router.invalidate({ forcePending: true }).catch(() => {
+        toast.add({
+          type: 'error',
+          title: 'Game history not refreshed',
+          description: 'Refresh the page to see the updated game history.',
+        })
+      })
+    } catch {
+      setSubmissionError('The game could not be deleted. Try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Game actions"
+            />
+          }
+        >
+          <MoreHorizontal data-icon="inline-start" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Trash2 />
+              Delete game
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DialogContent>
+        <form
+          className="flex flex-col gap-6"
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (!isSubmitting) {
+              void submitDeletion()
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete this game?</DialogTitle>
+            <DialogDescription>
+              This permanently deletes the game and removes its contributions
+              from crew statistics. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {submissionError ? (
+            <Alert variant="destructive">
+              <CircleAlert />
+              <AlertTitle>Game not deleted</AlertTitle>
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" />}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Trash2 data-icon="inline-start" />
+              )}
+              {isSubmitting ? 'Deleting…' : 'Delete game'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
