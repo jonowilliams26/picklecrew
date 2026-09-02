@@ -6,6 +6,7 @@ import {
   getBiggestRivals as getBiggestRivalsRequest,
   getBrickWall as getBrickWallRequest,
   getChiefPaddler as getChiefPaddlerRequest,
+  getIceMan as getIceManRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
@@ -37,6 +38,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         brickWall,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
         pointMachine,
@@ -51,6 +53,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBiggestRivalsRequest({ client }),
         getBrickWallRequest({ client }),
         getChiefPaddlerRequest({ client }),
+        getIceManRequest({ client }),
         getFriendsOrLoversRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
         getPointMachineRequest({ client }),
@@ -66,6 +69,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals,
         brickWall,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
         pointMachine,
@@ -82,6 +86,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals.error ||
         brickWall.error ||
         chiefPaddler.error ||
+        iceMan.error ||
         friendsOrLovers.error ||
         limpWristSyndrome.error ||
         pointMachine.error
@@ -112,6 +117,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         biggestRivals: biggestRivals.data,
         brickWall: brickWall.data,
         chiefPaddler: chiefPaddler.data,
+        iceMan: iceMan.data,
         friendsOrLovers: friendsOrLovers.data,
         limpWristSyndrome: limpWristSyndrome.data,
         pointMachine: pointMachine.data,

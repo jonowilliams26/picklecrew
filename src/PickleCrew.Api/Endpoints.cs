@@ -65,6 +65,7 @@ internal static class Endpoints
             .MapEndpoint<GetBrickWallEndpoint>()
             .MapEndpoint<GetChiefPaddlerEndpoint>()
             .MapEndpoint<GetFriendsOrLoversEndpoint>()
+            .MapEndpoint<GetIceManEndpoint>()
             .MapEndpoint<GetLimpWristSyndromeEndpoint>()
             .MapEndpoint<GetPointMachineEndpoint>()
             .MapEndpoint<GetNemesisEndpoint>()

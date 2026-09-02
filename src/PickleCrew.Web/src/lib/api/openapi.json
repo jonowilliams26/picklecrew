@@ -965,6 +965,67 @@
         }
       }
     },
+    "/statistics/ice-man": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Ice Man for the active Crew.",
+        "operationId": "GetIceMan",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetIceManHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/limp-wrist-syndrome": {
       "get": {
         "tags": [
@@ -2061,6 +2122,24 @@
           }
         }
       },
+      "GetIceManHttpResponse": {
+        "required": [
+          "iceMan"
+        ],
+        "type": "object",
+        "properties": {
+          "iceMan": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IceManHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetLimpWristSyndromeHttpResponse": {
         "required": [
           "limpWristSyndrome"
@@ -2293,6 +2372,33 @@
           "traceId": {
             "type": "string",
             "description": "The trace identifier for the request."
+          }
+        }
+      },
+      "IceManHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "clutchWins"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clutchWins": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
