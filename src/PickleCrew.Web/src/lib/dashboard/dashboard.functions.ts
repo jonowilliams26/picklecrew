@@ -5,6 +5,7 @@ import {
   getBestPartner as getBestPartnerRequest,
   getBiggestRivals as getBiggestRivalsRequest,
   getChiefPaddler as getChiefPaddlerRequest,
+  getIceMan as getIceManRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
@@ -34,6 +35,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestPartner,
         biggestRivals,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
       ] = await Promise.all([
@@ -46,6 +48,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getBestPartnerRequest({ client }),
         getBiggestRivalsRequest({ client }),
         getChiefPaddlerRequest({ client }),
+        getIceManRequest({ client }),
         getFriendsOrLoversRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
       ])
@@ -59,6 +62,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestPartner,
         biggestRivals,
         chiefPaddler,
+        iceMan,
         friendsOrLovers,
         limpWristSyndrome,
       ]
@@ -73,6 +77,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestPartner.error ||
         biggestRivals.error ||
         chiefPaddler.error ||
+        iceMan.error ||
         friendsOrLovers.error ||
         limpWristSyndrome.error
       ) {
@@ -101,6 +106,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         bestPartner: bestPartner.data,
         biggestRivals: biggestRivals.data,
         chiefPaddler: chiefPaddler.data,
+        iceMan: iceMan.data,
         friendsOrLovers: friendsOrLovers.data,
         limpWristSyndrome: limpWristSyndrome.data,
       })

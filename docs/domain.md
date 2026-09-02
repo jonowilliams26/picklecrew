@@ -120,6 +120,23 @@ The active crew member who holds the crew's bragging-rights statistic for the mo
 
 - A crew has zero or one **limp wrist syndrome** holder.
 
+## The Ice Man
+
+The active crew member who holds the crew's bragging-rights award for the most all-time clutch wins.
+
+### Business rules
+
+- A clutch win is a win where the opposing side scores 9 or more points.
+- A crew has no Ice Man when every active member has zero clutch wins.
+- The active member with the highest positive clutch-win count is the Ice Man.
+- Exactly one Ice Man is selected; tied members are resolved by highest Crew score, then by user identifier.
+- Former members cannot be the current Ice Man, while their historical clutch wins remain preserved.
+- Statistics from another crew do not affect the award.
+
+### Relationships
+
+- A crew has zero or one Ice Man.
+
 ## Matchup statistics
 
 A crew member's all-time cumulative results against one opposing crew member within one crew.

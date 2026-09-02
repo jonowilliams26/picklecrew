@@ -4,6 +4,7 @@ import type {
   GetBestPartnerHttpResponse,
   GetBiggestRivalsHttpResponse,
   GetChiefPaddlerHttpResponse,
+  GetIceManHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
   GetFriendsOrLoversHttpResponse,
@@ -24,6 +25,7 @@ export type DashboardData = Readonly<{
   bestPartner: GetBestPartnerHttpResponse
   biggestRivals: GetBiggestRivalsHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
+  iceMan: GetIceManHttpResponse
   friendsOrLovers: GetFriendsOrLoversHttpResponse
   limpWristSyndrome: GetLimpWristSyndromeHttpResponse
 }>

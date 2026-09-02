@@ -13,6 +13,7 @@ import {
   History,
   Medal,
   Skull,
+  Snowflake,
   Swords,
   Target,
   Trophy,
@@ -233,6 +234,7 @@ function DashboardPage() {
     bestPartner: bestPartnerResponse,
     biggestRivals,
     chiefPaddler: chiefPaddlerResponse,
+    iceMan: iceManResponse,
     friendsOrLovers,
     limpWristSyndrome: limpWristSyndromeResponse,
   } = result.value
@@ -259,6 +261,7 @@ function DashboardPage() {
   const firstRival = rivalry?.players[0]
   const secondRival = rivalry?.players[1]
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const iceMan = iceManResponse.iceMan
   const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
@@ -384,6 +387,8 @@ function DashboardPage() {
             <LimpWristSyndromeCard
               limpWristSyndrome={limpWristSyndrome}
             />
+
+            <IceManCard iceMan={iceMan} />
 
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
@@ -1089,6 +1094,41 @@ function LimpWristSyndromeCard({
         direction="counterclockwise"
         icon={Hand}
       />
+    </DashboardStatCard>
+  )
+}
+
+function IceManCard({
+  iceMan,
+}: {
+  iceMan: DashboardData['iceMan']['iceMan']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-5"
+      tone="purple"
+    >
+      <DashboardCardHeader
+        description="The clutch win master. Most wins with the other side scoring 9 or more."
+        icon={Snowflake}
+        iconTone="aqua-on-dark"
+        title="The Ice Man"
+      />
+      {iceMan ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-orange text-ink"
+          metadata="Ice in their veins"
+          metric={iceMan.clutchWins.toLocaleString('en-AU')}
+          metricLabel={iceMan.clutchWins === 1 ? 'clutch win' : 'clutch wins'}
+          person={iceMan}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Win a game after the other side reaches 9 points to claim it."
+          title="No clutch wins yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Snowflake} />
     </DashboardStatCard>
   )
 }
