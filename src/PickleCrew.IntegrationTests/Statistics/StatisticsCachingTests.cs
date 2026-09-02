@@ -47,6 +47,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/brick-wall",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.BrickWall
+                )
+            ),
+            (
                 "/statistics/chief-paddler",
                 new CrewStatisticsCacheOption(
                     crewId,
@@ -86,6 +93,13 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 new CrewStatisticsCacheOption(
                     crewId,
                     CrewStatisticsCacheResource.LimpWristSyndrome
+                )
+            ),
+            (
+                "/statistics/point-machine",
+                new CrewStatisticsCacheOption(
+                    crewId,
+                    CrewStatisticsCacheResource.PointMachine
                 )
             ),
             (

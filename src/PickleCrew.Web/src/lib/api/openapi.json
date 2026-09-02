@@ -782,6 +782,67 @@
         }
       }
     },
+    "/statistics/brick-wall": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Brick Wall for the active Crew.",
+        "operationId": "GetBrickWall",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBrickWallHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/chief-paddler": {
       "get": {
         "tags": [
@@ -1019,6 +1080,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetLimpWristSyndromeHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/point-machine": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the Point Machine for the active Crew.",
+        "operationId": "GetPointMachine",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPointMachineHttpResponse"
                 }
               }
             }
@@ -1410,6 +1532,47 @@
           "gamesPlayed": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "BrickWallHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "gamesPlayed",
+          "pointsConceded",
+          "averagePointsConceded"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pointsConceded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsConceded": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -1859,6 +2022,24 @@
           }
         }
       },
+      "GetBrickWallHttpResponse": {
+        "required": [
+          "brickWall"
+        ],
+        "type": "object",
+        "properties": {
+          "brickWall": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BrickWallHttpResponse"
+              }
+            ]
+          }
+        }
+      },
       "GetChiefPaddlerHttpResponse": {
         "required": [
           "chiefPaddler"
@@ -2092,6 +2273,24 @@
           "activeCrewMemberCount": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "GetPointMachineHttpResponse": {
+        "required": [
+          "pointMachine"
+        ],
+        "type": "object",
+        "properties": {
+          "pointMachine": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PointMachineHttpResponse"
+              }
+            ]
           }
         }
       },
@@ -2367,6 +2566,47 @@
           "totalPages": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "PointMachineHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "pointsScored",
+          "gamesPlayed",
+          "averagePointsScored"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pointsScored": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averagePointsScored": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
