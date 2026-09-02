@@ -12,6 +12,7 @@ internal static class Endpoints
         app.MapPost("/users", CreateUser);
         app.MapPut("/users/{userId}", UpdateUser);
         app.MapPost("/organizations", CreateOrganization);
+        app.MapPut("/organizations/{organizationId}", UpdateOrganizationName);
         app.MapPost("/memberships", CreateMembership);
         app.MapPut("/memberships/{membershipId}", UpdateMembershipRole);
         app.MapPost("/memberships/{membershipId}/deactivate", DeactivateMembership);
@@ -22,6 +23,7 @@ internal static class Endpoints
             "/organizations/by-external-id/{externalId}",
             FindOrganizationByExternalId
         );
+        app.MapGet("/organizations/{organizationId}", GetOrganization);
         app.MapGet(
             "/organizations/{organizationId}/active-memberships/{userId}",
             FindActiveMembership
@@ -127,6 +129,32 @@ internal static class Endpoints
             $"/organizations/{organization.Id}",
             new IdentifierHttpResponse { Id = organization.Id }
         );
+    }
+
+    private static Results<Ok<OrganizationHttpResponse>, NotFound, ProblemHttpResult>
+        UpdateOrganizationName(
+            string organizationId,
+            UpdateOrganizationNameHttpRequest request,
+            FakeWorkOsState state,
+            HttpRequest httpRequest)
+    {
+        if (ShouldFailOperation(
+            httpRequest,
+            state,
+            FakeWorkOsOperation.UpdateOrganization
+        ))
+        {
+            return CreateFaultProblem(FakeWorkOsOperation.UpdateOrganization);
+        }
+
+        var organization = state.UpdateOrganizationName(
+            organizationId,
+            request.Name
+        );
+
+        return organization is null
+            ? TypedResults.NotFound()
+            : TypedResults.Ok(ToHttpResponse(organization));
     }
 
     private static Results<Created<IdentifierHttpResponse>, ProblemHttpResult>
@@ -248,6 +276,18 @@ internal static class Endpoints
         );
 
         return TypedResults.NoContent();
+    }
+
+    private static Results<Ok<OrganizationHttpResponse>, NotFound>
+        GetOrganization(
+            string organizationId,
+            FakeWorkOsState state)
+    {
+        var organization = state.FindOrganizationById(organizationId);
+
+        return organization is null
+            ? TypedResults.NotFound()
+            : TypedResults.Ok(ToHttpResponse(organization));
     }
 
     private static Results<Ok<IdentifierHttpResponse>, NotFound, ProblemHttpResult>
@@ -387,6 +427,17 @@ internal static class Endpoints
         );
     }
 
+    private static OrganizationHttpResponse ToHttpResponse(
+        FakeOrganization organization)
+    {
+        return new OrganizationHttpResponse
+        {
+            Id = organization.Id,
+            Name = organization.Name,
+            ExternalId = organization.ExternalId,
+        };
+    }
+
     private static InvitationHttpResponse ToHttpResponse(FakeInvitation invitation)
     {
         return new InvitationHttpResponse
@@ -456,6 +507,20 @@ public sealed record UpdateUserHttpRequest
 public sealed record CreateOrganizationHttpRequest
 {
     public string? Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public required string ExternalId { get; init; }
+}
+
+public sealed record UpdateOrganizationNameHttpRequest
+{
+    public required string Name { get; init; }
+}
+
+public sealed record OrganizationHttpResponse
+{
+    public required string Id { get; init; }
 
     public required string Name { get; init; }
 
@@ -571,6 +636,7 @@ public enum FakeWorkOsOperation
 {
     FindOrganizationByExternalId,
     CreateOrganization,
+    UpdateOrganization,
     FindActiveMembership,
     CreateMembership,
     UpdateMembership,

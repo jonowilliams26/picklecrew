@@ -35,6 +35,14 @@ export type ChangeCrewMemberRoleHttpRequestBody = {
     role: CrewMemberRole;
 };
 
+export type ChangeCrewNameHttpRequest = {
+    name: string;
+};
+
+export type ChangeCrewNameHttpResponse = {
+    name: string;
+};
+
 export type ChiefPaddlerHttpResponse = {
     userId: string;
     displayName: string;
@@ -491,6 +499,47 @@ export type GetCrewMembersResponses = {
 };
 
 export type GetCrewMembersResponse = GetCrewMembersResponses[keyof GetCrewMembersResponses];
+
+export type ChangeCrewNameData = {
+    body: ChangeCrewNameHttpRequest;
+    path?: never;
+    query?: never;
+    url: '/crews/name';
+};
+
+export type ChangeCrewNameErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ChangeCrewNameError = ChangeCrewNameErrors[keyof ChangeCrewNameErrors];
+
+export type ChangeCrewNameResponses = {
+    /**
+     * OK
+     */
+    200: ChangeCrewNameHttpResponse;
+};
+
+export type ChangeCrewNameResponse = ChangeCrewNameResponses[keyof ChangeCrewNameResponses];
 
 export type SendCrewInvitationData = {
     body: SendCrewInvitationHttpRequest;

@@ -6,10 +6,12 @@ import {
   CalendarDays,
   CircleAlertIcon,
   LogOut,
+  Pencil,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Authorized } from '~/components/authorized'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Badge } from '~/components/ui/badge'
@@ -50,6 +52,8 @@ import {
   getCrewLeavingDisabledReason,
   validateCrewLeavingConfirmation,
 } from '~/lib/crews/crew-leaving'
+import { changeCrewName } from '~/lib/crews/crews.functions'
+import { validateCrewName } from '~/lib/crews/crews'
 import {
   getCrewLeavingEligibility,
   leaveCrew,
@@ -131,7 +135,7 @@ function SettingsPage() {
             Settings
           </h1>
           <p className="m-0 max-w-xl text-sm leading-relaxed text-ink-soft">
-            View your profile and active crew membership.
+            View your profile and manage your active crew.
           </p>
         </header>
 
@@ -168,6 +172,11 @@ function SettingsPage() {
                 icon={UsersRound}
                 label="Crew"
                 value={activeCrew.name}
+                action={
+                  <Authorized role="admin">
+                    <CrewNameEditDialog crewName={activeCrew.name} />
+                  </Authorized>
+                }
               />
               <Separator />
               <MembershipDetail
@@ -214,16 +223,168 @@ function SettingsPage() {
   )
 }
 
+function CrewNameEditDialog({ crewName }: { crewName: string }) {
+  const changeCrewNameServerFn = useServerFn(changeCrewName)
+  const [isOpen, setIsOpen] = useState(false)
+  const [name, setName] = useState(crewName)
+  const [nameError, setNameError] = useState<string>()
+  const [submissionError, setSubmissionError] = useState<string>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isUnchanged = name.trim() === crewName
+
+  const resetForm = () => {
+    setName(crewName)
+    setNameError(undefined)
+    setSubmissionError(undefined)
+    setIsSubmitting(false)
+  }
+
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (!nextOpen && isSubmitting) {
+      return
+    }
+
+    setIsOpen(nextOpen)
+
+    if (!nextOpen) {
+      resetForm()
+    }
+  }
+
+  const submitCrewNameChange = async (normalizedName: string) => {
+    setSubmissionError(undefined)
+    setIsSubmitting(true)
+
+    try {
+      const result = await changeCrewNameServerFn({
+        data: { name: normalizedName },
+      })
+
+      if (!result.ok) {
+        if (result.error.type === 'crew-name-change-validation-error') {
+          setNameError(result.error.message)
+        } else {
+          setSubmissionError(result.error.message)
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      window.location.reload()
+    } catch {
+      setSubmissionError('This crew name could not be changed. Try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label="Edit crew name"
+          />
+        }
+      >
+        <Pencil data-icon="inline-start" />
+      </DialogTrigger>
+      <DialogContent>
+        <form
+          className="flex flex-col gap-6"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (isSubmitting || isUnchanged) {
+              return
+            }
+
+            setNameError(undefined)
+            setSubmissionError(undefined)
+            const validation = validateCrewName(name)
+
+            if (!validation.ok) {
+              setNameError(validation.error.message)
+              return
+            }
+
+            void submitCrewNameChange(validation.value)
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Edit crew name</DialogTitle>
+            <DialogDescription>
+              Update the name shown to everyone in this crew.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <Field
+              data-invalid={nameError !== undefined || undefined}
+              data-disabled={isSubmitting || undefined}
+            >
+              <FieldLabel htmlFor="crew-name">Crew name</FieldLabel>
+              <Input
+                id="crew-name"
+                name="name"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value)
+                  setNameError(undefined)
+                  setSubmissionError(undefined)
+                }}
+                autoComplete="organization"
+                autoFocus
+                maxLength={100}
+                required
+                aria-invalid={nameError !== undefined || undefined}
+                disabled={isSubmitting}
+              />
+              <FieldError>{nameError}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          {submissionError ? (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertTitle>Crew name not changed</AlertTitle>
+              <AlertDescription>{submissionError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" />}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting || isUnchanged}>
+              {isSubmitting ? <Spinner data-icon="inline-start" /> : null}
+              {isSubmitting ? 'Saving…' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function MembershipDetail({
   icon: Icon,
   label,
   value,
   supportingText,
+  action,
 }: {
   icon: LucideIcon
   label: string
   value: string
   supportingText?: string
+  action?: ReactNode
 }) {
   return (
     <div className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
@@ -233,7 +394,10 @@ function MembershipDetail({
           {label}
         </span>
         <span className="flex min-w-0 flex-col sm:items-end sm:text-right">
-          <span className="truncate font-semibold">{value}</span>
+          <span className="flex min-w-0 items-center gap-1 sm:justify-end">
+            <span className="truncate font-semibold">{value}</span>
+            {action}
+          </span>
           {supportingText ? (
             <span className="text-xs text-muted-foreground">
               {supportingText}

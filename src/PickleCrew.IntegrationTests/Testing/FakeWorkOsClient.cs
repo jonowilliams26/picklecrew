@@ -105,6 +105,24 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
         );
     }
 
+    public async Task<FakeOrganization> GetOrganizationAsync(
+        string organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await client.GetAsync(
+            $"/organizations/{Uri.EscapeDataString(organizationId)}",
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<FakeOrganization>(
+            TestJsonSerializerOptions.Default,
+            cancellationToken
+        ) ?? throw new InvalidOperationException(
+            "The fake WorkOS service returned an empty organization response."
+        );
+    }
+
     public Task<string> CreateMembershipAsync(
         string membershipId,
         string userId,
@@ -596,6 +614,15 @@ internal sealed class FakeWorkOsClient(HttpClient client) : IDisposable
     }
 }
 
+internal sealed record FakeOrganization
+{
+    public required string Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public required string ExternalId { get; init; }
+}
+
 internal sealed record FakeWorkOsSetup
 {
     public required string UserId { get; init; }
@@ -657,6 +684,7 @@ public enum FakeWorkOsOperation
 {
     FindOrganizationByExternalId,
     CreateOrganization,
+    UpdateOrganization,
     FindActiveMembership,
     CreateMembership,
     UpdateMembership,

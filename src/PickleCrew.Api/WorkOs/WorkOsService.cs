@@ -15,6 +15,11 @@ internal interface IWorkOsService
         string externalId,
         CancellationToken cancellationToken);
 
+    Task UpdateOrganizationNameAsync(
+        string organizationId,
+        string name,
+        CancellationToken cancellationToken);
+
     Task<string?> FindActiveMembershipIdAsync(
         string userId,
         string organizationId,
@@ -86,6 +91,25 @@ internal sealed class WorkOsService(WorkOSClient client)
             cancellationToken: cancellationToken);
 
         return organization.Id;
+    }
+
+    public async Task UpdateOrganizationNameAsync(
+        string organizationId,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        await client.Organizations.UpdateAsync(
+            organizationId,
+            new OrganizationsUpdateOptions
+            {
+                Name = name,
+            },
+            new RequestOptions
+            {
+                MaxRetries = 0,
+            },
+            cancellationToken
+        );
     }
 
     public async Task<string?> FindActiveMembershipIdAsync(

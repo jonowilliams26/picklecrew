@@ -68,6 +68,23 @@ internal sealed class FakeWorkOsState
         );
     }
 
+    public FakeOrganization? UpdateOrganizationName(
+        string organizationId,
+        string name)
+    {
+        var organization = FindOrganizationById(organizationId);
+
+        if (organization is null)
+        {
+            return null;
+        }
+
+        var updatedOrganization = organization with { Name = name };
+        organizations[organization.ExternalId] = updatedOrganization;
+
+        return updatedOrganization;
+    }
+
     public FakeMembership? FindActiveMembership(string userId, string organizationId)
     {
         var organization = FindOrganizationById(organizationId);
@@ -310,7 +327,7 @@ internal sealed class FakeWorkOsState
             );
     }
 
-    private FakeOrganization? FindOrganizationById(string organizationId)
+    public FakeOrganization? FindOrganizationById(string organizationId)
     {
         return organizations.Values.FirstOrDefault(
             candidate => candidate.Id == organizationId
