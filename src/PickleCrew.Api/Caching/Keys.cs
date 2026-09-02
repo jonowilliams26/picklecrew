@@ -62,12 +62,15 @@ internal enum CrewStatisticsCacheResource
 {
     BestDoublesPairing,
     BiggestRivals,
+    BrickWall,
     ChiefPaddler,
     CrewLeaderboard,
     CrewLongestWinStreak,
     CrewStandings,
     FriendsOrLovers,
+    IceMan,
     LimpWristSyndrome,
+    PointMachine,
 }
 
 internal enum PersonalStatisticsCacheResource
@@ -86,12 +89,15 @@ internal static class StatisticsCacheResourceExtensions
         {
             CrewStatisticsCacheResource.BestDoublesPairing => "best-doubles-pairing",
             CrewStatisticsCacheResource.BiggestRivals => "biggest-rivals",
+            CrewStatisticsCacheResource.BrickWall => "brick-wall",
             CrewStatisticsCacheResource.ChiefPaddler => "chief-paddler",
             CrewStatisticsCacheResource.CrewLeaderboard => "crew-leaderboard",
             CrewStatisticsCacheResource.CrewLongestWinStreak => "crew-longest-win-streak",
             CrewStatisticsCacheResource.CrewStandings => "crew-standings",
             CrewStatisticsCacheResource.FriendsOrLovers => "friends-or-lovers",
+            CrewStatisticsCacheResource.IceMan => "ice-man",
             CrewStatisticsCacheResource.LimpWristSyndrome => "limp-wrist-syndrome",
+            CrewStatisticsCacheResource.PointMachine => "point-machine",
             _ => throw new ArgumentOutOfRangeException(nameof(resource), resource, null),
         };
     }

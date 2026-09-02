@@ -3,13 +3,16 @@ import type {
   GetBestDoublesPairingHttpResponse,
   GetBestPartnerHttpResponse,
   GetBiggestRivalsHttpResponse,
+  GetBrickWallHttpResponse,
   GetChiefPaddlerHttpResponse,
+  GetIceManHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
   GetFriendsOrLoversHttpResponse,
   GetLimpWristSyndromeHttpResponse,
   GetNemesisHttpResponse,
   GetPersonalStatisticsHttpResponse,
+  GetPointMachineHttpResponse,
   GetRecentGamesHttpResponse,
 } from '~/lib/api/generated/types.gen'
 import type { Result } from '~/lib/results'
@@ -23,9 +26,12 @@ export type DashboardData = Readonly<{
   bestDoublesPairing: GetBestDoublesPairingHttpResponse
   bestPartner: GetBestPartnerHttpResponse
   biggestRivals: GetBiggestRivalsHttpResponse
+  brickWall: GetBrickWallHttpResponse
   chiefPaddler: GetChiefPaddlerHttpResponse
+  iceMan: GetIceManHttpResponse
   friendsOrLovers: GetFriendsOrLoversHttpResponse
   limpWristSyndrome: GetLimpWristSyndromeHttpResponse
+  pointMachine: GetPointMachineHttpResponse
 }>
 
 type DashboardForbiddenError = Readonly<{
@@ -82,6 +88,27 @@ export function formatPercentage({
   value: number | string
 }): number {
   return Math.round(Number(value) * 100)
+}
+
+export function formatAveragePoints({
+  value,
+}: {
+  value: number | string
+}): string {
+  return Number(value).toLocaleString('en-AU', {
+    maximumFractionDigits: 2,
+  })
+}
+
+export function formatAveragePointsConceded({
+  value,
+}: {
+  value: number | string
+}): string {
+  return Number(value).toLocaleString('en-AU', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })
 }
 
 export function formatSignedNumber({

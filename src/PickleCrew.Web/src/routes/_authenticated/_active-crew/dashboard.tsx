@@ -3,6 +3,7 @@ import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
 import {
+  BrickWall,
   CircleAlert,
   Crown,
   Flame,
@@ -13,12 +14,14 @@ import {
   History,
   Medal,
   Skull,
+  Snowflake,
   Swords,
   Target,
   Trophy,
   TrendingDown,
   TrendingUp,
   UsersRound,
+  Zap,
   type LucideIcon,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -42,6 +45,8 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
+  formatAveragePoints,
+  formatAveragePointsConceded,
   formatCount,
   formatPercentage,
   formatRecord,
@@ -232,9 +237,12 @@ function DashboardPage() {
     bestDoublesPairing,
     bestPartner: bestPartnerResponse,
     biggestRivals,
+    brickWall: brickWallResponse,
     chiefPaddler: chiefPaddlerResponse,
+    iceMan: iceManResponse,
     friendsOrLovers,
     limpWristSyndrome: limpWristSyndromeResponse,
+    pointMachine: pointMachineResponse,
   } = result.value
   const winPercentage = formatPercentage({
     value: personalStatistics.winPercentage,
@@ -258,7 +266,9 @@ function DashboardPage() {
   const rivalry = biggestRivals.rivalry
   const firstRival = rivalry?.players[0]
   const secondRival = rivalry?.players[1]
+  const brickWall = brickWallResponse.brickWall
   const chiefPaddler = chiefPaddlerResponse.chiefPaddler
+  const iceMan = iceManResponse.iceMan
   const longestWinStreak = longestWinStreakResponse.longestWinStreak
   const bestPartner = getBestPartnerPresentation({
     bestPartner: bestPartnerResponse.bestPartner,
@@ -268,6 +278,7 @@ function DashboardPage() {
   })
   const nemesis = nemesisResponse.nemesis
   const limpWristSyndrome = limpWristSyndromeResponse.limpWristSyndrome
+  const pointMachine = pointMachineResponse.pointMachine
 
   if (
     pairing &&
@@ -382,9 +393,15 @@ function DashboardPage() {
               secondRival={secondRival}
             />
 
+            <PointMachineCard pointMachine={pointMachine} />
+
             <LimpWristSyndromeCard
               limpWristSyndrome={limpWristSyndrome}
             />
+
+            <BrickWallCard brickWall={brickWall} />
+
+            <IceManCard iceMan={iceMan} />
 
             <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
@@ -1055,6 +1072,44 @@ function BiggestRivalsCard({
   )
 }
 
+function PointMachineCard({
+  pointMachine,
+}: {
+  pointMachine: DashboardData['pointMachine']['pointMachine']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-5"
+      tone="orange"
+    >
+      <DashboardCardHeader
+        description="Highest all-time average points scored per game"
+        icon={Zap}
+        iconTone="lime"
+        tilt="counterclockwise"
+        title="Point Machine"
+      />
+      {pointMachine ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={`${formatCount({ count: pointMachine.pointsScored, singular: 'point' })} across ${formatCount({ count: pointMachine.gamesPlayed, singular: 'game' })}`}
+          metric={formatAveragePoints({
+            value: pointMachine.averagePointsScored,
+          })}
+          metricLabel="points per game"
+          person={pointMachine}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games and somebody will set the pace."
+          title="No Point Machine yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Zap} />
+    </DashboardStatCard>
+  )
+}
+
 function LimpWristSyndromeCard({
   limpWristSyndrome,
 }: {
@@ -1090,6 +1145,90 @@ function LimpWristSyndromeCard({
         direction="counterclockwise"
         icon={Hand}
       />
+    </DashboardStatCard>
+  )
+}
+
+function BrickWallCard({
+  brickWall,
+}: {
+  brickWall: DashboardData['brickWall']['brickWall']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-5"
+      tone="aqua"
+    >
+      <DashboardCardHeader
+        description="Lowest average points conceded per game"
+        icon={BrickWall}
+        iconTone="orange"
+        title="Brick wall"
+      />
+      {brickWall ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-purple text-white"
+          metadata={
+            <>
+              {formatCount({
+                count: brickWall.pointsConceded,
+                singular: 'point',
+              })}{' '}
+              conceded across{' '}
+              {formatCount({
+                count: brickWall.gamesPlayed,
+                singular: 'game',
+              })}
+            </>
+          }
+          metric={formatAveragePointsConceded({
+            value: brickWall.averagePointsConceded,
+          })}
+          metricLabel="points conceded per game"
+          person={brickWall}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games and see who gives away the fewest points."
+          title="No wall yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={BrickWall} />
+    </DashboardStatCard>
+  )
+}
+
+function IceManCard({
+  iceMan,
+}: {
+  iceMan: DashboardData['iceMan']['iceMan']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-6"
+      tone="purple"
+    >
+      <DashboardCardHeader
+        description="The clutch win master. Most wins with the other side scoring 9 or more."
+        icon={Snowflake}
+        iconTone="aqua-on-dark"
+        title="The Ice Man"
+      />
+      {iceMan ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-orange text-ink"
+          metadata="Ice in their veins"
+          metric={iceMan.clutchWins.toLocaleString('en-AU')}
+          metricLabel={iceMan.clutchWins === 1 ? 'clutch win' : 'clutch wins'}
+          person={iceMan}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Win a game after the other side reaches 9 points to claim it."
+          title="No clutch wins yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Snowflake} />
     </DashboardStatCard>
   )
 }
