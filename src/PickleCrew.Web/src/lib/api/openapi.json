@@ -843,6 +843,67 @@
         }
       }
     },
+    "/statistics/easy-win": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Gets the signed-in user's Easy Win for the active Crew.",
+        "operationId": "GetEasyWin",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEasyWinHttpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/statistics/friends-or-lovers": {
       "get": {
         "tags": [
@@ -1579,6 +1640,33 @@
           }
         }
       },
+      "EasyWinHttpResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "profilePictureUrl",
+          "wins"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePictureUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "FriendsOrLoversPairingHttpResponse": {
         "required": [
           "players",
@@ -1843,6 +1931,24 @@
               },
               {
                 "$ref": "#/components/schemas/LongestWinStreakHttpResponse"
+              }
+            ]
+          }
+        }
+      },
+      "GetEasyWinHttpResponse": {
+        "required": [
+          "easyWin"
+        ],
+        "type": "object",
+        "properties": {
+          "easyWin": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EasyWinHttpResponse"
               }
             ]
           }

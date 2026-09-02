@@ -225,6 +225,7 @@ function DashboardPage() {
 
   const {
     personalStatistics,
+    easyWin: easyWinResponse,
     nemesis: nemesisResponse,
     recentGames,
     leaderboard,
@@ -266,6 +267,7 @@ function DashboardPage() {
   const friendsOrLoversDetails = getFriendsOrLoversCardDetails({
     friendsOrLovers,
   })
+  const easyWin = easyWinResponse.easyWin
   const nemesis = nemesisResponse.nemesis
   const limpWristSyndrome = limpWristSyndromeResponse.limpWristSyndrome
 
@@ -319,6 +321,8 @@ function DashboardPage() {
               />
 
               <NemesisCard nemesis={nemesis} />
+
+              <EasyWinCard easyWin={easyWin} />
 
               <ThatsAPaddlinCard statistics={personalStatistics} />
 
@@ -733,7 +737,7 @@ function NemesisCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
       tone="orange"
     >
       <DashboardCardHeader
@@ -759,6 +763,42 @@ function NemesisCard({
         />
       )}
       <DashboardDecorativeIcon icon={Skull} size="small" />
+    </DashboardStatCard>
+  )
+}
+
+function EasyWinCard({
+  easyWin,
+}: {
+  easyWin: DashboardData['easyWin']['easyWin']
+}) {
+  return (
+    <DashboardStatCard
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
+      tone="lime"
+    >
+      <DashboardCardHeader
+        description="The opponent you’ve beaten the most"
+        icon={Trophy}
+        iconSize="small"
+        iconTone="cream"
+        title="Your easy win"
+      />
+      {easyWin ? (
+        <DashboardPersonMetric
+          avatarFallbackClassName="bg-aqua text-ink"
+          metadata="They can’t catch a break"
+          metric={easyWin.wins.toLocaleString('en-AU')}
+          metricLabel={`${easyWin.wins === 1 ? 'win' : 'wins'} against them`}
+          person={easyWin}
+        />
+      ) : (
+        <DashboardCardEmptyState
+          description="Play at least three games against an active crew member to find your easy win."
+          title="Nobody’s easy yet"
+        />
+      )}
+      <DashboardDecorativeIcon icon={Trophy} size="small" />
     </DashboardStatCard>
   )
 }
@@ -1185,7 +1225,7 @@ function BestPartnerCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-4"
+      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
       tone="paper"
     >
       <DashboardCardHeader
@@ -1439,7 +1479,7 @@ function ThatsAPaddlinCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
+      className="xl:col-span-3"
       description="11–0 wins. Zero points. Zero mercy."
       emptyState={
         statistics.thatsAPaddlin === 0

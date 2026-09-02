@@ -7,6 +7,7 @@ import {
   getChiefPaddler as getChiefPaddlerRequest,
   getCrewLeaderboard as getCrewLeaderboardRequest,
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
+  getEasyWin as getEasyWinRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
   getLimpWristSyndrome as getLimpWristSyndromeRequest,
   getNemesis as getNemesisRequest,
@@ -26,6 +27,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
       })
       const [
         personalStatistics,
+        easyWin,
         nemesis,
         recentGames,
         leaderboard,
@@ -38,6 +40,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         limpWristSyndrome,
       ] = await Promise.all([
         getPersonalStatisticsRequest({ client }),
+        getEasyWinRequest({ client }),
         getNemesisRequest({ client }),
         getRecentGamesRequest({ client }),
         getCrewLeaderboardRequest({ client }),
@@ -51,6 +54,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
       ])
       const results = [
         personalStatistics,
+        easyWin,
         nemesis,
         recentGames,
         leaderboard,
@@ -65,6 +69,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
 
       if (
         personalStatistics.error ||
+        easyWin.error ||
         nemesis.error ||
         recentGames.error ||
         leaderboard.error ||
@@ -93,6 +98,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
 
       return success({
         personalStatistics: personalStatistics.data,
+        easyWin: easyWin.data,
         nemesis: nemesis.data,
         recentGames: recentGames.data,
         leaderboard: leaderboard.data,

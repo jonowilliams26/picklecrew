@@ -6,6 +6,7 @@ import type {
   GetChiefPaddlerHttpResponse,
   GetCrewLeaderboardHttpResponse,
   GetCrewLongestWinStreakHttpResponse,
+  GetEasyWinHttpResponse,
   GetFriendsOrLoversHttpResponse,
   GetLimpWristSyndromeHttpResponse,
   GetNemesisHttpResponse,
@@ -16,6 +17,7 @@ import type { Result } from '~/lib/results'
 
 export type DashboardData = Readonly<{
   personalStatistics: GetPersonalStatisticsHttpResponse
+  easyWin: GetEasyWinHttpResponse
   nemesis: GetNemesisHttpResponse
   recentGames: GetRecentGamesHttpResponse
   leaderboard: GetCrewLeaderboardHttpResponse

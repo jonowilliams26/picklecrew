@@ -80,6 +80,13 @@ export type DoublesPairingPlayerHttpResponse = {
     profilePictureUrl?: null | string;
 };
 
+export type EasyWinHttpResponse = {
+    userId: string;
+    displayName: string;
+    profilePictureUrl: null | string;
+    wins: number;
+};
+
 export type FriendsOrLoversPairingHttpResponse = {
     players: Array<FriendsOrLoversPlayerHttpResponse>;
     wins: number;
@@ -144,6 +151,10 @@ export type GetCrewLeaderboardHttpResponse = {
 
 export type GetCrewLongestWinStreakHttpResponse = {
     longestWinStreak: null | LongestWinStreakHttpResponse;
+};
+
+export type GetEasyWinHttpResponse = {
+    easyWin: null | EasyWinHttpResponse;
 };
 
 export type GetFriendsOrLoversHttpResponse = {
@@ -767,6 +778,43 @@ export type GetChiefPaddlerResponses = {
 };
 
 export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
+
+export type GetEasyWinData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/easy-win';
+};
+
+export type GetEasyWinErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetEasyWinError = GetEasyWinErrors[keyof GetEasyWinErrors];
+
+export type GetEasyWinResponses = {
+    /**
+     * OK
+     */
+    200: GetEasyWinHttpResponse;
+};
+
+export type GetEasyWinResponse = GetEasyWinResponses[keyof GetEasyWinResponses];
 
 export type GetFriendsOrLoversData = {
     body?: never;

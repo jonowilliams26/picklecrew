@@ -159,6 +159,23 @@ A crew member's active opposing crew member against whom they have the most all-
 - Each crew member has zero or one Nemesis in each crew.
 - Each Nemesis identifies exactly one opposing crew member.
 
+## Easy Win
+
+A crew member's active opposing crew member against whom they have the most all-time wins within one crew.
+
+### Business rules
+
+- An Easy Win is calculated separately for each crew from the crew member's directional matchup statistics.
+- An opponent must have played at least three games against the crew member to qualify as their Easy Win.
+- A crew member has no Easy Win until they have defeated a qualifying active opposing crew member.
+- Guests and former crew members cannot be an Easy Win.
+- Tied opponents are resolved by user identifier.
+
+### Relationships
+
+- Each crew member has zero or one Easy Win in each crew.
+- Each Easy Win identifies exactly one opposing crew member.
+
 ## Biggest rivalry
 
 The all-time head-to-head matchup between two active crew members whose win-loss record is closest to even within one crew.

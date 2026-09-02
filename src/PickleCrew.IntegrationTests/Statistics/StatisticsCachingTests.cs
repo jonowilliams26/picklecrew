@@ -54,6 +54,14 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
                 )
             ),
             (
+                "/statistics/easy-win",
+                new PersonalStatisticsCacheOption(
+                    crewId,
+                    userId,
+                    PersonalStatisticsCacheResource.EasyWin
+                )
+            ),
+            (
                 "/statistics/leaderboard",
                 new CrewStatisticsCacheOption(
                     crewId,
