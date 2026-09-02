@@ -182,7 +182,7 @@ describe('dashboard formatting', () => {
     )
     assert.equal(
       getCurrentStreakDetail({ currentWinStreak: 5, longestWinStreak: 5 }),
-      'You’ve got the hot paddle — personal best in progress',
+      'You’re matching your personal-best streak',
     )
   })
 

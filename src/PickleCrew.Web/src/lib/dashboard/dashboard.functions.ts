@@ -12,6 +12,7 @@ import {
   getCrewLongestWinStreak as getCrewLongestWinStreakRequest,
   getEasyWin as getEasyWinRequest,
   getFriendsOrLovers as getFriendsOrLoversRequest,
+  getHotPaddle as getHotPaddleRequest,
   getLimpWristSyndrome as getLimpWristSyndromeRequest,
   getNemesis as getNemesisRequest,
   getPersonalStatistics as getPersonalStatisticsRequest,
@@ -44,6 +45,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler,
         iceMan,
         friendsOrLovers,
+        hotPaddle,
         limpWristSyndrome,
         pointMachine,
       ] = await Promise.all([
@@ -61,6 +63,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         getChiefPaddlerRequest({ client }),
         getIceManRequest({ client }),
         getFriendsOrLoversRequest({ client }),
+        getHotPaddleRequest({ client }),
         getLimpWristSyndromeRequest({ client }),
         getPointMachineRequest({ client }),
       ])
@@ -79,6 +82,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler,
         iceMan,
         friendsOrLovers,
+        hotPaddle,
         limpWristSyndrome,
         pointMachine,
       ]
@@ -98,6 +102,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler.error ||
         iceMan.error ||
         friendsOrLovers.error ||
+        hotPaddle.error ||
         limpWristSyndrome.error ||
         pointMachine.error
       ) {
@@ -131,6 +136,7 @@ export const getDashboard = createServerFn({ method: 'GET' })
         chiefPaddler: chiefPaddler.data,
         iceMan: iceMan.data,
         friendsOrLovers: friendsOrLovers.data,
+        hotPaddle: hotPaddle.data,
         limpWristSyndrome: limpWristSyndrome.data,
         pointMachine: pointMachine.data,
       })
