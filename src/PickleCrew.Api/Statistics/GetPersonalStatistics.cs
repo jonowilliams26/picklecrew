@@ -34,6 +34,8 @@ public sealed record GetPersonalStatisticsHttpResponse
 
     public required int PointDifferential { get; init; }
 
+    public required decimal AverageMargin { get; init; }
+
     public required int CrewScore { get; init; }
 
     public required int CrewRank { get; init; }
@@ -98,6 +100,7 @@ internal sealed class GetPersonalStatisticsEndpoint : IEndpoint
             PointsScored = standing.PointsScored,
             PointsConceded = standing.PointsConceded,
             PointDifferential = standing.PointDifferential,
+            AverageMargin = standing.AverageMargin,
             CrewScore = standing.CrewScore,
             CrewRank = standing.Rank,
             ActiveCrewMemberCount = standing.ActiveCrewMemberCount,

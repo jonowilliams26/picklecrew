@@ -2297,6 +2297,7 @@
           "pointsScored",
           "pointsConceded",
           "pointDifferential",
+          "averageMargin",
           "crewScore",
           "crewRank",
           "activeCrewMemberCount"
@@ -2367,6 +2368,14 @@
           "pointDifferential": {
             "type": "integer",
             "format": "int32"
+          },
+          "averageMargin": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           },
           "crewScore": {
             "type": "integer",

@@ -204,6 +204,7 @@ export type GetPersonalStatisticsHttpResponse = {
     pointsScored: number;
     pointsConceded: number;
     pointDifferential: number;
+    averageMargin: number | string;
     crewScore: number;
     crewRank: number;
     activeCrewMemberCount: number;

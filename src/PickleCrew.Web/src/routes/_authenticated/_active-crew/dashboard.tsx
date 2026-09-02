@@ -324,6 +324,7 @@ function DashboardPage() {
               <CrewRankCard statistics={personalStatistics} />
               <CurrentStreakCard statistics={personalStatistics} />
               <PointDifferentialCard statistics={personalStatistics} />
+              <AverageMarginCard statistics={personalStatistics} />
 
               <RecentGamesCard
                 recentGameCount={recentGameCount}
@@ -606,7 +607,7 @@ function WinPercentageCard({
 }) {
   return (
     <DashboardStatCard
-      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-5 xl:row-span-2"
+      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-4 xl:row-span-2"
       tone="lime"
     >
       <DashboardCardHeader
@@ -679,7 +680,7 @@ function RecentGamesCard({
   recentRecord: string
 }) {
   return (
-    <DashboardStatCard className="sm:col-span-2 xl:col-span-4" tone="cream">
+    <DashboardStatCard className="sm:col-span-2 xl:col-span-3" tone="cream">
       <DashboardCardHeader
         description={
           recentGameCount === 0
@@ -1549,7 +1550,7 @@ function CrewRankCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-3"
+      className="xl:col-span-4"
       description="Your place on the crew leaderboard"
       detail={`of ${formatCount({
         count: statistics.activeCrewMemberCount,
@@ -1597,16 +1598,36 @@ function PointDifferentialCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-3"
+      className="xl:col-span-4"
       description="Points scored minus points conceded"
       detail={`${statistics.pointsScored.toLocaleString('en-AU')} for · ${statistics.pointsConceded.toLocaleString('en-AU')} against`}
       eyebrow="Point differential"
-      icon={
-        statistics.pointDifferential < 0 ? TrendingDown : TrendingUp
-      }
+      icon={statistics.pointDifferential < 0 ? TrendingDown : TrendingUp}
       iconTone="cream"
       tone="aqua"
       value={formatSignedNumber({ value: statistics.pointDifferential })}
+    />
+  )
+}
+
+function AverageMarginCard({
+  statistics,
+}: {
+  statistics: DashboardData['personalStatistics']
+}) {
+  return (
+    <PersonalMetricCard
+      className="xl:col-span-4"
+      description="Average signed point differential per game"
+      detail={`${formatSignedNumber({ value: statistics.pointDifferential })} across ${formatCount({ count: statistics.gamesPlayed, singular: 'game' })}`}
+      eyebrow="Average margin"
+      icon={Number(statistics.averageMargin) < 0 ? TrendingDown : TrendingUp}
+      iconTone="cream"
+      tone="aqua"
+      value={formatSignedNumber({
+        value: statistics.averageMargin,
+        maximumFractionDigits: 1,
+      })}
     />
   )
 }

@@ -111,6 +111,9 @@ internal sealed class CrewStandingsService(
                     PointsScored = statistics.PointsScored,
                     PointsConceded = statistics.PointsConceded,
                     PointDifferential = statistics.PointDifferential,
+                    AverageMargin = statistics.GamesPlayed == 0
+                        ? 0
+                        : (decimal)statistics.PointDifferential / statistics.GamesPlayed,
                     CrewScore = statistics.CrewScore,
                     ActiveCrewMemberCount = activeMembersByUserId.Count,
                 };
@@ -186,6 +189,8 @@ internal sealed record CrewStanding
     public required int PointsConceded { get; init; }
 
     public required int PointDifferential { get; init; }
+
+    public required decimal AverageMargin { get; init; }
 
     public required int CrewScore { get; init; }
 
