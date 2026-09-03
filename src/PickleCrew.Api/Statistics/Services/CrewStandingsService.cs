@@ -17,6 +17,20 @@ internal sealed class CrewStandingsService(
         CancellationToken cancellationToken)
     {
         var standings = await GetStandingsAsync(cancellationToken);
+        var standing = standings.SingleOrDefault(candidate =>
+            string.Equals(candidate.UserId, userId, StringComparison.Ordinal)
+        );
+
+        if (standing is not null)
+        {
+            return standing;
+        }
+
+        await cache.RemoveByTagAsync(
+            new CrewStatisticsCacheTag(crewUserContext.CrewUuid),
+            cancellationToken
+        );
+        standings = await GetStandingsAsync(cancellationToken);
 
         return standings.Single(candidate =>
             string.Equals(candidate.UserId, userId, StringComparison.Ordinal)
