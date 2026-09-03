@@ -179,6 +179,52 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
     }
 
     [Fact]
+    public async Task PersonalStatistics_WhenMemberJoinsAfterStandingsAreCached_ShouldRefreshCrewStatistics()
+    {
+        var administratorId = $"user_test_{Guid.NewGuid():N}";
+        var memberId = $"user_test_{Guid.NewGuid():N}";
+        var context = await fixture.CreateCrewBuilder()
+            .WithAdministrator(id: administratorId)
+            .BuildAsync();
+        using var administratorClient = fixture.CreateApiClient(context.Administrator);
+
+        var initialLeaderboard = await GetCrewLeaderboardAsync(administratorClient);
+        Assert.Single(initialLeaderboard.Entries);
+
+        using var fakeWorkOs = fixture.CreateFakeWorkOsClient();
+        await fakeWorkOs.CreateUserAsync(
+            memberId,
+            $"{memberId}@example.test",
+            displayName: "New Member"
+        );
+        await fakeWorkOs.CreateMembershipAsync(
+            $"membership_test_{Guid.NewGuid():N}",
+            memberId,
+            context.OrganizationId,
+            FakeMembershipRole.Member,
+            FakeMembershipStatus.Active
+        );
+        var member = new TestIdentity
+        {
+            UserId = memberId,
+            EmailAddress = $"{memberId}@example.test",
+            OrganizationId = context.OrganizationId,
+            Role = "member",
+        };
+        using var memberClient = fixture.CreateApiClient(member);
+
+        var personalStatistics = await GetPersonalStatisticsAsync(memberClient);
+        var refreshedLeaderboard = await GetCrewLeaderboardAsync(administratorClient);
+
+        Assert.Equal(0, personalStatistics.GamesPlayed);
+        Assert.Equal(2, personalStatistics.ActiveCrewMemberCount);
+        Assert.Contains(
+            refreshedLeaderboard.Entries,
+            entry => string.Equals(entry.UserId, memberId, StringComparison.Ordinal)
+        );
+    }
+
+    [Fact]
     public async Task PersonalStatistics_WhenGameIsRecordedAfterResponseIsCached_ShouldReturnInvalidatedResponse()
     {
         var administratorId = $"user_test_{Guid.NewGuid():N}";
@@ -229,6 +275,19 @@ public sealed class StatisticsCachingTests(AppHostFixture fixture)
 
         Assert.Equal(1, refreshedStatistics.Wins);
         Assert.Equal(1, refreshedStatistics.GamesPlayed);
+    }
+
+    private static async Task<GetCrewLeaderboardHttpResponse> GetCrewLeaderboardAsync(
+        HttpClient apiClient)
+    {
+        using var response = await apiClient.GetAsync("/statistics/leaderboard");
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<GetCrewLeaderboardHttpResponse>(
+            TestJsonSerializerOptions.Default
+        ) ?? throw new InvalidOperationException(
+            "The API returned an empty crew leaderboard response."
+        );
     }
 
     private static async Task<GetPersonalStatisticsHttpResponse> GetPersonalStatisticsAsync(
