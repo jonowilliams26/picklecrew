@@ -84,6 +84,7 @@ function ActiveCrewLayout() {
   const { activeCrew, crews } = authenticatedRoute.useLoaderData()
   const { user } = useAuth()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const [switchingCrew, setSwitchingCrew] = useState<Crew>()
   const isRecordingGame = pathname === '/record-game'
 
   if (!activeCrew || !user) {
@@ -92,10 +93,15 @@ function ActiveCrewLayout() {
 
   return (
     <SidebarProvider className="min-h-dvh bg-background">
+      {switchingCrew ? (
+        <CrewSwitchLoadingPage crewName={switchingCrew.name} />
+      ) : null}
       <ActiveCrewSidebar
         activeCrew={activeCrew}
         crews={crews}
+        onSwitchingCrewChange={setSwitchingCrew}
         pathname={pathname}
+        switchingCrew={switchingCrew}
         user={user}
       />
 
@@ -168,13 +174,16 @@ function CrewSwitchLoadingPage({ crewName }: { crewName: string }) {
 function CrewSwitcher({
   activeCrew,
   crews,
+  onSwitchingCrewChange,
+  switchingCrew,
 }: {
   activeCrew: Crew
   crews: ReadonlyArray<Crew>
+  onSwitchingCrewChange: (crew: Crew | undefined) => void
+  switchingCrew: Crew | undefined
 }) {
   const { switchToOrganization } = useAuth()
   const { isMobile, setOpenMobile } = useSidebar()
-  const [switchingCrew, setSwitchingCrew] = useState<Crew>()
   const closeMobileNavigation = () => setOpenMobile(false)
   const isSwitching = switchingCrew !== undefined
 
@@ -191,30 +200,27 @@ function CrewSwitcher({
       return
     }
 
-    setSwitchingCrew(selectedCrew)
+    onSwitchingCrewChange(selectedCrew)
     closeMobileNavigation()
 
     try {
       const result = await switchToOrganization(organizationId)
       if (result) {
         showCrewSwitchError()
-        setSwitchingCrew(undefined)
+        onSwitchingCrewChange(undefined)
         return
       }
 
       window.location.reload()
     } catch {
       showCrewSwitchError()
-      setSwitchingCrew(undefined)
+      onSwitchingCrewChange(undefined)
     }
   }
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        {switchingCrew ? (
-          <CrewSwitchLoadingPage crewName={switchingCrew.name} />
-        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -289,12 +295,16 @@ function CrewSwitcher({
 function ActiveCrewSidebar({
   activeCrew,
   crews,
+  onSwitchingCrewChange,
   pathname,
+  switchingCrew,
   user,
 }: {
   activeCrew: Crew
   crews: ReadonlyArray<Crew>
+  onSwitchingCrewChange: (crew: Crew | undefined) => void
   pathname: string
+  switchingCrew: Crew | undefined
   user: User
 }) {
   const displayName = getDisplayName({ user })
@@ -314,7 +324,12 @@ function ActiveCrewSidebar({
           <span>PickleCrew</span>
         </Link>
 
-        <CrewSwitcher activeCrew={activeCrew} crews={crews} />
+        <CrewSwitcher
+          activeCrew={activeCrew}
+          crews={crews}
+          onSwitchingCrewChange={onSwitchingCrewChange}
+          switchingCrew={switchingCrew}
+        />
 
         <Link
           className={buttonVariants({
