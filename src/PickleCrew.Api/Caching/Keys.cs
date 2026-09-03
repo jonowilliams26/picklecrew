@@ -43,20 +43,6 @@ internal sealed record CrewStatisticsCacheOption(
     ];
 }
 
-internal sealed record CrewHealthCacheOption(
-    Guid CrewId,
-    DateOnly EndDate) : ICacheOption
-{
-    public string Key { get; } =
-        $"v1:crew:{CrewId}:statistics:crew-health:end-date:{EndDate:yyyy-MM-dd}";
-
-    public ICacheTag[] Tags { get; } =
-    [
-        new CrewCacheTag(CrewId),
-        new CrewStatisticsCacheTag(CrewId),
-    ];
-}
-
 internal sealed record PersonalStatisticsCacheOption(
     Guid CrewId,
     string UserId,

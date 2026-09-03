@@ -61,11 +61,6 @@ export type CreateCrewHttpResponse = {
     organizationId: string;
 };
 
-export type CrewHealthDayHttpResponse = {
-    date: string;
-    gameCount: number;
-};
-
 export type CrewInvitationOutcomeStatus = 'sent' | 'already-active-member' | 'already-pending' | 'failed';
 
 export type CrewLeaderboardEntryHttpResponse = {
@@ -179,12 +174,6 @@ export type GetBrickWallHttpResponse = {
 
 export type GetChiefPaddlerHttpResponse = {
     chiefPaddler: null | ChiefPaddlerHttpResponse;
-};
-
-export type GetCrewHealthHttpResponse = {
-    startDate: string;
-    endDate: string;
-    days: Array<CrewHealthDayHttpResponse>;
 };
 
 export type GetCrewLeaderboardHttpResponse = {
@@ -1220,43 +1209,6 @@ export type GetChiefPaddlerResponses = {
 };
 
 export type GetChiefPaddlerResponse = GetChiefPaddlerResponses[keyof GetChiefPaddlerResponses];
-
-export type GetCrewHealthData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/statistics/crew-health';
-};
-
-export type GetCrewHealthErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Too Many Requests
-     */
-    429: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetCrewHealthError = GetCrewHealthErrors[keyof GetCrewHealthErrors];
-
-export type GetCrewHealthResponses = {
-    /**
-     * OK
-     */
-    200: GetCrewHealthHttpResponse;
-};
-
-export type GetCrewHealthResponse = GetCrewHealthResponses[keyof GetCrewHealthResponses];
 
 export type GetEasyWinData = {
     body?: never;

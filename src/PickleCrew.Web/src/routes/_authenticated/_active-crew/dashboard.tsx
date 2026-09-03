@@ -4,7 +4,6 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
 import {
   BrickWall,
-  CalendarDays,
   CircleAlert,
   Crown,
   Flame,
@@ -39,11 +38,6 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '~/components/ui/tooltip'
 import type {
   CrewLeaderboardEntryHttpResponse,
   DoublesPairingPlayerHttpResponse,
@@ -51,11 +45,9 @@ import type {
 } from '~/lib/api/generated/types.gen'
 import { getDashboard } from '~/lib/dashboard/dashboard.functions'
 import {
-  buildCrewHealthCalendar,
   formatAveragePoints,
   formatAveragePointsConceded,
   formatCount,
-  formatCrewHealthDay,
   formatPercentage,
   formatRecord,
   formatSignedNumber,
@@ -65,7 +57,6 @@ import {
   getFriendsOrLoversCardDetails,
   getInitials,
   type BestPartnerPresentation,
-  type CrewHealthCalendar,
   type DashboardData,
 } from '~/lib/dashboard/dashboard'
 import { cn } from '~/lib/utils'
@@ -188,30 +179,6 @@ const dashboardCardTextVariants = cva('', {
   },
 })
 
-const crewHealthIntensities = [0, 1, 2, 3, 4] as const
-
-const crewHealthDayVariants = cva(
-  'block rounded-[3px] border border-ink/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
-  {
-    variants: {
-      intensity: {
-        0: 'bg-ink/10',
-        1: 'bg-lime/30',
-        2: 'bg-lime/55',
-        3: 'bg-lime/80',
-        4: 'bg-ink',
-      },
-      layout: {
-        calendar: 'aspect-square w-full',
-        legend: 'size-3',
-      },
-    },
-    defaultVariants: {
-      layout: 'calendar',
-    },
-  },
-)
-
 const dashboardAvatarFallbackVariants = cva('font-heading font-black', {
   variants: {
     size: {
@@ -268,7 +235,6 @@ function DashboardPage() {
     easyWin: easyWinResponse,
     nemesis: nemesisResponse,
     recentGames,
-    crewHealth,
     leaderboard,
     longestWinStreak: longestWinStreakResponse,
     bestDoublesPairing,
@@ -295,7 +261,6 @@ function DashboardPage() {
     losses: recentGames.losses,
   })
   const recentGameCount = recentGames.games.length
-  const crewHealthCalendar = buildCrewHealthCalendar({ crewHealth })
   const hasLeaderboardGames = leaderboard.entries.some(
     (member) => member.wins + member.losses > 0,
   )
@@ -352,32 +317,39 @@ function DashboardPage() {
           />
 
           {personalStatistics.gamesPlayed > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
-              <WinPercentageCard
-                personalRecord={personalRecord}
-                personalStatistics={personalStatistics}
-                progressPercentage={progressPercentage}
-                winPercentage={winPercentage}
-              />
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <WinPercentageCard
+                  personalRecord={personalRecord}
+                  personalStatistics={personalStatistics}
+                  progressPercentage={progressPercentage}
+                  winPercentage={winPercentage}
+                />
 
-              <CrewRankCard statistics={personalStatistics} />
-              <CurrentStreakCard statistics={personalStatistics} />
-              <PointDifferentialCard statistics={personalStatistics} />
-              <AverageMarginCard statistics={personalStatistics} />
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <CrewRankCard statistics={personalStatistics} />
+                  <CurrentStreakCard statistics={personalStatistics} />
 
-              <RecentGamesCard
-                recentGameCount={recentGameCount}
-                recentGames={recentGames}
-                recentRecord={recentRecord}
-              />
+                  <RecentGamesCard
+                    recentGameCount={recentGameCount}
+                    recentGames={recentGames}
+                    recentRecord={recentRecord}
+                  />
+                </div>
+              </div>
 
-              <NemesisCard nemesis={nemesis} />
+              <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+                <ThatsAPaddlinCard statistics={personalStatistics} />
 
-              <EasyWinCard easyWin={easyWin} />
+                <PointDifferentialCard statistics={personalStatistics} />
+                <AverageMarginCard statistics={personalStatistics} />
 
-              <ThatsAPaddlinCard statistics={personalStatistics} />
+                <NemesisCard nemesis={nemesis} />
 
-              <BestPartnerCard bestPartner={bestPartner} />
+                <EasyWinCard easyWin={easyWin} />
+
+                <BestPartnerCard bestPartner={bestPartner} />
+              </div>
             </div>
           ) : (
             <Card className="relative min-h-[310px] overflow-hidden border-2 border-dashed border-ink/30 bg-cream">
@@ -415,44 +387,48 @@ function DashboardPage() {
             headingId="crew-stats-heading"
           />
 
-          <div className="grid gap-5 xl:grid-cols-12">
-            <CrewLeaderboardCard
-              currentUserId={user.id}
-              hasLeaderboardGames={hasLeaderboardGames}
-              leaderboard={leaderboard}
-            />
+          <div className="flex flex-col gap-5">
+            <div className="grid gap-5 xl:grid-cols-2">
+              <CrewLeaderboardCard
+                currentUserId={user.id}
+                hasLeaderboardGames={hasLeaderboardGames}
+                leaderboard={leaderboard}
+              />
 
-            <BestDoublesPairingCard
-              firstPairingPlayer={firstPairingPlayer}
-              pairing={pairing}
-              secondPairingPlayer={secondPairingPlayer}
-            />
+              <LongestWinStreakCard longestWinStreak={longestWinStreak} />
 
-            <FriendsOrLoversCard details={friendsOrLoversDetails} />
+              <ChiefPaddlerCard chiefPaddler={chiefPaddler} />
+            </div>
 
-            <BiggestRivalsCard
-              firstRival={firstRival}
-              rivalry={rivalry}
-              secondRival={secondRival}
-            />
+            <div className="grid gap-5 xl:grid-cols-2">
+              <BestDoublesPairingCard
+                firstPairingPlayer={firstPairingPlayer}
+                pairing={pairing}
+                secondPairingPlayer={secondPairingPlayer}
+              />
 
-            <PointMachineCard pointMachine={pointMachine} />
+              <BiggestRivalsCard
+                firstRival={firstRival}
+                rivalry={rivalry}
+                secondRival={secondRival}
+              />
+            </div>
 
-            <LimpWristSyndromeCard
-              limpWristSyndrome={limpWristSyndrome}
-            />
+            <div className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
+              <FriendsOrLoversCard details={friendsOrLoversDetails} />
 
-            <BrickWallCard brickWall={brickWall} />
+              <PointMachineCard pointMachine={pointMachine} />
 
-            <IceManCard iceMan={iceMan} />
+              <LimpWristSyndromeCard
+                limpWristSyndrome={limpWristSyndrome}
+              />
 
-            <HotPaddleCard hotPaddle={hotPaddle} />
+              <BrickWallCard brickWall={brickWall} />
 
-            <LongestWinStreakCard longestWinStreak={longestWinStreak} />
+              <IceManCard iceMan={iceMan} />
 
-            <ChiefPaddlerCard chiefPaddler={chiefPaddler} />
-
-            <CrewHealthCard calendar={crewHealthCalendar} />
+              <HotPaddleCard hotPaddle={hotPaddle} />
+            </div>
           </div>
         </section>
       </div>
@@ -654,7 +630,7 @@ function WinPercentageCard({
 }) {
   return (
     <DashboardStatCard
-      className="dashboard-stat-card-lime min-h-[310px] sm:col-span-2 xl:col-span-4 xl:row-span-2"
+      className="dashboard-stat-card-lime min-h-[310px]"
       tone="lime"
     >
       <DashboardCardHeader
@@ -727,7 +703,7 @@ function RecentGamesCard({
   recentRecord: string
 }) {
   return (
-    <DashboardStatCard className="sm:col-span-2 xl:col-span-3" tone="cream">
+    <DashboardStatCard className="xl:col-span-2" tone="cream">
       <DashboardCardHeader
         description={
           recentGameCount === 0
@@ -802,7 +778,7 @@ function NemesisCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
+      className="min-h-[190px] overflow-hidden"
       tone="orange"
     >
       <DashboardCardHeader
@@ -839,7 +815,7 @@ function EasyWinCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
+      className="min-h-[190px] overflow-hidden"
       tone="lime"
     >
       <DashboardCardHeader
@@ -868,122 +844,6 @@ function EasyWinCard({
   )
 }
 
-function CrewHealthCard({ calendar }: { calendar: CrewHealthCalendar }) {
-  return (
-    <DashboardStatCard
-      className="min-h-[280px] xl:col-span-12 xl:row-start-7"
-      interactive={false}
-      tone="cream"
-    >
-      <DashboardCardHeader
-        description="Games played across the last 365 days"
-        icon={CalendarDays}
-        iconTone="lime"
-        title="Crew health"
-        titleVariant="heading"
-      />
-      <CardContent className="relative z-1">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex w-full min-w-[52rem] gap-3">
-            <div className="mt-6 grid grid-rows-7 gap-1 text-[8px] font-black text-muted-foreground uppercase">
-              <span>Sun</span>
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div
-                className="grid h-4 gap-1 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
-                style={{
-                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
-                }}
-                aria-hidden="true"
-              >
-                {calendar.monthLabels.map((month) => (
-                  <span
-                    className="col-span-3"
-                    key={`${month.label}-${month.weekIndex}`}
-                    style={{ gridColumnStart: month.weekIndex + 1 }}
-                  >
-                    {month.label}
-                  </span>
-                ))}
-              </div>
-              <div
-                className="grid grid-rows-[repeat(7,auto)] gap-1"
-                style={{
-                  gridTemplateColumns: `repeat(${calendar.weekCount}, minmax(0, 1fr))`,
-                }}
-                role="group"
-                aria-label={`${formatCount({ count: calendar.totalGames, singular: 'game' })} played across ${formatCount({ count: calendar.activeDayCount, singular: 'active day' })} in the last 365 days`}
-              >
-                {calendar.days.map((day) => {
-                  const label = formatCrewHealthDay(day)
-                  const className = crewHealthDayVariants({
-                    intensity: day.intensity,
-                  })
-                  const style = {
-                    gridColumnStart: day.weekIndex + 1,
-                    gridRowStart: day.dayOfWeek + 1,
-                  }
-
-                  return day.gameCount > 0 ? (
-                    <Tooltip key={day.date}>
-                      <TooltipTrigger
-                        aria-label={label}
-                        className={className}
-                        style={style}
-                        type="button"
-                      />
-                      <TooltipContent>{label}</TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className={className}
-                      key={day.date}
-                      style={style}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="relative z-1 flex-wrap justify-between gap-4">
-        <span className={dashboardCardTextVariants({ role: 'metadata' })}>
-          {formatCount({ count: calendar.totalGames, singular: 'game' })} ·{' '}
-          {formatCount({
-            count: calendar.activeDayCount,
-            singular: 'active day',
-          })}
-        </span>
-        <div
-          className="flex items-center gap-2 text-[8px] font-black tracking-[.08em] text-muted-foreground uppercase"
-          aria-label="Activity intensity from less to more"
-        >
-          <span>Less</span>
-          {crewHealthIntensities.map((intensity) => (
-            <span
-              aria-hidden="true"
-              className={crewHealthDayVariants({
-                intensity,
-                layout: 'legend',
-              })}
-              key={intensity}
-            />
-          ))}
-          <span>More</span>
-        </div>
-      </CardFooter>
-    </DashboardStatCard>
-  )
-}
-
 function CrewLeaderboardCard({
   currentUserId,
   hasLeaderboardGames,
@@ -995,7 +855,7 @@ function CrewLeaderboardCard({
 }) {
   return (
     <DashboardStatCard
-      className="xl:col-span-7 xl:row-span-2 xl:row-start-1"
+      className="xl:col-span-2 2xl:col-span-1 2xl:row-span-2"
       tone="cream"
     >
       <DashboardCardHeader
@@ -1048,7 +908,7 @@ function BestDoublesPairingCard({
 }) {
   return (
     <DashboardStatCard
-      className="dashboard-pair-card min-h-[330px] xl:col-span-6 xl:row-start-3"
+      className="dashboard-pair-card min-h-[330px]"
       tone="purple"
     >
       <DashboardCardHeader
@@ -1137,7 +997,7 @@ function FriendsOrLoversCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-3"
+      className="min-h-[330px] overflow-hidden"
       tone="lime"
     >
       <DashboardCardHeader
@@ -1205,7 +1065,7 @@ function BiggestRivalsCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-4"
+      className="min-h-[330px] overflow-hidden"
       tone="ink"
     >
       <DashboardCardHeader
@@ -1282,7 +1142,7 @@ function PointMachineCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-5"
+      className="min-h-[330px] overflow-hidden"
       tone="orange"
     >
       <DashboardCardHeader
@@ -1295,7 +1155,7 @@ function PointMachineCard({
       {pointMachine ? (
         <DashboardPersonMetric
           avatarFallbackClassName="bg-purple text-white"
-          metadata={`${formatCount({ count: pointMachine.pointsScored, singular: 'point' })} across ${formatCount({ count: pointMachine.gamesPlayed, singular: 'game' })}`}
+          metadata="The scoreboard’s worst nightmare"
           metric={formatAveragePoints({
             value: pointMachine.averagePointsScored,
           })}
@@ -1320,7 +1180,7 @@ function LimpWristSyndromeCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-4"
+      className="min-h-[330px] overflow-hidden"
       tone="paper"
     >
       <DashboardCardHeader
@@ -1333,7 +1193,7 @@ function LimpWristSyndromeCard({
       {limpWristSyndrome ? (
         <DashboardPersonMetric
           avatarFallbackClassName="bg-aqua text-ink"
-          metadata={`Point differential ${formatSignedNumber({ value: limpWristSyndrome.pointDifferential })}`}
+          metadata="Somebody call an ambulance"
           metric={limpWristSyndrome.losses.toLocaleString('en-AU')}
           metricLabel={limpWristSyndrome.losses === 1 ? 'loss' : 'losses'}
           person={limpWristSyndrome}
@@ -1359,7 +1219,7 @@ function BrickWallCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-5"
+      className="min-h-[330px] overflow-hidden"
       tone="aqua"
     >
       <DashboardCardHeader
@@ -1371,19 +1231,7 @@ function BrickWallCard({
       {brickWall ? (
         <DashboardPersonMetric
           avatarFallbackClassName="bg-purple text-white"
-          metadata={
-            <>
-              {formatCount({
-                count: brickWall.pointsConceded,
-                singular: 'point',
-              })}{' '}
-              conceded across{' '}
-              {formatCount({
-                count: brickWall.gamesPlayed,
-                singular: 'game',
-              })}
-            </>
-          }
+          metadata="Nothing gets past them"
           metric={formatAveragePointsConceded({
             value: brickWall.averagePointsConceded,
           })}
@@ -1408,7 +1256,7 @@ function IceManCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:row-start-6"
+      className="min-h-[330px] overflow-hidden"
       tone="purple"
     >
       <DashboardCardHeader
@@ -1443,7 +1291,7 @@ function HotPaddleCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[330px] overflow-hidden xl:col-span-6 xl:col-start-7 xl:row-start-6"
+      className="min-h-[330px] overflow-hidden"
       tone="lime"
     >
       <DashboardCardHeader
@@ -1456,7 +1304,7 @@ function HotPaddleCard({
       {hotPaddle ? (
         <DashboardPersonMetric
           avatarFallbackClassName="bg-purple text-white"
-          metadata={`${formatRecord({ wins: hotPaddle.wins, losses: hotPaddle.losses })} over their last five`}
+          metadata="Too hot to handle"
           metric={`${formatPercentage({ value: hotPaddle.winPercentage })}%`}
           metricLabel="win rate"
           person={hotPaddle}
@@ -1479,7 +1327,7 @@ function LongestWinStreakCard({
 }) {
   return (
     <DashboardStatCard
-      className="dashboard-streak-card min-h-[190px] overflow-hidden xl:col-span-5 xl:col-start-8 xl:row-start-1"
+      className="dashboard-streak-card min-h-[190px] overflow-hidden"
       tone="orange"
     >
       <DashboardCardHeader
@@ -1523,7 +1371,7 @@ function ChiefPaddlerCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden xl:col-span-5 xl:col-start-8 xl:row-start-2"
+      className="min-h-[190px] overflow-hidden"
       tone="aqua"
     >
       <DashboardCardHeader
@@ -1564,7 +1412,7 @@ function BestPartnerCard({
 }) {
   return (
     <DashboardStatCard
-      className="min-h-[190px] overflow-hidden sm:col-span-2 xl:col-span-3"
+      className="min-h-[190px] overflow-hidden"
       tone="paper"
     >
       <DashboardCardHeader
@@ -1749,7 +1597,6 @@ function CrewRankCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
       description="Your place on the crew leaderboard"
       detail={`of ${formatCount({
         count: statistics.activeCrewMemberCount,
@@ -1771,7 +1618,6 @@ function CurrentStreakCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
       description="Consecutive wins through your latest game"
       detail={getCurrentStreakDetail({
         currentWinStreak: statistics.currentWinStreak,
@@ -1797,7 +1643,7 @@ function PointDifferentialCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
+      className="min-h-[170px]"
       description="Points scored minus points conceded"
       detail={`${statistics.pointsScored.toLocaleString('en-AU')} for · ${statistics.pointsConceded.toLocaleString('en-AU')} against`}
       eyebrow="Point differential"
@@ -1816,7 +1662,7 @@ function AverageMarginCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-4"
+      className="min-h-[170px]"
       description="Average signed point differential per game"
       detail={`${formatSignedNumber({ value: statistics.pointDifferential })} across ${formatCount({ count: statistics.gamesPlayed, singular: 'game' })}`}
       eyebrow="Average margin"
@@ -1838,8 +1684,13 @@ function ThatsAPaddlinCard({
 }) {
   return (
     <PersonalMetricCard
-      className="xl:col-span-3"
+      className="min-h-[170px]"
       description="11–0 wins. Zero points. Zero mercy."
+      detail={
+        statistics.thatsAPaddlin === 1
+          ? 'paddlin delivered'
+          : 'paddlins delivered'
+      }
       emptyState={
         statistics.thatsAPaddlin === 0
           ? "No paddlins yet. Court's waiting. Go obliterate somebody."
@@ -1865,7 +1716,7 @@ function PersonalMetricCard({
   iconTone,
   tone,
 }: {
-  className: string
+  className?: string
   eyebrow: string
   description: string
   value: string

@@ -23,16 +23,6 @@ A named group that users belong to within Picklecrew.
 - Each crew corresponds to exactly one WorkOS organization.
 - Each WorkOS organization corresponds to exactly one crew.
 
-## Crew health
-
-A Crew's recent Game activity shown as a calendar.
-
-### Business rules
-
-- Crew health includes only Games recorded for that Crew within the preceding year.
-- Each calendar day shows how many Games were played on that day.
-- Calendar color intensity increases as more Games are played on a day.
-
 ## User
 
 A person who uses Picklecrew.
